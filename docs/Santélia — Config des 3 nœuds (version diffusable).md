@@ -39,10 +39,6 @@ Un hyperviseur physique héberge **trois nœuds Proxmox VE imbriqués**, virtuel
 Le quorum Corosync exige une **majorité stricte**. À trois nœuds, la majorité est de deux : perdre un nœud laisse le cluster opérationnel. À deux nœuds, il faudrait ajouter un **QDevice** externe pour obtenir cette même majorité.
 Le choix de trois nœuds supprime donc le besoin d'un QDevice, d'un export NFS comme stockage partagé, et de toute la complexité qui va avec.
 
-### Pourquoi les trois nœuds sur la même machine
-
-Les trois nœuds partagent un processeur identique, ce qui autorise l'exposition du **type CPU natif** et supprime toute contrainte de compatibilité pour la migration à chaud. Un nœud placé sur une seconde machine physique, de génération différente, aurait imposé un modèle de CPU conservateur au détriment des performances.
-
 * * *
 
 ## 4. Prérequis techniques
