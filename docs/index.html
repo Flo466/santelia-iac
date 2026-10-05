@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Santélia — Documentation technique</title>
+  <style>
+    :root { color-scheme: light; }
+    body {
+      font-family: "DejaVu Sans", -apple-system, "Segoe UI", sans-serif;
+      max-width: 780px;
+      margin: 3.5rem auto 4rem;
+      padding: 0 1.4rem;
+      line-height: 1.65;
+      color: #111;
+      background: #fff;
+    }
+    header { border-bottom: 2px solid #222; padding-bottom: .8rem; margin-bottom: 1.8rem; }
+    h1 { font-size: 1.7rem; margin: 0 0 .3rem; }
+    .chantier { color: #555; font-size: .92rem; margin: 0; }
+    p.intro { font-size: 1rem; color: #333; }
+    ul.docs { list-style: none; padding: 0; margin: 1.6rem 0 0; }
+    ul.docs li {
+      margin: 0 0 .7rem;
+      padding: .9rem 1.1rem;
+      border: 1px solid #dcdcdc;
+      border-left: 4px solid #0b5fa5;
+      border-radius: 5px;
+      background: #fafafa;
+    }
+    ul.docs li:hover { background: #f2f7fc; }
+    ul.docs a { text-decoration: none; color: #0b5fa5; font-weight: 600; font-size: 1.02rem; }
+    ul.docs a:hover { text-decoration: underline; }
+    ul.docs span { display: block; color: #555; font-size: .88rem; font-weight: normal; margin-top: .25rem; }
+    footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #e5e5e5; color: #777; font-size: .85rem; }
+    @media (max-width: 600px) {
+      body { margin: 1.8rem auto 3rem; padding: 0 1rem; }
+      h1 { font-size: 1.35rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Santélia — Documentation technique</h1>
+    <p class="chantier">Haute disponibilité des machines virtuelles — Proxmox VE</p>
+  </header>
+
+  <p class="intro">
+    Documentation de la brique de continuité de service : architecture du cluster,
+    construction de la machine de test, et compte rendu de recette.
+  </p>
+
+  <ul class="docs">
+    <li>
+      <a href="01-cluster-proxmox.html">1. Architecture du cluster Proxmox</a>
+      <span>Configuration des trois nœuds, quorum, stockage, réseau et écarts assumés.</span>
+    </li>
+    <li>
+      <a href="02-vm-test-ha.html">2. Machine de test — construction et provisionnement</a>
+      <span>Image cloud, provisionnement automatique, service témoin et reproductibilité.</span>
+    </li>
+    <li>
+      <a href="03-test-recette-HA.html">3. Test de recette — simulation de panne de nœud</a>
+      <span>Mesures de reprise, quorum maintenu, et preuves brutes horodatées en annexe.</span>
+    </li>
+  </ul>
+
+  <footer>
+    TP Bloc 2 AIS — Groupe 2 (Florent, Youcef, Robin) — Documentation générée depuis le dépôt
+    <code>santelia-iac</code>.
+  </footer>
+
+</body>
+</html>

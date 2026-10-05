@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Santélia — VM critique : construction</title>
+  <style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+  <style type="text/css">@page { size: A4; margin: 18mm 15mm; }
+body { font-family: "DejaVu Sans", sans-serif; font-size: 10.5pt; line-height: 1.45; color: #111; }
+h1 { font-size: 18pt; border-bottom: 2px solid #333; padding-bottom: 4pt; }
+h2 { font-size: 14pt; margin-top: 18pt; border-bottom: 1px solid #999; padding-bottom: 2pt; }
+h3 { font-size: 11.5pt; margin-top: 13pt; }
+h4 { font-size: 10.5pt; margin-top: 10pt; }
+table { border-collapse: collapse; width: 100%; font-size: 9pt; margin: 8pt 0; }
+th, td { border: 1px solid #bbb; padding: 3.5pt 5pt; text-align: left; vertical-align: top; }
+th { background: #eeeeee; }
+code, pre { font-family: "DejaVu Sans Mono", monospace; font-size: 8.5pt; }
+pre { background: #f6f6f6; border: 1px solid #ddd; padding: 6pt; white-space: pre-wrap; }
+blockquote { border-left: 3px solid #999; margin-left: 0; padding-left: 10pt; color: #333; }
+h1, h2, h3 { break-after: avoid; }
+table, pre, blockquote { break-inside: avoid; }
+</style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Santélia — VM critique : construction</h1>
+</header>
+<h1 id="santélia-vm-critique-vm-test-ha-construction-et-provisionnement">Santélia
+— VM critique <code>vm-test-ha</code> : construction et
+provisionnement</h1>
+<blockquote>
+<p>Document rendable — décrit la mise en place de la machine de test de
+la brique HA. Les mesures de disponibilité et le compte rendu de recette
+sont dans le document « Santélia — Test de recette HA : simulation de
+panne de nœud ». TP Bloc 2 AIS, Groupe 2 (Florent, Youcef, Robin)</p>
+</blockquote>
+<hr />
+<h2 id="objet-de-ce-document">1. Objet de ce document</h2>
+<p>Ce document décrit la <strong>construction</strong> d’une machine
+virtuelle minimale destinée à servir d’objet de test pour la brique de
+haute disponibilité.</p>
+<p>Il ne traite ni des mesures ni du compte rendu de recette, qui font
+l’objet d’un document distinct.</p>
+<p>Le cahier des charges répartit les rôles ainsi : Proxmox VE HA traite
+la continuité des VM, Proxmox Backup Server la sauvegarde et la
+restauration, Zabbix la supervision, et Ansible l’automatisation et la
+standardisation. La préparation de la HA et l’intégration des VM
+critiques constituent la phase 2 du planning, avec pour jalon une
+<strong>HA opérationnelle sur l’environnement cible</strong>.</p>
+<p><strong>Pourquoi une machine minimale plutôt que le service réel
+:</strong> elle permet de valider le mécanisme complet sans introduire
+d’autres variables. Une fois le mécanisme prouvé, le contenu pourra être
+remplacé par le service réel sans retoucher au mécanisme.</p>
+<hr />
+<h2 id="approche-retenue-image-cloud-et-provisionnement-automatique">2.
+Approche retenue : image cloud et provisionnement automatique</h2>
+<p>Plutôt qu’une installation interactive depuis une image
+d’installation, une <strong>image cloud</strong> et un mécanisme de
+<strong>provisionnement automatique</strong> ont été utilisés.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th></th>
+<th>Image d’installation</th>
+<th>Image cloud</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nature</td>
+<td>Support d’installation</td>
+<td>Disque système <strong>déjà installé</strong></td>
+</tr>
+<tr>
+<td>Format</td>
+<td><code>.iso</code></td>
+<td><code>.qcow2</code></td>
+</tr>
+<tr>
+<td>Au démarrage</td>
+<td>Un programme d’installation pose des questions</td>
+<td>Le système démarre directement</td>
+</tr>
+<tr>
+<td>Utilisateur, réseau</td>
+<td>Configurés manuellement</td>
+<td>Définis par <strong>données de configuration</strong></td>
+</tr>
+<tr>
+<td>Reproductibilité</td>
+<td>Faible</td>
+<td><strong>Élevée</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="principe-du-provisionnement-automatique">Principe du
+provisionnement automatique</h3>
+<p>Un service embarqué dans l’image s’exécute au <strong>premier
+démarrage</strong>. Il lit des instructions fournies par l’hyperviseur
+et les applique : création de l’utilisateur, dépôt d’une clé
+d’authentification, configuration réseau. Il ne s’exécute <strong>qu’une
+seule fois</strong>, puis se marque comme terminé.</p>
+<p>Côté hyperviseur, ces instructions ne sont pas rédigées à la main :
+elles se renseignent sous forme d’<strong>options dans la configuration
+de la machine</strong>, et un petit périphérique de type CD-ROM est
+généré automatiquement pour les transporter jusqu’à l’invité.</p>
+<p><strong>Intérêt pour le projet :</strong> la machine est décrite en
+<strong>données</strong> plutôt que configurée manuellement. C’est la
+même démarche que l’automatisation attendue en phase de standardisation,
+où les configurations des serveurs et des applications doivent être
+automatisées et documentées.</p>
+<hr />
+<h2 id="vérifications-préalables">3. Vérifications préalables</h2>
+<p>Trois contrôles avant toute création.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Contrôle</th>
+<th>Objet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Adresse réseau disponible</td>
+<td>Vérifier qu’aucune machine ne répond, et que l’adresse est hors de
+la plage d’attribution automatique</td>
+</tr>
+<tr>
+<td>Clé d’authentification présente sur le nœud</td>
+<td>C’est elle qui sera injectée dans la machine</td>
+</tr>
+<tr>
+<td>Numéro de machine libre</td>
+<td>Dans un cluster, les numéros sont <strong>uniques à l’échelle du
+cluster</strong>, pas par nœud</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Les numéros déjà attribués à d’autres projets hébergés sur le même
+hôte physique doivent être évités. Prévoir des plages distinctes par
+projet.</p>
+</blockquote>
+<hr />
+<h2 id="création-de-la-machine">4. Création de la machine</h2>
+<h3 id="récupération-de-limage-cloud">4.1 Récupération de l’image
+cloud</h3>
+<p>L’image est récupérée depuis les dépôts officiels de la
+distribution.</p>
+<p><strong>Contrôle :</strong> le fichier doit faire <strong>plusieurs
+centaines de mégaoctets</strong>. Une taille de quelques kilo-octets
+indique une page d’erreur et non une image.</p>
+<h3 id="création-de-la-coquille">4.2 Création de la coquille</h3>
+<p>Une machine est créée <strong>sans disque</strong>, avec les
+paramètres suivants.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Paramètre</th>
+<th>Justification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mémoire fixe, gestion dynamique <strong>désactivée</strong></td>
+<td>La gestion mémoire dynamique est erratique dans un hyperviseur
+lui-même virtualisé</td>
+</tr>
+<tr>
+<td>Interface réseau sur un pont <strong>existant sur tous les
+nœuds</strong></td>
+<td>Indispensable pour que la machine puisse redémarrer sur un autre
+nœud après une reprise</td>
+</tr>
+<tr>
+<td>Agent invité activé</td>
+<td>Ouvre le canal de communication avec l’agent (voir § 6)</td>
+</tr>
+<tr>
+<td>Démarrage automatique activé</td>
+<td>La machine revient après un redémarrage de l’hôte</td>
+</tr>
+</tbody>
+</table>
+<p>À ce stade, la machine est une <strong>coquille vide</strong> : aucun
+disque, aucune image de démarrage.</p>
+<h3 id="import-de-limage-comme-disque">4.3 Import de l’image comme
+disque</h3>
+<p>L’image est importée puis <strong>raccordée</strong> à la
+machine.</p>
+<blockquote>
+<p>Le retour de l’import indique que le disque est <strong>importé mais
+pas encore raccordé</strong>. C’est une étape intermédiaire
+volontaire.</p>
+</blockquote>
+<h3 id="agrandissement-du-disque">4.4 Agrandissement du disque</h3>
+<p>Les images cloud sont volontairement <strong>minuscules</strong> —
+deux à trois gigaoctets — afin que la taille finale soit choisie au
+déploiement.</p>
+<blockquote>
+<p><strong>L’agrandissement est obligatoire.</strong> Sans lui, la
+machine démarre mais toute installation de paquet échoue rapidement par
+manque d’espace.</p>
+</blockquote>
+<p>Taille retenue : <strong>8 Gio</strong>, avec option de récupération
+de l’espace libéré activée.</p>
+<h3 id="disque-damorçage-ordre-de-démarrage-et-console-série">4.5 Disque
+d’amorçage, ordre de démarrage et console série</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Option</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Disque de provisionnement en position secondaire</td>
+<td>Crée le périphérique qui transporte les instructions jusqu’à la
+machine</td>
+</tr>
+<tr>
+<td>Ordre de démarrage forcé sur le disque</td>
+<td>Sans disque au moment de la création, l’hyperviseur place le réseau
+en premier</td>
+</tr>
+<tr>
+<td>Console série activée</td>
+<td><strong>Les images cloud n’ont pas d’affichage graphique.</strong>
+Elles écrivent sur la console série : sans cette option, la console
+reste noire et on croit à une panne</td>
+</tr>
+</tbody>
+</table>
+<h3 id="renseignement-de-la-configuration">4.6 Renseignement de la
+configuration</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Élément</th>
+<th>Valeur</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Utilisateur invité</td>
+<td>Compte d’administration non privilégié</td>
+</tr>
+<tr>
+<td>Clé d’authentification</td>
+<td>Injectée depuis le fichier de clés autorisées du nœud</td>
+</tr>
+<tr>
+<td>Adresse réseau</td>
+<td>Adresse statique du réseau d’administration</td>
+</tr>
+<tr>
+<td>Serveur de noms</td>
+<td>Passerelle du réseau</td>
+</tr>
+</tbody>
+</table>
+<p>L’utilisation du chemin vers le fichier de clés autorisées évite de
+recopier une clé à la main : l’hyperviseur lit le fichier et
+l’injecte.</p>
+<h3 id="contrôle-de-la-configuration">4.7 Contrôle de la
+configuration</h3>
+<p>Le contrôle consiste à vérifier que figurent bien : le disque
+<strong>avec sa taille finale</strong> — preuve que l’agrandissement a
+été appliqué —, le périphérique de provisionnement, l’ordre de
+démarrage, la console série, l’utilisateur et l’adresse réseau.</p>
+<hr />
+<h2 id="contrôles-après-démarrage">5. Contrôles après démarrage</h2>
+<p>Un délai de <strong>30 à 60 secondes</strong> est nécessaire au
+premier démarrage, le temps que le provisionnement automatique crée
+l’utilisateur, dépose la clé et applique la configuration réseau.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Vérification</th>
+<th>Résultat obtenu</th>
+<th>Interprétation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Réponse réseau</td>
+<td>Réponses en 2 à 4 ms</td>
+<td>La machine communique</td>
+</tr>
+<tr>
+<td>Connexion à distance</td>
+<td>Réussie <strong>sans mot de passe</strong></td>
+<td>L’utilisateur a été créé <strong>et</strong> la clé injectée</td>
+</tr>
+<tr>
+<td>Empreinte de la clé d’hôte</td>
+<td>Aucune autre machine connue sous cette adresse</td>
+<td>Identité propre, aucun partage</td>
+</tr>
+<tr>
+<td>Espace disque</td>
+<td><strong>7,7 Gio</strong> sur la partition racine</td>
+<td>L’agrandissement et l’extension de partition ont fonctionné</td>
+</tr>
+<tr>
+<td>État du provisionnement</td>
+<td>Terminé, sans erreur</td>
+<td>Configuration appliquée intégralement</td>
+</tr>
+<tr>
+<td>Agent invité</td>
+<td><strong>Inactif</strong></td>
+<td>⚠️ Voir § 6</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Conclusion :</strong> le déploiement d’une machine virtuelle
+<strong>sans aucune installation interactive</strong> est validé. Aucune
+question posée, aucune intervention dans la console.</p>
+<hr />
+<h2 id="point-de-vigilance-agent-invité">6. Point de vigilance — agent
+invité</h2>
+<p><strong>Constat.</strong> L’activation de l’agent dans la
+configuration de la machine ouvre le <strong>canal</strong> de
+communication, mais <strong>n’installe pas le logiciel dans
+l’invité</strong>. L’image cloud de la distribution ne l’embarque pas
+par défaut, d’où un état inactif constaté après démarrage.</p>
+<p><strong>Conséquence.</strong></p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Sans agent</th>
+<th>Avec agent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>L’hyperviseur ne connaît pas l’adresse réseau de la machine</td>
+<td>L’adresse est remontée automatiquement</td>
+</tr>
+<tr>
+<td>Les arrêts de la machine peuvent aboutir à un délai d’attente
+dépassé</td>
+<td>Arrêt propre fiable</td>
+</tr>
+<tr>
+<td>La supervision ne peut pas exploiter les informations invitées</td>
+<td>Inventaire et mesures disponibles</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Mesure appliquée.</strong> Installation et activation du
+logiciel dans l’invité, puis vérification depuis l’hyperviseur que la
+communication est établie et que les informations système remontent.</p>
+<p><strong>Réserve.</strong> Non bloquant pour un redémarrage sur un
+autre nœud, qui fonctionne avec ou sans agent, mais
+<strong>nécessaire</strong> pour les opérations d’arrêt propre et pour
+la supervision.</p>
+<hr />
+<h2 id="dispositif-témoin-installé-dans-la-machine">7. Dispositif témoin
+installé dans la machine</h2>
+<p>Pour que la vérification de disponibilité porte sur <strong>le
+service rendu</strong> et non sur l’état de la machine, un serveur web
+minimal est installé, accompagné d’une <strong>page
+dynamique</strong>.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Point</th>
+<th>Pourquoi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Service <strong>réel</strong> plutôt qu’un script isolé</td>
+<td>Il possède un état vérifiable et un comportement de production</td>
+</tr>
+<tr>
+<td>Activation au démarrage</td>
+<td><strong>Sans cette activation, le service ne redémarrerait pas après
+une reprise et la vérification perdrait sa valeur</strong></td>
+</tr>
+<tr>
+<td>Page <strong>dynamique</strong> plutôt que statique</td>
+<td>La page lit l’état réel de la machine à chaque requête : horodatage
+de démarrage, heure de réponse, ancienneté. Une page statique
+afficherait indéfiniment la même valeur et ne prouverait rien</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>C’est une distinction essentielle pour un engagement de continuité :
+l’hyperviseur considère une machine démarrée bien avant que le service
+rendu ne le soit.</p>
+</blockquote>
+<hr />
+<h2 id="reproductibilité-de-la-construction">8. Reproductibilité de la
+construction</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Élément</th>
+<th>Comportement constaté</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Clé d’authentification</td>
+<td>Injectée automatiquement au provisionnement</td>
+</tr>
+<tr>
+<td>Identifiant machine</td>
+<td>Dérivé de l’identifiant unique exposé par l’hyperviseur :
+<strong>unique par construction</strong></td>
+</tr>
+<tr>
+<td>Configuration réseau</td>
+<td>Appliquée par le provisionnement automatique</td>
+</tr>
+<tr>
+<td>Disque</td>
+<td>Raccordé et agrandi selon la taille choisie</td>
+</tr>
+</tbody>
+</table>
+<p>Cette machine est <strong>reproductible à l’identique</strong> : les
+étapes décrites ici constituent déjà une configuration décrite en
+données, et non une suite d’opérations manuelles.</p>
+<p><strong>Fait notable constaté pendant la mise au point :</strong> une
+configuration appliquée manuellement dans la machine invitée, après
+coup, n’est <strong>pas reproductible</strong> et peut être perdue lors
+d’une reprise ou d’une synchronisation de disque. Ce constat est
+détaillé et exploité dans le document de recette associé.</p>
+<hr />
+<h2 id="suite-donnée">9. Suite donnée</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Étape</th>
+<th>Objet</th>
+<th>Document</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Réplication vers un second nœud</td>
+<td>Permettre au nœud survivant de retrouver le disque</td>
+<td>Document de configuration du cluster</td>
+</tr>
+<tr>
+<td>Déclaration en ressource haute disponibilité</td>
+<td>Confier la surveillance de la machine au gestionnaire</td>
+<td>Document de configuration du cluster</td>
+</tr>
+<tr>
+<td><strong>Simulation de panne et mesure</strong></td>
+<td>Vérifier la reprise et le délai de rétablissement du service</td>
+<td><strong>Document « Test de recette HA »</strong></td>
+</tr>
+<tr>
+<td>Standardisation</td>
+<td>Reproduire cette construction par playbook plutôt qu’à la main</td>
+<td>Phase de standardisation</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="situation-dans-le-planning">10. Situation dans le planning</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Contenu</th>
+<th>Jalon</th>
+<th>Statut</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2. Haute disponibilité</td>
+<td>Préparation de la HA et intégration des VM critiques</td>
+<td><strong>HA opérationnelle sur l’environnement cible</strong></td>
+<td>✅ Objet de test en place</td>
+</tr>
+<tr>
+<td>3. Sauvegarde</td>
+<td>Proxmox Backup Server et stratégie 3-2-1</td>
+<td>Sauvegardes + premier test de restauration</td>
+<td>À venir</td>
+</tr>
+<tr>
+<td>4. Supervision</td>
+<td>Zabbix, équipements et les 30 postes</td>
+<td>Supervision centralisée et alertes</td>
+<td>À venir</td>
+</tr>
+<tr>
+<td>5. IaC</td>
+<td>Playbooks Ansible et standardisation</td>
+<td>Playbooks validés et documentés</td>
+<td>À venir</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><em>Source : cahier des charges Santélia, Bloc 2 AIS — Groupe
+2.</em></p>
+</body>
+</html>

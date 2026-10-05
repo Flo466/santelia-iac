@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Santélia — Test de recette HA</title>
+  <style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+  <style type="text/css">@page { size: A4; margin: 18mm 15mm; }
+body { font-family: "DejaVu Sans", sans-serif; font-size: 10.5pt; line-height: 1.45; color: #111; }
+h1 { font-size: 18pt; border-bottom: 2px solid #333; padding-bottom: 4pt; }
+h2 { font-size: 14pt; margin-top: 18pt; border-bottom: 1px solid #999; padding-bottom: 2pt; }
+h3 { font-size: 11.5pt; margin-top: 13pt; }
+h4 { font-size: 10.5pt; margin-top: 10pt; }
+table { border-collapse: collapse; width: 100%; font-size: 9pt; margin: 8pt 0; }
+th, td { border: 1px solid #bbb; padding: 3.5pt 5pt; text-align: left; vertical-align: top; }
+th { background: #eeeeee; }
+code, pre { font-family: "DejaVu Sans Mono", monospace; font-size: 8.5pt; }
+pre { background: #f6f6f6; border: 1px solid #ddd; padding: 6pt; white-space: pre-wrap; }
+blockquote { border-left: 3px solid #999; margin-left: 0; padding-left: 10pt; color: #333; }
+h1, h2, h3 { break-after: avoid; }
+table, pre, blockquote { break-inside: avoid; }
+</style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Santélia — Test de recette HA</h1>
+</header>
+<h1 id="santélia-test-de-recette-ha-simulation-de-panne-de-nœud">Santélia —
+Test de recette HA : simulation de panne de nœud</h1>
+<blockquote>
+<p>Brique testée : Proxmox VE HA — « Héberger les VM critiques dans une
+architecture de haute disponibilité afin de limiter les interruptions »
+Exigence associée : n° 1, « Accès continu au DPI via haute disponibilité
+des VM » — priorité <strong>Must</strong> TP Bloc 2 AIS, Groupe 2
+(Florent, Youcef, Robin) — 05/10/2026</p>
+</blockquote>
+<hr />
+<h2 id="objet-et-cadre">1. Objet et cadre</h2>
+<p>La recette associée à cette brique demande de <strong>simuler
+l’indisponibilité d’un nœud hébergeant une VM critique</strong>, avec
+pour résultat attendu que « le service reste disponible ou est rétabli
+dans le délai cible », et pour preuve un « <strong>compte rendu +
+horodatage</strong> ».</p>
+<p>L’indicateur contractuel est un <strong>retour du service critique
+dans un délai cible de 5 à 10 minutes</strong>.</p>
+<h3 id="architecture-de-test">Architecture de test</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Élément</th>
+<th>Valeur</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cluster</td>
+<td>3 nœuds Proxmox VE imbriqués, quorum à 2 sur 3</td>
+</tr>
+<tr>
+<td>Objet de test</td>
+<td>Machine virtuelle minimale, provisionnée par image cloud et
+cloud-init</td>
+</tr>
+<tr>
+<td>Système invité</td>
+<td>Debian 13</td>
+</tr>
+<tr>
+<td>Dispositif témoin</td>
+<td>Serveur web + page dynamique affichant l’horodatage de
+démarrage</td>
+</tr>
+<tr>
+<td>Protection</td>
+<td>Réplication ZFS vers un second nœud, intervalle 15 minutes</td>
+</tr>
+<tr>
+<td>Gestion de la disponibilité</td>
+<td>Ressource HA rattachée à un groupe à priorités de nœuds</td>
+</tr>
+</tbody>
+</table>
+<h3 id="méthode-de-mesure">Méthode de mesure</h3>
+<p>Une <strong>surveillance en tâche de fond</strong> interroge le
+service témoin chaque seconde et relève l’instant exact de la coupure,
+celui du rétablissement, et calcule la durée. La mesure est ainsi
+indépendante de toute observation manuelle.</p>
+<p>Le témoin est une <strong>page dynamique</strong> qui lit l’état réel
+de la machine à chaque requête : heure de démarrage, heure de réponse,
+ancienneté. Une page statique ne permettrait pas de distinguer un
+redémarrage effectif d’une réponse servie depuis un cache.</p>
+<blockquote>
+<p>Toutes les mesures utilisent <strong>une seule horloge de
+référence</strong>. Le système invité est en UTC alors que le poste de
+travail est en heure locale : mélanger les deux sources fausserait tout
+calcul de durée.</p>
+</blockquote>
+<hr />
+<h2 id="résultats">2. Résultats</h2>
+<h3 id="synthèse">2.1 Synthèse</h3>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Indicateur</th>
+<th>Cible</th>
+<th>Mesure</th>
+<th>Statut</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Retour du service critique</strong></td>
+<td><strong>5 à 10 min</strong></td>
+<td><strong>2 min 24 s</strong></td>
+<td>✅ <strong>Conforme</strong></td>
+</tr>
+<tr>
+<td>Durée d’indisponibilité totale</td>
+<td>—</td>
+<td>144 s</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Détection de la perte du nœud</td>
+<td>—</td>
+<td>6 s</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Décision de reprise par le gestionnaire</td>
+<td>—</td>
+<td>2 min 06 s</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Service opérationnel après reprise</td>
+<td>Doit répondre</td>
+<td>Page CGI fonctionnelle</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Quorum pendant la panne</td>
+<td>Rester opérationnel</td>
+<td>Maintien de 2 votes sur 3</td>
+<td>✅</td>
+</tr>
+</tbody>
+</table>
+<p><strong>La cible est tenue avec une marge importante</strong> : 2 min
+24 s mesurées contre 5 à 10 minutes demandées.</p>
+<h3 id="chronologie-détaillée">2.2 Chronologie détaillée</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Heure</th>
+<th>Événement</th>
+<th>Écart</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>11:38:40</td>
+<td>Coupure brutale du nœud hébergeur (simulation de panne)</td>
+<td>—</td>
+</tr>
+<tr>
+<td>11:38:46</td>
+<td>Le nœud est détecté comme injoignable</td>
+<td><strong>6 s</strong></td>
+</tr>
+<tr>
+<td>11:39:36</td>
+<td>La ressource est déclarée perdue, séquence de sécurisation
+engagée</td>
+<td>50 s</td>
+</tr>
+<tr>
+<td>11:40:46</td>
+<td>Décision de reprise : redémarrage annoncé sur le nœud survivant</td>
+<td>70 s</td>
+</tr>
+<tr>
+<td><strong>11:41:04</strong></td>
+<td><strong>Le service répond de nouveau</strong></td>
+<td><strong>18 s</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="point-de-méthode-essentiel">2.3 Point de méthode essentiel</h3>
+<p>Le gestionnaire annonce la ressource « démarrée » à
+<strong>11:40:46</strong>, mais le service n’est réellement joignable
+qu’à <strong>11:41:04</strong>. Ces <strong>18 secondes</strong>
+correspondent au démarrage du système invité puis à celui des services
+applicatifs.</p>
+<blockquote>
+<p><strong>À retenir : l’hyperviseur considère une machine démarrée bien
+avant que le service rendu ne le soit.</strong> Un indicateur calculé
+sur l’état de la machine est optimiste. L’engagement de continuité doit
+se mesurer sur la <strong>réponse du service</strong>, comme cela a été
+fait ici.</p>
+</blockquote>
+<h3 id="comportement-du-quorum">2.4 Comportement du quorum</h3>
+<table>
+<thead>
+<tr>
+<th>État</th>
+<th>Avant la panne</th>
+<th>Pendant la panne</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nœuds</td>
+<td>3</td>
+<td><strong>2</strong></td>
+</tr>
+<tr>
+<td>Votes attendus</td>
+<td>3</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Majorité requise</td>
+<td>2</td>
+<td>2</td>
+</tr>
+<tr>
+<td>État</td>
+<td>Quorate</td>
+<td><strong>Quorate</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>C’est le résultat le plus significatif du test.</strong> La
+perte d’un nœud n’a pas fait perdre le quorum, ce qui a permis au
+gestionnaire de déclencher la reprise. Une architecture à deux nœuds
+aurait perdu le quorum, et aucune reprise n’aurait été possible sans
+dispositif externe supplémentaire.</p>
+<h3 id="preuve-de-redémarrage-effectif">2.5 Preuve de redémarrage
+effectif</h3>
+<table>
+<thead>
+<tr>
+<th>Moment</th>
+<th>Horodatage de démarrage de la machine</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Avant la panne</td>
+<td>09:26:17</td>
+</tr>
+<tr>
+<td><strong>Après la reprise sur le nœud survivant</strong></td>
+<td><strong>09:40:56</strong></td>
+</tr>
+</tbody>
+</table>
+<p>L’horodatage de démarrage est <strong>différent</strong>, ce qui
+atteste d’un redémarrage réel et non d’une simple réponse mise en cache.
+Cette valeur est fournie par le dispositif témoin lui-même, à chaque
+requête.</p>
+<hr />
+<h2 id="points-de-vigilance-identifiés">3. Points de vigilance
+identifiés</h2>
+<p>Ces points ont été mis en évidence lors de la mise au point du
+montage. Ils conditionnent la réussite d’une reprise et sont à intégrer
+à la procédure d’exploitation.</p>
+<h3 id="volume-damorçage-local-non-répliqué">3.1 Volume d’amorçage local
+non répliqué</h3>
+<p><strong>Constat.</strong> Le volume d’amorçage généré localement par
+l’hyperviseur pour le provisionnement automatique <strong>n’est pas
+transmis par la réplication</strong>, contrairement au disque système.
+Sa présence sur le nœud défaillant ne suffit pas.</p>
+<p><strong>Conséquence.</strong> Un démarrage peut échouer intégralement
+après une attente complète, avec pour seul message l’absence du volume
+attendu.</p>
+<p><strong>Mesure appliquée.</strong> Le volume d’amorçage n’est plus
+nécessaire après provisionnement complet de la machine : il peut être
+détaché, la machine ne dépendant alors que du disque répliqué.</p>
+<p><strong>Piste de production.</strong> Le <strong>stockage
+partagé</strong>, qui expose les mêmes volumes à tous les nœuds,
+supprime cette classe de problème par construction.</p>
+<p><strong>Réserve à documenter.</strong> Le détachement du volume
+d’amorçage retire la possibilité de modifier la configuration invitée
+par le mécanisme de provisionnement automatique. Ce compromis est
+acceptable pour une machine déjà provisionnée.</p>
+<h3 id="fenêtre-de-perte-de-données-liée-à-lintervalle-de-réplication">3.2
+Fenêtre de perte de données liée à l’intervalle de réplication</h3>
+<p><strong>Constat.</strong> Une configuration appliquée
+<strong>manuellement après la dernière synchronisation</strong> n’est
+pas présente sur la copie répliquée. Lors d’une reprise, elle est donc
+absente sur le nœud d’accueil.</p>
+<p><strong>Conséquence.</strong> Le service redémarre, mais dans un état
+antérieur. La fenêtre de perte correspond à l’intervalle de réplication,
+soit <strong>15 minutes</strong> dans notre configuration : c’est la
+définition même du <strong>RPO</strong>.</p>
+<p><strong>Mesure appliquée.</strong> <strong>Forcer une synchronisation
+immédiatement avant toute coupure volontaire.</strong> Cette opération a
+été validée : lors du test de référence, le service témoin s’est
+retrouvé <strong>intact et fonctionnel</strong> après la reprise.</p>
+<p><strong>Effet induit à connaître.</strong> La désactivation du
+mécanisme de réplication avant un test <strong>élargit</strong> la
+fenêtre de perte au lieu de la réduire. Elle doit être évitée.</p>
+<h3 id="séquencement-des-interventions">3.3 Séquencement des
+interventions</h3>
+<p><strong>Constat.</strong> Une intervention effectuée pendant que le
+gestionnaire de disponibilité traite encore un incident place la
+ressource dans un état de sécurisation anti-double-exécution, dans
+lequel le redémarrage est volontairement refusé.</p>
+<p><strong>Explication.</strong> Ce comportement est <strong>attendu et
+indispensable</strong> : il garantit qu’une même machine ne peut pas se
+retrouver en fonctionnement simultané sur deux nœuds. Il se résout de
+lui-même une fois la séquence terminée.</p>
+<p><strong>Règle d’exploitation.</strong> <strong>Une seule opération de
+disponibilité à la fois.</strong> Tant que la ressource se trouve dans
+un état transitoire, aucune intervention ne doit être engagée.</p>
+<p><strong>Corollaire pour la mesure.</strong> Les essais de reprise
+doivent être espacés et l’état de la ressource vérifié comme
+<strong>stabilisé</strong> avant toute nouvelle manipulation.</p>
+<hr />
+<h2 id="conclusion">4. Conclusion</h2>
+<h3 id="ce-que-le-test-démontre">4.1 Ce que le test démontre</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Affirmation</th>
+<th>Preuve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>La reprise automatique sur un autre nœud fonctionne</td>
+<td>Reprise déclenchée et aboutie sans intervention manuelle</td>
+</tr>
+<tr>
+<td><strong>Le service est réellement rétabli</strong></td>
+<td>Page témoin fonctionnelle après la reprise</td>
+</tr>
+<tr>
+<td><strong>La cible de rétablissement est tenue</strong></td>
+<td><strong>2 min 24 s</strong> contre 5 à 10 min demandées</td>
+</tr>
+<tr>
+<td>Le quorum survit à la perte d’un nœud</td>
+<td>2 votes sur 3 maintenus</td>
+</tr>
+<tr>
+<td>Le redémarrage est prouvé</td>
+<td>Horodatage de démarrage distinct, fourni par le témoin</td>
+</tr>
+<tr>
+<td>La perte de données peut être maîtrisée</td>
+<td>Synchronisation forcée avant coupure, service intact après
+reprise</td>
+</tr>
+</tbody>
+</table>
+<h3 id="cohérence-avec-la-stratégie-du-projet">4.2 Cohérence avec la
+stratégie du projet</h3>
+<p>Le cahier des charges retient Proxmox VE HA comme brique de
+continuité de service, en réponse à « l’accès continu au DPI » et à la
+réduction du temps d’interruption. L’incident de référence du projet —
+une panne de plus de six heures bloquant la prise de rendez-vous sur un
+site — est ici ramené à <strong>2 min 24 s</strong>.</p>
+<h3 id="lien-avec-lautomatisation">4.3 Lien avec l’automatisation</h3>
+<p>Les points de vigilance des sections 3.1 et 3.2 ont une cause commune
+: une configuration <strong>appliquée manuellement</strong> sur un nœud,
+sans possibilité de rejeu. Elle est perdue dès qu’une reprise ou une
+synchronisation de disque intervient.</p>
+<p>Ce constat est la justification expérimentale de l’exigence suivante
+: « automatiser et standardiser les configurations des serveurs et des
+applications », avec protection des secrets. Une configuration décrite
+et rejouable ne peut pas être perdue de cette manière.</p>
+<p>Ce résultat relie directement deux briques du projet et constitue un
+argument à présenter en recette.</p>
+<hr />
+<h2 id="suites-à-donner">5. Suites à donner</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Suite</th>
+<th>Objet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Restitution de la ressource sur son nœud prioritaire</td>
+<td>Vérifier le retour à trois nœuds et la stabilité</td>
+</tr>
+<tr>
+<td>Nouveau test après standardisation</td>
+<td>Démontrer que la configuration survit à une reprise grâce au
+rejeu</td>
+</tr>
+<tr>
+<td>Mesure du RPO réel</td>
+<td>Chronométrer précisément la fenêtre de perte avec synchronisation
+forcée</td>
+</tr>
+<tr>
+<td>Second chemin de communication de cluster</td>
+<td>Écart à documenter, pour supprimer le point unique</td>
+</tr>
+<tr>
+<td>Test de recette suivant</td>
+<td>Sauvegarde et restauration (brique PBS) — « journal de sauvegarde +
+preuve de restauration »</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="rappel-des-cibles-de-recette">6. Rappel des cibles de
+recette</h2>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Brique</th>
+<th>Test</th>
+<th>Résultat attendu</th>
+<th>Preuve</th>
+<th>Statut</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>HA / Proxmox VE</strong></td>
+<td>Simuler l’indisponibilité d’un nœud hébergeant une VM critique</td>
+<td>Le service reste disponible ou est rétabli dans le délai cible</td>
+<td><strong>Compte rendu + horodatage</strong></td>
+<td>✅ <strong>2 min 24 s</strong></td>
+</tr>
+<tr>
+<td>Sauvegarde / PBS</td>
+<td>Lancer une sauvegarde puis tester une restauration</td>
+<td>Sauvegarde exploitable et restauration réussie</td>
+<td>Journal de sauvegarde + preuve de restauration</td>
+<td>À faire</td>
+</tr>
+<tr>
+<td>Supervision / Zabbix</td>
+<td>Vérifier la remontée et déclencher une alerte</td>
+<td>Les 30 postes visibles, alerte remontée</td>
+<td>Capture/export Zabbix + journal</td>
+<td>À faire</td>
+</tr>
+<tr>
+<td>IaC / Ansible</td>
+<td>Déployer ou reconfigurer une machine de test, puis rejouer le
+playbook</td>
+<td>Configuration identique et standardisée, sans action manuelle</td>
+<td>Playbook + sortie d’exécution + état final</td>
+<td>À faire</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>La recette vérifie chaque brique <strong>séparément puis leur
+fonctionnement conjoint</strong>, et les tests sont réalisés sur
+l’<strong>environnement de validation avant mise en
+production</strong>.</p>
+</blockquote>
+<hr />
+<h2 id="annexe-a-preuves-brutes-horodatées">Annexe A — Preuves brutes
+horodatées</h2>
+<blockquote>
+<p>Cette annexe constitue la <strong>preuve horodatée</strong> exigée
+par la recette. Les relevés sont reproduits tels quels, sans
+retraitement.</p>
+</blockquote>
+<h3 id="a.1-relevé-de-la-surveillance-du-service-témoin">A.1 Relevé de
+la surveillance du service témoin</h3>
+<p>Surveillance automatique, interrogée chaque seconde. Extrait du
+journal de mesure :</p>
+<pre><code>SURVEILLANCE 11:37:41
+COUPURE : 11:38:40
+RETOUR DU SERVICE : 11:41:04
+DUREE INTERRUPTION : 144 secondes</code></pre>
+<p><strong>Lecture :</strong> la coupure est détectée à 11:38:40, le
+service répond de nouveau à 11:41:04, soit <strong>144 secondes
+d’indisponibilité</strong>.</p>
+<h3 id="a.2-journal-du-gestionnaire-de-disponibilité">A.2 Journal du
+gestionnaire de disponibilité</h3>
+<p>Extrait du journal du gestionnaire, relevé sur le nœud survivant
+:</p>
+<pre><code>Oct 05 11:38:46  node &#39;pve-a&#39;: state changed from &#39;online&#39; =&gt; &#39;unknown&#39;
+Oct 05 11:39:36  service &#39;vm:100&#39;: state changed from &#39;started&#39; to &#39;fence&#39;
+Oct 05 11:39:36  node &#39;pve-a&#39;: state changed from &#39;unknown&#39; =&gt; &#39;fence&#39;
+Oct 05 11:40:46  node &#39;pve-a&#39;: state changed from &#39;fence&#39; =&gt; &#39;unknown&#39;
+Oct 05 11:40:46  service &#39;vm:100&#39;: state changed from &#39;fence&#39; to &#39;recovery&#39;
+Oct 05 11:40:46  recover service &#39;vm:100&#39; from fenced node &#39;pve-a&#39; to node &#39;pve-b&#39;
+Oct 05 11:40:46  service &#39;vm:100&#39;: state changed from &#39;recovery&#39; to &#39;started&#39;  (node = pve-b)</code></pre>
+<p><strong>Lecture :</strong> le nœud est détecté injoignable en 6
+secondes. La ressource est déclarée perdue puis la reprise est engagée
+et aboutie sans intervention manuelle.</p>
+<h3 id="a.3-état-du-cluster-pendant-la-panne">A.3 État du cluster
+pendant la panne</h3>
+<pre><code>Quorum information
+------------------
+Nodes:            3
+Quorum:           2
+Flags:            Quorate
+
+Membership information
+----------------------
+   Nodeid      Votes Name
+        1          1 pve-a
+        2          1 pve-b
+        3          1 pve-c</code></pre>
+<p><strong>Lecture :</strong> trois nœuds déclarés, majorité requise de
+2 votes, état <strong>quorate</strong> maintenu pendant
+l’indisponibilité d’un nœud.</p>
+<h3 id="a.4-réponses-du-service-témoin-avant-et-après-la-reprise">A.4
+Réponses du service témoin, avant et après la reprise</h3>
+<p><strong>Avant la panne :</strong></p>
+<pre><code>&lt;h1&gt;vm-test-ha&lt;/h1&gt;
+&lt;p&gt;Boot: 2026-10-05 09:26:17&lt;/p&gt;
+&lt;p&gt;Repondu le: 2026-10-05 09:37:32 UTC&lt;/p&gt;
+&lt;p&gt;Uptime: up 11 minutes&lt;/p&gt;</code></pre>
+<p><strong>Après la reprise :</strong></p>
+<pre><code>&lt;h1&gt;vm-test-ha&lt;/h1&gt;
+&lt;p&gt;Boot: 2026-10-05 09:40:56&lt;/p&gt;
+&lt;p&gt;Repondu le: 2026-10-05 09:42:55 UTC&lt;/p&gt;
+&lt;p&gt;Uptime: up 1 minute&lt;/p&gt;</code></pre>
+<p><strong>Lecture :</strong> l’horodatage de démarrage passe de
+<strong>09:26:17</strong> à <strong>09:40:56</strong>, ce qui atteste
+d’un redémarrage effectif. L’ancienneté passe de 11 minutes à 1 minute,
+cohérente avec le nouvel horodatage. Le service répond, ce qui prouve
+que la configuration a survécu à la reprise.</p>
+<h3 id="a.5-état-de-la-ressource-après-la-reprise">A.5 État de la
+ressource après la reprise</h3>
+<pre><code>service vm:100 (pve-b, started)
+     VMID NAME                 STATUS     MEM(MB)    BOOTDISK(GB) PID
+      100 vm-test-ha           running    1024               8.00 26922</code></pre>
+<p><strong>Lecture :</strong> la ressource est gérée par le mécanisme de
+disponibilité, la machine tourne sur le nœud survivant avec un
+identifiant de processus neuf.</p>
+<h3 id="a.6-synchronisation-forcée-avant-la-coupure">A.6 Synchronisation
+forcée avant la coupure</h3>
+<pre><code>JobID      Enabled    Target          LastSync              NextSync   Duration   FailCount State
+100-0      Yes        local/pve-b     2026-10-05_11:37:18   11:45:00   2.96 s     0         OK</code></pre>
+<p><strong>Lecture :</strong> la synchronisation a été forcée
+immédiatement avant la coupure, avec <code>FailCount 0</code> et un état
+<code>OK</code>. C’est cette opération qui garantit que le service
+témoin se retrouve intact sur le nœud d’accueil.</p>
+<hr />
+<p><em>Source : cahier des charges Santélia, Bloc 2 AIS — Groupe
+2.</em></p>
+</body>
+</html>

@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Santélia — Configuration des 3 nœuds Proxmox</title>
+  <style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+  <style type="text/css">@page { size: A4; margin: 18mm 15mm; }
+body { font-family: "DejaVu Sans", sans-serif; font-size: 10.5pt; line-height: 1.45; color: #111; }
+h1 { font-size: 18pt; border-bottom: 2px solid #333; padding-bottom: 4pt; }
+h2 { font-size: 14pt; margin-top: 18pt; border-bottom: 1px solid #999; padding-bottom: 2pt; }
+h3 { font-size: 11.5pt; margin-top: 13pt; }
+h4 { font-size: 10.5pt; margin-top: 10pt; }
+table { border-collapse: collapse; width: 100%; font-size: 9pt; margin: 8pt 0; }
+th, td { border: 1px solid #bbb; padding: 3.5pt 5pt; text-align: left; vertical-align: top; }
+th { background: #eeeeee; }
+code, pre { font-family: "DejaVu Sans Mono", monospace; font-size: 8.5pt; }
+pre { background: #f6f6f6; border: 1px solid #ddd; padding: 6pt; white-space: pre-wrap; }
+blockquote { border-left: 3px solid #999; margin-left: 0; padding-left: 10pt; color: #333; }
+h1, h2, h3 { break-after: avoid; }
+table, pre, blockquote { break-inside: avoid; }
+</style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Santélia — Configuration des 3 nœuds Proxmox</h1>
+</header>
+<h1 id="santélia-configuration-des-3-nœuds-proxmox">Santélia —
+Configuration des 3 nœuds Proxmox</h1>
+<blockquote>
+<p>Document diffusable — TP Bloc 2 AIS, Groupe 2 (Florent, Youcef,
+Robin) Dépôt : <code>santelia-iac</code> — Dernière mise à jour :
+05/10/2026</p>
+</blockquote>
+<hr />
+<h2 id="objet-du-document">1. Objet du document</h2>
+<p>Ce document décrit la configuration retenue pour la brique
+<strong>Proxmox VE HA</strong> du projet Santélia, dont le rôle est
+d’héberger les VM critiques dans une architecture de haute disponibilité
+afin de limiter les interruptions de service.</p>
+<p><strong>Statut :</strong> cluster <strong>créé et
+opérationnel</strong> (quorate, trois nœuds, anneaux de communication
+vérifiés). La réplication et le groupe de haute disponibilité sont
+opérationnels.</p>
+<p>Cette brique répond à l’exigence n° 1 du cahier des charges, classée
+<strong>Must</strong> : « Accès continu au DPI via haute disponibilité
+des VM ».</p>
+<hr />
+<h2 id="écarts-assumés">2. Écarts assumés</h2>
+<p>À déclarer explicitement dans la recette, puisqu’elle doit démontrer
+la conformité de façon objective.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Écart</th>
+<th>Justification</th>
+<th>Impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Les 3 nœuds sont hébergés sur <strong>une seule machine
+physique</strong></td>
+<td>Contrainte matérielle du laboratoire</td>
+<td>La maquette démontre le <strong>mécanisme</strong> de quorum, de
+réplication et de bascule, pas la résistance à une panne physique de
+l’hôte</td>
+</tr>
+<tr>
+<td><strong>Pare-feu Proxmox désactivé</strong></td>
+<td>Simplification de l’environnement de test</td>
+<td>À activer en production</td>
+</tr>
+<tr>
+<td><code>host_key_checking = False</code> côté Ansible</td>
+<td>Environnement de test</td>
+<td>Écart de sécurité documenté, à corriger en production</td>
+</tr>
+<tr>
+<td><strong>Aucun swap</strong> dans les nœuds</td>
+<td>Comportement Proxmox par défaut sur ZFS</td>
+<td>Acceptable pour des nœuds de laboratoire, à surveiller</td>
+</tr>
+<tr>
+<td>ZFS en <strong>RAID0 (disque unique)</strong> par nœud</td>
+<td>Un seul disque virtuel par nœud</td>
+<td>Aucune redondance au niveau du pool ; le pool sert à la réplication,
+pas à la tolérance de panne</td>
+</tr>
+<tr>
+<td><strong>Un seul chemin de communication de cluster</strong></td>
+<td>Configuration par défaut</td>
+<td>Pas de redondance du lien de quorum si le réseau d’administration
+vacille</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="architecture">3. Architecture</h2>
+<p>Un hyperviseur physique héberge <strong>trois nœuds Proxmox VE
+imbriqués</strong>, virtuellement séparés.</p>
+<table>
+<thead>
+<tr>
+<th>Nœud</th>
+<th>Rôle</th>
+<th>vCPU</th>
+<th>RAM</th>
+<th>Disque</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pve-a</code></td>
+<td>Nœud principal</td>
+<td>2</td>
+<td>4 Gio</td>
+<td>24 Gio</td>
+</tr>
+<tr>
+<td><code>pve-b</code></td>
+<td>Nœud secondaire</td>
+<td>2</td>
+<td>4 Gio</td>
+<td>24 Gio</td>
+</tr>
+<tr>
+<td><code>pve-c</code></td>
+<td>Votant de quorum</td>
+<td>2</td>
+<td>4 Gio</td>
+<td>24 Gio</td>
+</tr>
+</tbody>
+</table>
+<h3 id="pourquoi-trois-nœuds-et-pas-deux">Pourquoi trois nœuds et pas
+deux</h3>
+<p>Le quorum Corosync exige une <strong>majorité stricte</strong>. À
+trois nœuds, la majorité est de deux : perdre un nœud laisse le cluster
+opérationnel. À deux nœuds, il faudrait ajouter un
+<strong>QDevice</strong> externe pour obtenir cette même majorité.</p>
+<p>Le choix de trois nœuds supprime donc le besoin d’un QDevice, d’un
+export NFS comme stockage partagé, et de toute la complexité qui va
+avec.</p>
+<h3 id="pourquoi-les-trois-nœuds-sur-la-même-machine">Pourquoi les trois
+nœuds sur la même machine</h3>
+<p>Les trois nœuds partagent un processeur identique, ce qui autorise
+l’exposition du <strong>type CPU natif</strong> et supprime toute
+contrainte de compatibilité pour la migration à chaud. Un nœud placé sur
+une seconde machine physique, de génération différente, aurait imposé un
+modèle de CPU conservateur au détriment des performances.</p>
+<hr />
+<h2 id="prérequis-techniques">4. Prérequis techniques</h2>
+<h3 id="activation-de-la-virtualisation-imbriquée">Activation de la
+virtualisation imbriquée</h3>
+<p>L’hôte doit exposer les instructions de virtualisation matérielle à
+ses invités, sinon un nœud démarre mais <strong>refuse de lancer ses
+propres machines virtuelles</strong>.</p>
+<p>Vérification : le paramètre <code>nested</code> du module KVM doit
+valoir <code>Y</code>.</p>
+<h3 id="paramétrage-des-vm">Paramétrage des VM</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Paramètre</th>
+<th>Valeur</th>
+<th>Justification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Type de CPU</td>
+<td><strong>Natif</strong></td>
+<td>Sans lui, le nœud démarre mais ne peut pas virtualiser</td>
+</tr>
+<tr>
+<td>Gestion mémoire dynamique</td>
+<td><strong>Désactivée</strong></td>
+<td>Comportement erratique dans un hyperviseur déjà virtualisé</td>
+</tr>
+<tr>
+<td>Discard</td>
+<td><strong>Activé</strong></td>
+<td>Permet au stockage thin de récupérer les blocs libérés</td>
+</tr>
+<tr>
+<td>Démarrage automatique</td>
+<td><strong>Activé</strong></td>
+<td>Les nœuds reviennent après un redémarrage de l’hôte</td>
+</tr>
+<tr>
+<td>Deux cartes réseau</td>
+<td>—</td>
+<td>Une pour l’administration, une pour le réseau de service</td>
+</tr>
+</tbody>
+</table>
+<h3 id="plafonnement-du-cache-zfs">Plafonnement du cache ZFS</h3>
+<p>ZFS consomme par défaut jusqu’à la moitié de la RAM disponible en
+cache. Sur trois nœuds de 4 Gio, cela provoque une saturation mémoire.
+Le cache est donc plafonné à <strong>512 Mio par nœud</strong>.</p>
+<hr />
+<h2 id="stockage">5. Stockage</h2>
+<h3 id="hôte-physique">Hôte physique</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Volume</th>
+<th>Taille</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Système</td>
+<td>69 Gio</td>
+<td>Système d’exploitation, modèles de conteneurs, images ISO</td>
+</tr>
+<tr>
+<td>Thin pool</td>
+<td>141 Gio</td>
+<td><strong>Disques des machines virtuelles</strong></td>
+</tr>
+<tr>
+<td>Sauvegardes</td>
+<td>60 Gio libres</td>
+<td>Sauvegardes <code>vzdump</code></td>
+</tr>
+<tr>
+<td>Disque annexe</td>
+<td>245 Gio</td>
+<td>⛔ Réservé à un autre projet, hors périmètre</td>
+</tr>
+</tbody>
+</table>
+<p>Les disques des nœuds sont créés dans le <strong>thin pool</strong>,
+ce qui permet de sur-allouer : un disque de 24 Gio annoncé n’occupe que
+l’espace réellement écrit.</p>
+<h3 id="nœuds">Nœuds</h3>
+<p>Chaque nœud est installé en <strong>ZFS sur disque
+unique</strong>.</p>
+<p>Ce choix n’est pas guidé par la redondance, mais par le <strong>nom
+du pool</strong>. Proxmox nomme systématiquement son pool système de la
+même façon, ce qui rend la <strong>réplication native entre
+nœuds</strong> possible. C’est ce mécanisme qui permettra à une VM de
+redémarrer sur un nœud survivant.</p>
+<p>Capacité utile constatée : environ <strong>20,8 Gio</strong> sur les
+24 Gio alloués, ZFS réservant près de 13 % pour ses métadonnées.</p>
+<hr />
+<h2 id="réseau">6. Réseau</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Interface</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Administration</strong></td>
+<td>Accès web et SSH aux nœuds, trafic de cluster Corosync</td>
+</tr>
+<tr>
+<td><strong>Service</strong></td>
+<td>Segment L2 commun aux instances du service applicatif</td>
+</tr>
+</tbody>
+</table>
+<p>La séparation en deux plans répond à deux besoins distincts. Le
+réseau d’administration supporte l’exploitation et le clustering, le
+réseau de service supporte la continuité applicative.</p>
+<h3 id="point-dattention-l2-obligatoire-pour-corosync">Point d’attention
+: L2 obligatoire pour Corosync</h3>
+<p>Corosync échange ses votes en multicast sur le même segment de niveau
+2. Il ne doit <strong>jamais</strong> traverser un NAT, sous peine de
+votes fantômes et de pertes de quorum inexpliquées.</p>
+<h3 id="accès-distant">Accès distant</h3>
+<p>Les nœuds imbriqués ne sont pas des machines indépendantes sur le
+réseau. L’administration à distance s’effectue par <strong>rebond
+SSH</strong> via l’hôte physique, ce qui fonctionne aussi bien sur le
+réseau local qu’à distance.</p>
+<h3 id="adressage">Adressage</h3>
+<p>Six adresses statiques sont nécessaires : trois pour les nœuds, trois
+réservées à l’avance pour les futurs services. Elles doivent être
+<strong>exclues de la plage DHCP</strong> du réseau pour éviter tout
+conflit.</p>
+<hr />
+<h2 id="procédure-de-duplication-dun-nœud">7. Procédure de duplication
+d’un nœud</h2>
+<p>Le clonage d’une machine virtuelle duplique son identité. Trois
+éléments doivent impérativement être régénérés dans chaque clone,
+<strong>avant tout test de connexion</strong>.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Élément</th>
+<th>Risque si dupliqué</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Clés d’hôte SSH</strong></td>
+<td>Rejet des connexions, alertes de sécurité, échec du clustering</td>
+</tr>
+<tr>
+<td><strong>Identifiant machine</strong></td>
+<td>Comportements erratiques des services, traces ambiguës</td>
+</tr>
+<tr>
+<td><strong>Adresse réseau</strong></td>
+<td>Conflit d’adresses, coupures intermittentes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="procédure">Procédure</h3>
+<ol type="1">
+<li>Renommer la machine.</li>
+<li><strong>Supprimer</strong> les clés d’hôte existantes.</li>
+<li>Les régénérer.</li>
+<li>Régénérer l’identifiant machine.</li>
+<li>Modifier l’adresse réseau et le fichier de résolution local.</li>
+<li>Redémarrer le service SSH.</li>
+<li>Redémarrer la machine.</li>
+</ol>
+<h3 id="piège-documenté">Piège documenté</h3>
+<p><strong>L’outil de génération de clés SSH ne régénère jamais une clé
+existante.</strong> Il crée uniquement les clés manquantes, et il reste
+totalement silencieux lorsqu’il n’a rien à faire.</p>
+<p>Conséquence : si l’étape de suppression n’est pas exécutée, la
+commande ne produit rien et le clone conserve l’identité de la machine
+d’origine. C’est l’erreur la plus coûteuse de cette phase.</p>
+<h3 id="bonne-nouvelle-sur-lidentifiant-machine">Bonne nouvelle sur
+l’identifiant machine</h3>
+<p>Sur une machine virtuelle, l’identifiant machine n’est pas tiré au
+hasard : il est <strong>dérivé de l’identifiant unique exposé par
+l’hyperviseur</strong>. Comme l’opération de clonage régénère cet
+identifiant, chaque clone dispose déjà du sien dès son premier
+démarrage. La régénération est donc une <strong>ceinture de
+sécurité</strong>, pas une urgence.</p>
+<h3 id="symptômes-dune-identité-dupliquée">Symptômes d’une identité
+dupliquée</h3>
+<ul>
+<li>Le client SSH signale que la clé du serveur est connue sous un
+<strong>autre nom ou une autre adresse</strong>.</li>
+<li>Une connexion SSH s’établit puis est coupée brutalement avant toute
+authentification.</li>
+<li>Le service SSH apparaît actif alors qu’il ne peut servir aucune
+connexion.</li>
+</ul>
+<h3 id="vérification">Vérification</h3>
+<p>Les empreintes de clés d’hôte de tous les nœuds doivent être
+<strong>différentes</strong>. Le commentaire associé à chaque clé
+indique le nom de la machine qui l’a générée, ce qui permet d’identifier
+immédiatement un partage d’identité.</p>
+<hr />
+<h2 id="vérifications-réalisées">8. Vérifications réalisées</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Contrôle</th>
+<th>Méthode</th>
+<th>Résultat obtenu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Virtualisation imbriquée</td>
+<td>Recherche du flag <code>vmx</code> dans le processeur</td>
+<td>Présent, non nul sur les trois nœuds</td>
+</tr>
+<tr>
+<td>Pool ZFS</td>
+<td>État et nom du pool système</td>
+<td><code>rpool</code> en ligne, <strong>nom identique</strong> sur les
+trois nœuds</td>
+</tr>
+<tr>
+<td>Espace disponible</td>
+<td>Espace libre de chaque pool</td>
+<td>~21,5 Gio libres par nœud</td>
+</tr>
+<tr>
+<td>Cache ZFS</td>
+<td>Valeur du plafond en mémoire</td>
+<td>512 Mio appliqués</td>
+</tr>
+<tr>
+<td>Unicité des noms</td>
+<td>Nom d’hôte de chaque nœud</td>
+<td>Trois valeurs distinctes</td>
+</tr>
+<tr>
+<td>Unicité des identités</td>
+<td>Identifiants machine et empreintes SSH</td>
+<td>Trois valeurs distinctes</td>
+</tr>
+<tr>
+<td>Unicité réseau</td>
+<td>Comparaison des adresses MAC déclarées et observées</td>
+<td>Trois adresses distinctes, sans conflit</td>
+</tr>
+<tr>
+<td>Accès automatisé</td>
+<td>Connexion SSH <strong>sans mot de passe</strong></td>
+<td>Réussie sur les trois nœuds</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Une adresse MAC identique observée sur deux nœuds peut provenir d’un
+<strong>cache réseau obsolète</strong>. Vider la table et réinterroger
+avant de conclure à un conflit réel.</p>
+<p>Un pont réseau hérite de l’adresse MAC de son premier port : c’est un
+comportement normal, pas un conflit.</p>
+</blockquote>
+<hr />
+<h2 id="création-du-cluster">9. Création du cluster</h2>
+<p>Le cluster a été créé et assemblé le <strong>05/10/2026</strong>. Il
+est <strong>quorate</strong> avec trois nœuds participants.</p>
+<table>
+<thead>
+<tr>
+<th>Caractéristique</th>
+<th>Valeur</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nom du cluster</td>
+<td><code>santelia</code></td>
+</tr>
+<tr>
+<td>Transport</td>
+<td><code>knet</code></td>
+</tr>
+<tr>
+<td>Authentification sécurisée</td>
+<td>Activée</td>
+</tr>
+<tr>
+<td>Nœuds</td>
+<td><strong>3</strong></td>
+</tr>
+<tr>
+<td>Votes attendus</td>
+<td><strong>3</strong></td>
+</tr>
+<tr>
+<td><strong>Majorité requise (quorum)</strong></td>
+<td><strong>2</strong></td>
+</tr>
+<tr>
+<td>État</td>
+<td><code>Quorate</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="déroulé-de-lassemblage">Déroulé de l’assemblage</h3>
+<table>
+<thead>
+<tr>
+<th>Étape</th>
+<th>Date</th>
+<th>Version de configuration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Création sur le nœud principal</td>
+<td>05/10 à <strong>09:18</strong></td>
+<td>1</td>
+</tr>
+<tr>
+<td>Jonction du 2e nœud</td>
+<td>05/10 à <strong>09:27</strong></td>
+<td>2</td>
+</tr>
+<tr>
+<td>Jonction du 3e nœud</td>
+<td>05/10 à <strong>09:30</strong></td>
+<td>3</td>
+</tr>
+</tbody>
+</table>
+<h3 id="bénéfice-du-quorum-à-deux-sur-trois">Bénéfice du quorum à deux
+sur trois</h3>
+<p>La perte d’un nœud laisse le cluster <strong>opérationnel</strong>.
+C’est précisément ce qu’apporte la solution à <strong>trois
+nœuds</strong> : une majorité atteignable sans dispositif externe. Une
+solution à deux nœuds aurait nécessité un <strong>QDevice</strong>
+supplémentaire pour obtenir la même résilience.</p>
+<h3 id="piège-rencontré-à-documenter">Piège rencontré, à documenter</h3>
+<p>La jonction d’un nœud échoue si le <strong>fichier de résolution
+local</strong> contient encore les informations de la machine d’origine.
+Deux problèmes constatés après clonage :</p>
+<ol type="1">
+<li><strong>L’adresse héritée</strong> pointait vers le nœud source. Le
+cluster ne pouvait alors pas déterminer l’adresse locale de la machine,
+et refusait la jonction avec un message explicite.</li>
+<li><strong>Le nom pleinement qualifié</strong> contenait un caractère
+erroné, rendant la résolution incohérente avec le nom court de la
+machine.</li>
+</ol>
+<p>Correction : la ligne de résolution locale doit associer <strong>la
+bonne adresse</strong> au <strong>nom complet correct</strong>, suivi du
+<strong>nom court</strong>. Le contrôle consiste à comparer nom court,
+nom complet et résolution par nom court : les trois doivent
+concorder.</p>
+<blockquote>
+<p>Cette correction est le <strong>quatrième effet du clonage</strong>,
+après les clés d’hôte SSH, l’identifiant machine et l’adressage réseau.
+Elle justifie à elle seule l’automatisation de la procédure en phase de
+standardisation.</p>
+</blockquote>
+<hr />
+<h2 id="contrôles-post-création-effectués">10. Contrôles post-création
+effectués</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Contrôle</th>
+<th>Résultat obtenu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>État du cluster</td>
+<td>Trois nœuds, trois votes, quorum à deux, indicateur « quorate »</td>
+</tr>
+<tr>
+<td>Liste des membres</td>
+<td>Les trois nœuds présents, <strong>un vote chacun</strong></td>
+</tr>
+<tr>
+<td><strong>Anneaux de communication Corosync</strong></td>
+<td><strong>Tous les liens « connected », aucun paquet
+perdu</strong></td>
+</tr>
+<tr>
+<td>Cohérence des pools de réplication</td>
+<td>Nom de pool identique sur les trois nœuds</td>
+</tr>
+<tr>
+<td>Unicité des identifiants machine</td>
+<td>Trois valeurs distinctes</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Le contrôle des <strong>anneaux de communication Corosync</strong>
+est le plus souvent négligé. Il révèle les clusters qui fonctionnent en
+apparence mais perdent leur quorum sans explication au bout de quelques
+semaines. Il est recommandé de le systématiser après toute opération sur
+le cluster.</p>
+</blockquote>
+<hr />
+<h2 id="état-davancement">11. État d’avancement</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Élément</th>
+<th>État</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hôte physique</td>
+<td>Opérationnel, virtualisation imbriquée active</td>
+</tr>
+<tr>
+<td>Trois nœuds Proxmox</td>
+<td>Installés, identités uniques, administrables à distance</td>
+</tr>
+<tr>
+<td><strong>Cluster</strong></td>
+<td>✅ <strong>Créé le 05/10/2026</strong>, quorate à 3 nœuds, majorité
+à 2</td>
+</tr>
+<tr>
+<td>Anneaux de communication</td>
+<td>✅ Tous les liens actifs</td>
+</tr>
+<tr>
+<td>Réplication entre nœuds</td>
+<td>✅ Opérationnelle, état <code>OK</code></td>
+</tr>
+<tr>
+<td>Groupe de haute disponibilité</td>
+<td>✅ Configuré, ressource critique rattachée</td>
+</tr>
+</tbody>
+</table>
+<h3 id="étapes-suivantes">Étapes suivantes</h3>
+<ol type="1">
+<li>✅ <strong>Création du cluster</strong> et jonction des trois nœuds
+— <strong>fait le 05/10/2026</strong>.</li>
+<li>✅ <strong>Contrôle du quorum et des anneaux</strong> : trois votes,
+majorité à deux, état « quorate », liens actifs.</li>
+<li>✅ <strong>Réplication</strong> des volumes entre nœuds.</li>
+<li>✅ <strong>Groupe HA</strong> et machine virtuelle de test.</li>
+<li>✅ <strong>Démonstration de bascule</strong> horodatée — voir le
+document « Test de recette HA ».</li>
+</ol>
+<hr />
+<h2 id="cibles-de-recette-associées">12. Cibles de recette
+associées</h2>
+<h3 id="test-de-recette-défini-par-le-cahier-des-charges">Test de
+recette défini par le cahier des charges</h3>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Brique</th>
+<th>Test</th>
+<th>Résultat attendu</th>
+<th>Preuve exigée</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>HA / Proxmox VE</strong></td>
+<td>Simuler l’indisponibilité d’un nœud hébergeant une VM critique</td>
+<td>Le service reste disponible ou est rétabli dans le délai cible</td>
+<td><strong>Compte rendu + horodatage</strong></td>
+</tr>
+<tr>
+<td><strong>Sauvegarde / PBS</strong></td>
+<td>Lancer une sauvegarde puis tester une restauration</td>
+<td>Sauvegarde exploitable et restauration réussie</td>
+<td><strong>Journal de sauvegarde + preuve de restauration</strong></td>
+</tr>
+<tr>
+<td><strong>Supervision / Zabbix</strong></td>
+<td>Vérifier la remontée et déclencher une alerte</td>
+<td>Les 30 postes visibles, alerte remontée correctement</td>
+<td><strong>Capture/export Zabbix + journal</strong></td>
+</tr>
+<tr>
+<td><strong>IaC / Ansible</strong></td>
+<td>Déployer ou reconfigurer une machine de test, puis rejouer le
+playbook</td>
+<td>Configuration identique et standardisée, sans action manuelle</td>
+<td><strong>Playbook + sortie d’exécution + état final</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>La recette vérifie chaque brique <strong>séparément puis leur
+fonctionnement conjoint</strong>, et les tests sont réalisés sur
+l’<strong>environnement de validation avant la mise en
+production</strong>.</p>
+</blockquote>
+<h3 id="indicateurs-complémentaires-proposés">Indicateurs
+complémentaires proposés</h3>
+<p>Ces indicateurs sont <strong>proposés</strong> et restent à
+valider.</p>
+<table>
+<thead>
+<tr>
+<th>Domaine</th>
+<th>Indicateur</th>
+<th>Cible proposée</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sauvegarde</td>
+<td>RPO (perte de données maximale)</td>
+<td>&lt; 15 min</td>
+</tr>
+<tr>
+<td>Sauvegarde</td>
+<td>Temps de restauration d’une VM critique</td>
+<td>&lt; 30 min</td>
+</tr>
+<tr>
+<td>Ansible</td>
+<td>Temps de déploiement ou de reconfiguration</td>
+<td>&lt; 15 min</td>
+</tr>
+<tr>
+<td>Zabbix</td>
+<td>Réactivité des alertes vers la DSI</td>
+<td>&lt; 2 min</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="rappel-des-exigences-et-priorités">13. Rappel des exigences et
+priorités</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Exigence</th>
+<th>Priorité</th>
+<th>Brique retenue</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Accès continu au DPI via haute disponibilité des VM</td>
+<td><strong>Must</strong></td>
+<td>Proxmox VE HA</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Sauvegarde 3-2-1 et restauration</td>
+<td><strong>Must</strong></td>
+<td>PBS + copie secondaire</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Automatisation des serveurs et applications</td>
+<td><strong>Must</strong></td>
+<td>Ansible + playbooks</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Supervision centralisée des 30 postes</td>
+<td>Should</td>
+<td>Zabbix</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Les exigences <strong>Must</strong> sont traitées en priorité, en
+vérifiant que les options retenues restent compatibles avec l’enveloppe
+maximale de 15 000 €.</p>
+</blockquote>
+<hr />
+<p><em>Les identifiants techniques détaillés (adressage complet,
+empreintes, identifiants machine) sont conservés dans une annexe interne
+non jointe à ce document.</em></p>
+<p><em>Source : cahier des charges Santélia, Bloc 2 AIS — Groupe
+2.</em></p>
+</body>
+</html>
