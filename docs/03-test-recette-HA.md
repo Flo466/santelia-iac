@@ -2,7 +2,7 @@
 
 > Brique testée : Proxmox VE HA — « Héberger les VM critiques dans une architecture de haute disponibilité afin de limiter les interruptions »
 > Exigence associée : n° 1, « Accès continu au DPI via haute disponibilité des VM » — priorité **Must**
-> TP Bloc 2 AIS, Groupe 2 (Florent, Youcef, Robin) — 05/10/2026
+> 05/10/2026
 
 ---
 

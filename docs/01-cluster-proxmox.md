@@ -1,6 +1,6 @@
 # Santélia — Configuration des 3 nœuds Proxmox
 
-> Document diffusable — TP Bloc 2 AIS, Groupe 2 (Florent, Youcef, Robin)
+> Document diffusable
 > Dépôt : `santelia-iac` — Dernière mise à jour : 05/10/2026
 
 ---

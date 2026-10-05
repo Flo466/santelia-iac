@@ -2,7 +2,6 @@
 
 > Document rendable — décrit la mise en place de la machine de test de la brique HA.
 > Les mesures de disponibilité et le compte rendu de recette sont dans le document « Santélia — Test de recette HA : simulation de panne de nœud ».
-> TP Bloc 2 AIS, Groupe 2 (Florent, Youcef, Robin)
 
 ---
 
