@@ -56,14 +56,21 @@ Le témoin est une **page dynamique** qui lit l'état réel de la machine à cha
 | 11:38:46 | Le nœud est détecté comme injoignable | **6 s** |
 | 11:39:36 | La ressource est déclarée perdue, séquence de sécurisation engagée | 50 s |
 | 11:40:46 | Décision de reprise : redémarrage annoncé sur le nœud survivant | 70 s |
+| 11:40:56 | **Démarrage effectif de la machine** (relevé par le témoin) | 10 s |
 | **11:41:04** | **Le service répond de nouveau** | **18 s** |
 
-### 2.3 Point de méthode essentiel
+### 2.3 Du démarrage annoncé au service réellement rendu
 
-Le gestionnaire annonce la ressource « démarrée » à **11:40:46**, mais le service n'est réellement joignable qu'à **11:41:04**. Ces **18 secondes** correspondent au démarrage du système invité puis à celui des services applicatifs.
+Ce paragraphe explique la différence entre trois instants souvent confondus.
+
+| Instant | Heure | Ce qui est vrai à ce moment-là |
+| --- | --- | --- |
+| Le gestionnaire déclare la ressource démarrée | 11:40:46 | La décision est prise, la machine n'a pas encore démarré |
+| La machine démarre réellement | 11:40:56 | Le système invité s'amorce, les services applicatifs ne sont pas encore lancés |
+| Le service répond | 11:41:04 | La chaîne complète est opérationnelle |
 
 > **À retenir : l'hyperviseur considère une machine démarrée bien avant que le service rendu ne le soit.**
-> Un indicateur calculé sur l'état de la machine est optimiste. L'engagement de continuité doit se mesurer sur la **réponse du service**, comme cela a été fait ici.
+> Un indicateur calculé sur l'état de la machine est donc optimiste. L'engagement de continuité doit se mesurer sur la **réponse du service**, comme cela a été fait ici.
 
 ### 2.4 Comportement du quorum
 
@@ -76,14 +83,16 @@ Le gestionnaire annonce la ressource « démarrée » à **11:40:46**, mais le s
 
 **C'est le résultat le plus significatif du test.** La perte d'un nœud n'a pas fait perdre le quorum, ce qui a permis au gestionnaire de déclencher la reprise. Une architecture à deux nœuds aurait perdu le quorum, et aucune reprise n'aurait été possible sans dispositif externe supplémentaire.
 
-### 2.5 Preuve de redémarrage effectif
+### 2.5 Preuve du redémarrage effectif
 
-| Moment | Horodatage de démarrage de la machine |
-| --- | --- |
-| Avant la panne | 09:26:17 |
-| **Après la reprise sur le nœud survivant** | **09:40:56** |
+Le dispositif témoin affiche l'horodatage de démarrage de la machine, valeur qu'il relit à chaque requête.
 
-L'horodatage de démarrage est **différent**, ce qui atteste d'un redémarrage réel et non d'une simple réponse mise en cache. Cette valeur est fournie par le dispositif témoin lui-même, à chaque requête.
+| Moment | Démarrage de la machine (heure locale) | Ce que cela signifie |
+| --- | --- | --- |
+| Avant la coupure | **11:26:17** | La machine tournait depuis 12 minutes quand le test a été lancé |
+| Après la reprise | **11:40:56** | La machine a redémarré : nouvel horodatage, postérieur à la coupure |
+
+L'horodatage de démarrage est **différent**, et le nouveau se situe **après la coupure**. C'est la preuve d'un redémarrage réel, et non d'une réponse mise en cache ou d'une machine restée en fonctionnement.
 
 ---
 
@@ -229,27 +238,20 @@ Membership information
 
 **Lecture :** trois nœuds déclarés, majorité requise de 2 votes, état **quorate** maintenu pendant l'indisponibilité d'un nœud.
 
-### A.4 Réponses du service témoin, avant et après la reprise
+**Conversion et lecture :** la machine invitée étant en temps universel, il faut ajouter deux heures pour se ramener au référentiel des mesures.
 
-**Avant la panne :**
+| Élément | Sortie brute (UTC) | Converti (heure locale) |
+| --- | --- | --- |
+| Démarrage avant la coupure | 09:26:17 | **11:26:17** |
+| Réponse avant la coupure | 09:37:32 | 11:37:32 |
+| Démarrage après la reprise | 09:40:56 | **11:40:56** |
+| Réponse après la reprise | 09:42:55 | 11:42:55 |
 
-```
-<h1>vm-test-ha</h1>
-<p>Boot: 2026-10-05 09:26:17</p>
-<p>Repondu le: 2026-10-05 09:37:32 UTC</p>
-<p>Uptime: up 11 minutes</p>
-```
+Trois vérifications de cohérence :
 
-**Après la reprise :**
-
-```
-<h1>vm-test-ha</h1>
-<p>Boot: 2026-10-05 09:40:56</p>
-<p>Repondu le: 2026-10-05 09:42:55 UTC</p>
-<p>Uptime: up 1 minute</p>
-```
-
-**Lecture :** l'horodatage de démarrage passe de **09:26:17** à **09:40:56**, ce qui atteste d'un redémarrage effectif. L'ancienneté passe de 11 minutes à 1 minute, cohérente avec le nouvel horodatage. Le service répond, ce qui prouve que la configuration a survécu à la reprise.
+1. **Avant la coupure** : démarrage à 11:26:17, réponse à 11:37:32, soit 11 minutes d'ancienneté — ce que confirme la mention « up 11 minutes ».
+2. **Après la reprise** : démarrage à 11:40:56, réponse à 11:42:55, soit 2 minutes d'ancienneté — cohérent avec « up 1 minute ».
+3. **Enchaînement de la reprise** : décision à 11:40:46, démarrage à 11:40:56, service joignable à 11:41:04. Les trois relevés s'enchaînent sans contradiction.
 
 ### A.5 État de la ressource après la reprise
 
@@ -272,4 +274,4 @@ JobID      Enabled    Target          LastSync              NextSync   Duration 
 
 ---
 
-_Source : cahier des charges Santélia, Bloc 2 AIS — Groupe 2._
+> **Convention d'horodatage.** Le système invité est en temps universel (UTC) et affiche donc ses propres valeurs décalées de deux heures par rapport au poste de mesure, réglé à l'heure locale d'été. Pour éviter toute ambiguïté, **tous les horodatages de ce document sont exprimés dans le référentiel du poste de mesure**. Les relevés bruts de la machine invitée figurent en annexe A, accompagnés de leur conversion.
