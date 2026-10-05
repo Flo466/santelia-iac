@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Santélia — Journal des commandes</title>
+  <style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+  <style type="text/css">@page { size: A4; margin: 18mm 15mm; }
+body { font-family: "DejaVu Sans", sans-serif; font-size: 10.5pt; line-height: 1.45; color: #111; }
+h1 { font-size: 18pt; border-bottom: 2px solid #333; padding-bottom: 4pt; }
+h2 { font-size: 14pt; margin-top: 18pt; border-bottom: 1px solid #999; padding-bottom: 2pt; }
+h3 { font-size: 11.5pt; margin-top: 13pt; }
+h4 { font-size: 10.5pt; margin-top: 10pt; }
+table { border-collapse: collapse; width: 100%; font-size: 9pt; margin: 8pt 0; }
+th, td { border: 1px solid #bbb; padding: 3.5pt 5pt; text-align: left; vertical-align: top; }
+th { background: #eeeeee; }
+code, pre { font-family: "DejaVu Sans Mono", monospace; font-size: 8.5pt; }
+pre { background: #f6f6f6; border: 1px solid #ddd; padding: 6pt; white-space: pre-wrap; }
+blockquote { border-left: 3px solid #999; margin-left: 0; padding-left: 10pt; color: #333; }
+h1, h2, h3 { break-after: avoid; }
+table, pre, blockquote { break-inside: avoid; }
+</style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Santélia — Journal des commandes</h1>
+</header>
+<h1 id="santélia-annexe-journal-des-commandes-exécutées">Santélia —
+Annexe : journal des commandes exécutées</h1>
+<blockquote>
+<p>Document rendable — reconstitution de la séquence complète de mise en
+œuvre de la brique haute disponibilité. Permet à un tiers de rejouer le
+montage et sert de matière première à l’écriture des rôles
+d’automatisation. TP Bloc 2 AIS, Groupe 2 (Florent, Youcef, Robin) —
+05/10/2026</p>
+</blockquote>
+<hr />
+<h2 id="préambule-les-quatre-environnements-dexécution">Préambule — Les
+quatre environnements d’exécution</h2>
+<p>Les commandes ne s’exécutent pas au même endroit. Cette distinction
+est essentielle : une erreur de contexte constitue la principale source
+d’échec du montage.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Environnement</th>
+<th>Accès</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Poste de travail</strong></td>
+<td>direct</td>
+<td>Mesures, surveillance, accès client</td>
+</tr>
+<tr>
+<td><strong>Hôte physique</strong></td>
+<td>réseau local ou distant</td>
+<td>Contient les trois nœuds du cluster</td>
+</tr>
+<tr>
+<td><strong>Nœuds du cluster</strong> (<code>pve-a</code>,
+<code>pve-b</code>, <code>pve-c</code>)</td>
+<td>rebond via l’hôte</td>
+<td>Constituent le cluster</td>
+</tr>
+<tr>
+<td><strong>Machine invitée</strong> (machine de test)</td>
+<td>réseau d’administration</td>
+<td>Héberge le dispositif témoin</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="a.1-vérifications-préalables-sur-lhôte-physique">A.1
+Vérifications préalables sur l’hôte physique</h2>
+<h3 id="a.1.1-prérequis-de-virtualisation-imbriquée">A.1.1 Prérequis de
+virtualisation imbriquée</h3>
+<pre><code>cat /sys/module/kvm_intel/parameters/nested</code></pre>
+<p><strong>Résultat attendu :</strong> <code>Y</code>. Sans cette
+activation, un nœud démarre mais refuse de lancer ses propres machines
+virtuelles.</p>
+<h3 id="a.1.2-inventaire-du-stockage">A.1.2 Inventaire du stockage</h3>
+<pre><code>pvesm status
+lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT,TRAN
+vgs &amp;&amp; lvs
+cat /etc/pve/storage.cfg</code></pre>
+<p><strong>Objet :</strong> identifier les stockages disponibles, leur
+type, leur capacité libre, et vérifier qu’aucun disque n’est occupé par
+un autre projet.</p>
+<h3 id="a.1.3-inventaire-mémoire-et-système">A.1.3 Inventaire mémoire et
+système</h3>
+<pre><code>free -h
+hostnamectl
+pveversion</code></pre>
+<h3 id="a.1.4-inventaire-réseau">A.1.4 Inventaire réseau</h3>
+<pre><code>cat /etc/network/interfaces
+bridge link
+ip -4 -br addr</code></pre>
+<h3 id="a.1.5-état-du-filtrage-réseau">A.1.5 État du filtrage
+réseau</h3>
+<pre><code>pve-firewall status
+iptables -S FORWARD
+cat /proc/sys/net/ipv4/ip_forward</code></pre>
+<p><strong>Objet :</strong> vérifier que le routage est actif et que les
+règles de transfert autorisent les communications nécessaires.</p>
+<h3 id="a.1.6-catalogue-des-modèles-de-conteneurs">A.1.6 Catalogue des
+modèles de conteneurs</h3>
+<pre><code>pveam update
+pveam available --section system | grep -iE &quot;debian|ubuntu&quot;
+pveam list local</code></pre>
+<p><strong>Objet :</strong> identifier les images disponibles pour les
+futurs conteneurs. <code>update</code> rafraîchit le catalogue, il ne
+télécharge rien.</p>
+<h3 id="a.1.7-vérification-de-lunicité-dune-adresse">A.1.7 Vérification
+de l’unicité d’une adresse</h3>
+<pre><code>ping -c1 &lt;adresse-visee&gt;
+ip neigh | grep &lt;adresse-visee&gt;</code></pre>
+<p><strong>Résultat attendu :</strong> perte de paquets à 100 %, aucune
+entrée de voisinage. L’adresse est libre.</p>
+<blockquote>
+<p><code>arp</code> n’est plus disponible sur les distributions
+récentes. Utiliser <code>ip neigh</code>.</p>
+</blockquote>
+<hr />
+<h2 id="a.2-création-et-duplication-des-nœuds">A.2 Création et
+duplication des nœuds</h2>
+<h3 id="a.2.1-création-du-premier-nœud">A.2.1 Création du premier
+nœud</h3>
+<pre><code>qm create 310 \
+  --name pve-a \
+  --ostype l26 \
+  --memory 4096 --balloon 0 \
+  --sockets 1 --cores 2 --cpu host \
+  --scsihw virtio-scsi-single \
+  --scsi0 local-lvm:24,discard=on,iothread=1 \
+  --ide2 local:iso/proxmox-ve_8.4-1.iso,media=cdrom \
+  --boot &#39;order=scsi0;ide2&#39; \
+  --net0 virtio,bridge=vmbr0 \
+  --net1 virtio,bridge=vmbr2 \
+  --agent enabled=1 \
+  --onboot 1</code></pre>
+<p><strong>Paramètres déterminants :</strong></p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Paramètre</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--cpu host</code></td>
+<td><strong>Indispensable.</strong> Sans lui, le nœud ne peut pas
+virtualiser</td>
+</tr>
+<tr>
+<td><code>--balloon 0</code></td>
+<td>Désactive la gestion mémoire dynamique, erratique en
+imbrication</td>
+</tr>
+<tr>
+<td><code>--onboot 1</code></td>
+<td>Retour automatique après redémarrage de l’hôte</td>
+</tr>
+<tr>
+<td><code>discard=on</code></td>
+<td>Récupération des blocs libérés côté stockage</td>
+</tr>
+<tr>
+<td>Deux interfaces</td>
+<td>Une pour l’administration et le cluster, une pour le réseau de
+service</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Les guillemets simples autour de <code>&#39;order=scsi0;ide2&#39;</code> sont
+obligatoires : sans eux, l’interpréteur de commandes coupe la ligne au
+point-virgule.</p>
+</blockquote>
+<h3 id="a.2.2-contrôle-de-la-configuration">A.2.2 Contrôle de la
+configuration</h3>
+<pre><code>qm config 310
+qm config 310 | grep -E &quot;^(cpu|memory|balloon|cores|boot|onboot)&quot;</code></pre>
+<p><strong>Objet :</strong> vérifier la présence effective de
+<code>cpu: host</code>, <code>balloon: 0</code>, <code>onboot: 1</code>
+avant tout démarrage.</p>
+<h3 id="a.2.3-installation-du-système">A.2.3 Installation du
+système</h3>
+<p>Installation depuis l’image d’installation Proxmox, avec les choix
+suivants : système de fichiers <strong>ZFS en disque unique</strong>,
+plafond de cache mémoire à <strong>512 Mio</strong>, nom complet de
+machine, adresse statique et passerelle.</p>
+<h3 id="a.2.4-contrôles-dans-le-nœud-après-installation">A.2.4 Contrôles
+dans le nœud après installation</h3>
+<pre><code>grep -c vmx /proc/cpuinfo
+zpool status
+pvesm status
+cat /sys/module/zfs/parameters/zfs_arc_max
+free -h</code></pre>
+<p><strong>Résultats attendus :</strong></p>
+<table>
+<thead>
+<tr>
+<th>Commande</th>
+<th>Attendu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>grep -c vmx</code></td>
+<td>Valeur non nulle — le nœud sait virtualiser</td>
+</tr>
+<tr>
+<td><code>zpool status</code></td>
+<td>Pool système en ligne</td>
+</tr>
+<tr>
+<td><code>pvesm status</code></td>
+<td>Stockages <code>local</code> et <code>local-zfs</code> actifs</td>
+</tr>
+<tr>
+<td><code>zfs_arc_max</code></td>
+<td>Valeur du plafond appliquée</td>
+</tr>
+</tbody>
+</table>
+<h3 id="a.2.5-extinction-et-duplication">A.2.5 Extinction et
+duplication</h3>
+<pre><code>qm shutdown 310
+qm clone 310 311 --name pve-b --full --storage local-lvm
+qm clone 310 312 --name pve-c --full --storage local-lvm
+qm list</code></pre>
+<p><strong>Objet :</strong> créer deux clones indépendants. Le nœud
+source est éteint au préalable.</p>
+<h3 id="a.2.6-contrôle-des-adresses-matérielles-des-clones">A.2.6
+Contrôle des adresses matérielles des clones</h3>
+<pre><code>qm config 310 | grep ^net0
+qm config 311 | grep ^net0
+qm config 312 | grep ^net0</code></pre>
+<p><strong>Résultat attendu :</strong> trois adresses matérielles
+distinctes. La duplication régénère normalement ces adresses, mais le
+contrôle est systématique.</p>
+<hr />
+<h2 id="a.3-correction-didentité-des-clones">A.3 Correction d’identité
+des clones</h2>
+<blockquote>
+<p><strong>Procédure à appliquer dans chaque clone, avant tout test de
+connexion.</strong> Jamais sur le nœud source : l’opération interrompt
+l’accès distant.</p>
+</blockquote>
+<h3 id="a.3.1-séquence-complète">A.3.1 Séquence complète</h3>
+<pre><code>hostnamectl set-hostname pve-b
+
+rm -f /etc/ssh/ssh_host_*
+ssh-keygen -A
+ls -la /etc/ssh/ssh_host_*
+
+truncate -s 0 /etc/machine-id
+systemd-machine-id-setup
+cat /etc/machine-id
+
+systemctl restart ssh
+reboot</code></pre>
+<p><strong>Point critique :</strong> la commande de génération de clés
+<strong>ne régénère jamais une clé existante</strong>. Elle ne crée que
+les clés absentes et reste silencieuse lorsqu’il n’y a rien à faire. La
+suppression préalable est donc obligatoire.</p>
+<h3 id="a.3.2-contrôle-de-lunicité">A.3.2 Contrôle de l’unicité</h3>
+<pre><code>hostname
+hostname -f
+getent hosts pve-b
+cat /etc/machine-id
+ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub</code></pre>
+<p><strong>Objet :</strong> les trois valeurs doivent être distinctes
+d’un nœud à l’autre. Le commentaire associé à la clé indique le nom de
+la machine qui l’a générée, ce qui révèle immédiatement un partage
+d’identité.</p>
+<h3 id="a.3.3-correction-du-fichier-de-résolution-local">A.3.3
+Correction du fichier de résolution local</h3>
+<p>Le fichier doit associer la bonne adresse au nom complet correct,
+suivi du nom court :</p>
+<pre><code>192.168.1.152 pve-b.local pve-b</code></pre>
+<h3 id="a.3.4-contrôle-côté-poste-de-travail">A.3.4 Contrôle côté poste
+de travail</h3>
+<pre><code>ssh-keygen -R &lt;adresse&gt;
+ssh pve-b hostname
+ssh -o BatchMode=yes pve-b hostname</code></pre>
+<p><strong>Objet :</strong> la seconde commande réenregistre
+l’empreinte, la troisième doit répondre <strong>sans mot de
+passe</strong>, ce qui valide l’authentification par clé.</p>
+<hr />
+<h2 id="a.4-création-et-contrôle-du-cluster">A.4 Création et contrôle du
+cluster</h2>
+<h3 id="a.4.1-création">A.4.1 Création</h3>
+<pre><code>pvecm create santelia
+pvecm status</code></pre>
+<h3 id="a.4.2-jonction-des-nœuds-secondaires">A.4.2 Jonction des nœuds
+secondaires</h3>
+<pre><code>pvecm add 192.168.1.151</code></pre>
+<p>À exécuter depuis chaque nœud à joindre. Demande le mot de passe du
+nœud initial, puis l’acceptation de son empreinte de clé.</p>
+<h3 id="a.4.3-contrôles-du-cluster">A.4.3 Contrôles du cluster</h3>
+<pre><code>pvecm status
+pvecm nodes
+corosync-cfgtool -s</code></pre>
+<p><strong>Résultats attendus :</strong></p>
+<table>
+<thead>
+<tr>
+<th>Élément</th>
+<th>Attendu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nœuds</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Votes attendus</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Majorité requise</td>
+<td>2</td>
+</tr>
+<tr>
+<td>État</td>
+<td>Quorate</td>
+</tr>
+<tr>
+<td>Anneaux de communication</td>
+<td>Tous les liens connectés</td>
+</tr>
+</tbody>
+</table>
+<h3 id="a.4.4-contrôle-de-la-synchronisation-horaire">A.4.4 Contrôle de
+la synchronisation horaire</h3>
+<pre><code>timedatectl | grep -iE &quot;synchronized|NTP&quot;</code></pre>
+<p><strong>Objet :</strong> la stabilité du quorum dépend directement de
+la synchronisation des horloges entre nœuds.</p>
+<h3 id="a.4.5-contrôle-de-lespace-des-pools-de-réplication">A.4.5
+Contrôle de l’espace des pools de réplication</h3>
+<pre><code>for h in pve-a pve-b pve-c; do echo &quot;=== $h&quot;; ssh $h &#39;zpool list -o name,size,alloc,free&#39;; done</code></pre>
+<p><strong>Objet :</strong> vérifier que les pools portent <strong>le
+même nom</strong> sur les trois nœuds, condition technique de la
+réplication native.</p>
+<h3 id="a.4.6-relevé-des-fichiers-de-configuration-du-cluster">A.4.6
+Relevé des fichiers de configuration du cluster</h3>
+<pre><code>cat /etc/pve/corosync.conf
+cat /etc/pve/replication.cfg
+cat /etc/pve/ha/groups.cfg</code></pre>
+<hr />
+<h2 id="a.5-préparation-de-la-machine-de-test">A.5 Préparation de la
+machine de test</h2>
+<h3 id="a.5.1-récupération-de-limage-cloud">A.5.1 Récupération de
+l’image cloud</h3>
+<pre><code>mkdir -p /root/iso &amp;&amp; cd /root/iso
+wget &lt;url-de-l-image-cloud&gt;
+ls -lh</code></pre>
+<p><strong>Contrôle :</strong> le fichier doit faire plusieurs centaines
+de mégaoctets. Une taille de quelques kilo-octets indique une page
+d’erreur.</p>
+<h3 id="a.5.2-création-de-la-coquille">A.5.2 Création de la
+coquille</h3>
+<pre><code>qm create 100 \
+  --name vm-test-ha \
+  --ostype l26 \
+  --memory 1024 --balloon 0 --cores 1 \
+  --scsihw virtio-scsi-single \
+  --net0 virtio,bridge=vmbr0 \
+  --agent enabled=1 \
+  --onboot 1</code></pre>
+<h3 id="a.5.3-import-raccordement-et-agrandissement-du-disque">A.5.3
+Import, raccordement et agrandissement du disque</h3>
+<pre><code>qm importdisk 100 &lt;fichier-image&gt;.qcow2 local-zfs
+
+qm set 100 --scsi0 local-zfs:vm-100-disk-0
+qm resize 100 scsi0 8G</code></pre>
+<p><strong>Point critique :</strong> l’agrandissement est obligatoire.
+Les images cloud sont volontairement minuscules, deux à trois
+gigaoctets, afin que la taille finale soit choisie au déploiement.</p>
+<h3 id="a.5.4-disque-damorçage-ordre-de-démarrage-et-console-série">A.5.4
+Disque d’amorçage, ordre de démarrage et console série</h3>
+<pre><code>qm set 100 --ide2 local-zfs:cloudinit
+qm set 100 --boot order=scsi0
+qm set 100 --serial0 socket --vga serial0</code></pre>
+<p><strong>Objet :</strong> le disque secondaire transporte les
+instructions d’amorçage. La console série est nécessaire car les images
+cloud n’ont pas d’affichage graphique.</p>
+<h3 id="a.5.5-renseignement-de-la-configuration-de-provisionnement">A.5.5
+Renseignement de la configuration de provisionnement</h3>
+<pre><code>qm set 100 \
+  --ciuser admin \
+  --sshkeys /root/.ssh/authorized_keys \
+  --ipconfig0 ip=192.168.1.160/24,gw=192.168.1.1 \
+  --nameserver 192.168.1.1</code></pre>
+<h3 id="a.5.6-contrôle-avant-démarrage">A.5.6 Contrôle avant
+démarrage</h3>
+<pre><code>qm config 100
+qm start 100
+qm status 100</code></pre>
+<p><strong>Objet :</strong> vérifier la présence du disque <strong>avec
+sa taille finale</strong>, du périphérique d’amorçage, de l’ordre de
+démarrage, de la console série et des paramètres de provisionnement.</p>
+<h3 id="a.5.7-contrôles-après-démarrage">A.5.7 Contrôles après
+démarrage</h3>
+<p>Depuis le poste de travail, après un délai de 30 à 60 secondes :</p>
+<pre><code>ping -c3 192.168.1.160
+ssh admin@192.168.1.160 hostname
+ssh admin@192.168.1.160 &#39;df -h /; cloud-init status; systemctl is-active qemu-guest-agent&#39;</code></pre>
+<p><strong>Résultats attendus :</strong> réponse réseau, connexion
+<strong>sans mot de passe</strong>, partition racine étendue à la taille
+demandée, provisionnement terminé.</p>
+<h3 id="a.5.8-correction-de-lagent-invité">A.5.8 Correction de l’agent
+invité</h3>
+<pre><code>sudo apt update &amp;&amp; sudo apt install -y qemu-guest-agent nginx fcgiwrap
+sudo systemctl enable --now qemu-guest-agent nginx fcgiwrap.socket</code></pre>
+<p>Contrôle depuis le nœud hébergeur :</p>
+<pre><code>qm agent 100 ping &amp;&amp; echo &quot;AGENT OK&quot;
+qm agent 100 get-osinfo</code></pre>
+<hr />
+<h2 id="a.6-mise-en-service-du-dispositif-témoin">A.6 Mise en service du
+dispositif témoin</h2>
+<h3 id="a.6.1-script-du-témoin">A.6.1 Script du témoin</h3>
+<pre><code>sudo mkdir -p /usr/lib/cgi-bin
+sudo chmod 755 /usr/lib/cgi-bin
+
+sudo tee /usr/lib/cgi-bin/uptime.sh &gt; /dev/null &lt;&lt; &#39;EOF&#39;
+#!/bin/bash
+echo &quot;Content-Type: text/html&quot;
+echo &quot;&quot;
+echo &quot;&lt;h1&gt;vm-test-ha&lt;/h1&gt;&quot;
+echo &quot;&lt;p&gt;Boot: $(uptime -s)&lt;/p&gt;&quot;
+echo &quot;&lt;p&gt;Repondu le: $(date -u &#39;+%Y-%m-%d %H:%M:%S UTC&#39;)&lt;/p&gt;&quot;
+echo &quot;&lt;p&gt;Uptime: $(uptime -p)&lt;/p&gt;&quot;
+EOF
+
+sudo chmod 755 /usr/lib/cgi-bin/uptime.sh</code></pre>
+<h3 id="a.6.2-activation-de-la-passerelle-dexécution">A.6.2 Activation
+de la passerelle d’exécution</h3>
+<p>Bloc à insérer dans la section serveur de
+<code>/etc/nginx/sites-available/default</code> :</p>
+<pre><code>location /cgi-bin/ {
+    gzip off;
+    root /usr/lib/;
+    fastcgi_pass unix:/var/run/fcgiwrap.socket;
+    include /etc/nginx/fastcgi_params;
+}</code></pre>
+<h3 id="a.6.3-contrôle-de-la-configuration-et-rechargement">A.6.3
+Contrôle de la configuration et rechargement</h3>
+<pre><code>sudo nginx -t &amp;&amp; sudo systemctl reload nginx
+curl -s http://192.168.1.160/cgi-bin/uptime.sh</code></pre>
+<p><strong>Objet :</strong> la validation de configuration précède
+toujours le rechargement. Un rechargement sur une configuration invalide
+fait tomber le service.</p>
+<h3 id="a.6.4-relevé-de-létat-de-référence">A.6.4 Relevé de l’état de
+référence</h3>
+<pre><code>curl -s http://192.168.1.160/cgi-bin/uptime.sh
+ssh admin@192.168.1.160 &#39;uptime -s&#39;</code></pre>
+<p><strong>Objet :</strong> consigner l’horodatage de démarrage
+<strong>avant</strong> toute manipulation, afin de disposer d’un point
+de comparaison.</p>
+<hr />
+<h2 id="a.7-réplication-et-gestion-de-la-disponibilité">A.7 Réplication
+et gestion de la disponibilité</h2>
+<h3 id="a.7.1-création-du-job-de-réplication">A.7.1 Création du job de
+réplication</h3>
+<pre><code>pvesr create-local-job 100-0 pve-b --schedule &#39;*/15&#39;
+pvesr list
+pvesr status</code></pre>
+<p><strong>Point d’attention :</strong> l’identifiant du job est composé
+du numéro de machine et d’un index, sous la forme
+<code>&lt;vmid&gt;-&lt;index&gt;</code>. Un identifiant simple est
+refusé.</p>
+<h3 id="a.7.2-synchronisation-immédiate">A.7.2 Synchronisation
+immédiate</h3>
+<pre><code>pvesr run --id 100-0</code></pre>
+<p><strong>Objet :</strong> ne pas attendre la prochaine échéance. À
+exécuter systématiquement <strong>avant toute coupure
+volontaire</strong>.</p>
+<h3 id="a.7.3-contrôle-de-la-présence-du-volume-sur-le-nœud-cible">A.7.3
+Contrôle de la présence du volume sur le nœud cible</h3>
+<pre><code>ssh pve-b &#39;zfs list | grep vm-100&#39;</code></pre>
+<p><strong>Résultat attendu :</strong> le volume de la machine est
+présent sur le nœud secondaire, preuve que la réplication est
+effective.</p>
+<h3 id="a.7.4-gestion-du-job">A.7.4 Gestion du job</h3>
+<pre><code>pvesr disable 100-0
+pvesr enable 100-0
+pvesr delete 100-0</code></pre>
+<blockquote>
+<p>La désactivation du job <strong>élargit</strong> la fenêtre de perte
+de données. Elle est à éviter avant une coupure volontaire.</p>
+</blockquote>
+<h3 id="a.7.5-déclaration-en-ressource-à-haute-disponibilité">A.7.5
+Déclaration en ressource à haute disponibilité</h3>
+<pre><code>ha-manager add vm:100
+ha-manager status
+
+ha-manager groupadd santelia-ha --nodes &quot;pve-a:2,pve-b:1&quot;
+cat /etc/pve/ha/groups.cfg
+
+ha-manager set vm:100 --group santelia-ha
+ha-manager config</code></pre>
+<p><strong>Objet :</strong> le groupe restreint les nœuds d’accueil
+possibles et définit leur ordre de préférence. Sans groupe, la ressource
+peut redémarrer sur n’importe quel nœud, y compris un nœud qui ne
+dispose pas du volume répliqué.</p>
+<h3 id="a.7.6-commandes-de-gestion-de-la-ressource">A.7.6 Commandes de
+gestion de la ressource</h3>
+<pre><code>ha-manager set vm:100 --state started
+ha-manager set vm:100 --state stopped
+ha-manager set vm:100 --state disabled
+ha-manager set vm:100 --state ignored
+
+ha-manager migrate vm:100 pve-a</code></pre>
+<p><strong>Règle d’exploitation :</strong> une seule opération à la
+fois. Tant que la ressource présente un état transitoire, aucune
+intervention ne doit être engagée.</p>
+<hr />
+<h2 id="a.8-simulation-de-panne-et-mesure">A.8 Simulation de panne et
+mesure</h2>
+<h3 id="a.8.1-surveillance-en-tâche-de-fond-depuis-le-poste-de-travail">A.8.1
+Surveillance en tâche de fond, depuis le poste de travail</h3>
+<pre><code>nohup bash -c &#39;
+  echo &quot;SURVEILLANCE $(date +%T)&quot;
+  d=&quot;&quot;
+  while true; do
+    if curl -s --max-time 2 http://192.168.1.160 &gt;/dev/null 2&gt;&amp;1; then
+      if [ -n &quot;$d&quot; ]; then
+        echo &quot;RETOUR DU SERVICE : $(date +%T)&quot;
+        echo &quot;DUREE INTERRUPTION : $(( $(date +%s) - d )) secondes&quot;
+        d=&quot;&quot;
+      fi
+    else
+      if [ -z &quot;$d&quot; ]; then echo &quot;COUPURE : $(date +%T)&quot;; d=$(date +%s); fi
+    fi
+    sleep 1
+  done
+&#39; &gt; /tmp/test-ha.log 2&gt;&amp;1 &amp;</code></pre>
+<p><strong>Objet :</strong> détecter la transition indisponibilité /
+rétablissement et calculer la durée. Lancée <strong>avant</strong> la
+coupure, elle rend la mesure indépendante de toute observation
+manuelle.</p>
+<h3 id="a.8.2-coupure-du-nœud-hébergeur">A.8.2 Coupure du nœud
+hébergeur</h3>
+<p>Depuis l’hôte physique :</p>
+<pre><code>qm stop 310</code></pre>
+<p><strong>Objet :</strong> provoquer une indisponibilité brutale et non
+un arrêt propre, conformément au test de recette attendu : « panne
+contrôlée sur une VM » [1].</p>
+<h3 id="a.8.3-relevé-du-résultat">A.8.3 Relevé du résultat</h3>
+<pre><code>cat /tmp/test-ha.log</code></pre>
+<h3 id="a.8.4-preuves-de-la-reprise">A.8.4 Preuves de la reprise</h3>
+<pre><code>curl -s http://192.168.1.160/cgi-bin/uptime.sh
+ssh pve-b &#39;qm list | grep 100&#39;
+ssh pve-b &#39;ha-manager status&#39;
+ssh pve-b &#39;journalctl -u pve-ha-crm --since &quot;15 min ago&quot; --no-pager&#39;</code></pre>
+<p><strong>Objet :</strong> démontrer le redémarrage par un horodatage
+de démarrage distinct, et relever la chronologie complète de la reprise
+côté gestionnaire.</p>
+<h3 id="a.8.5-restitution-de-la-ressource">A.8.5 Restitution de la
+ressource</h3>
+<p>À effectuer <strong>après stabilisation complète</strong> de l’état
+:</p>
+<pre><code>qm start 310
+ssh pve-a &#39;pvecm status; ha-manager status&#39;</code></pre>
+<p><strong>Point critique :</strong> le retour du nœud avant la fin de
+la séquence de reprise place la ressource en état de sécurisation et
+bloque le redémarrage.</p>
+<h3 id="a.8.6-remise-en-service-de-la-réplication">A.8.6 Remise en
+service de la réplication</h3>
+<pre><code>pvesr list
+pvesr enable 100-0
+pvesr run --id 100-0</code></pre>
+<hr />
+<h2 id="a.9-récapitulatif-des-fichiers-de-configuration-concernés">A.9
+Récapitulatif des fichiers de configuration concernés</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Fichier</th>
+<th>Emplacement</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Configuration réseau</td>
+<td><code>/etc/network/interfaces</code></td>
+<td>Interfaces et ponts</td>
+</tr>
+<tr>
+<td>Résolution locale</td>
+<td><code>/etc/hosts</code></td>
+<td>Nom court et nom complet de la machine</td>
+</tr>
+<tr>
+<td>Configuration du cluster</td>
+<td><code>/etc/pve/corosync.conf</code></td>
+<td>Membres et transport</td>
+</tr>
+<tr>
+<td>Groupes de disponibilité</td>
+<td><code>/etc/pve/ha/groups.cfg</code></td>
+<td>Nœuds d’accueil et priorités</td>
+</tr>
+<tr>
+<td>Ressources gérées</td>
+<td><code>/etc/pve/ha/resources.cfg</code></td>
+<td>Machines et conteneurs sous surveillance</td>
+</tr>
+<tr>
+<td>Jobs de réplication</td>
+<td><code>/etc/pve/replication.cfg</code></td>
+<td>Sources, cibles et planification</td>
+</tr>
+<tr>
+<td>Configuration de la machine</td>
+<td><code>/etc/pve/qemu-server/&lt;vmid&gt;.conf</code></td>
+<td>Paramètres de la machine virtuelle</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="a.10-portée-de-cette-annexe">A.10 Portée de cette annexe</h2>
+<p>Ces commandes ont été exécutées manuellement, une par une, lors de la
+mise au point du montage.</p>
+<p><strong>Elles constituent la cible de la phase
+d’automatisation</strong> : le cahier des charges prévoit d’«
+automatiser et standardiser les configurations des serveurs et des
+applications », avec protection des secrets [1]. Chaque séquence décrite
+ici correspond à un futur rôle d’automatisation, rejouable et
+documenté.</p>
+<blockquote>
+<p>Sept points de vigilance relevés lors de la mise au point, répartis
+entre la configuration du cluster (volume d’amorçage non répliqué,
+fichier de résolution local des clones, agents invités) et
+l’exploitation de la haute disponibilité (fenêtre de réplication,
+séquencement des interventions). Ils sont détaillés dans le document de
+recette associé.</p>
+</blockquote>
+<hr />
+<p><em>Source : cahier des charges Santélia, Bloc 2 AIS — Groupe
+2.</em></p>
+</body>
+</html>
