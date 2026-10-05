@@ -2,7 +2,7 @@
 
 > Document rendable — reconstitution de la séquence complète de mise en œuvre de la brique haute disponibilité.
 > Permet à un tiers de rejouer le montage et sert de matière première à l'écriture des rôles d'automatisation.
-> TP Bloc 2 AIS, Groupe 2 (Florent, Youcef, Robin) — 05/10/2026
+> 05/10/2026
 
 ---
 
