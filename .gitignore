@@ -1,3 +1,7 @@
 
 # Journaux de test locaux
 santelia-preuves/
+
+# Documents generes : seules les sources .md et les pages html sont versionnees
+*.docx
+docs/*.pdf
