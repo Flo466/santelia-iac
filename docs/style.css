@@ -129,3 +129,29 @@ footer p{margin:0}
   a{color:#000;border:0}
   pre,pre.sourceCode{background:#f2f2f2;color:#000}
 }
+
+/* ---------- pastilles de statut ---------- */
+.status{font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:4px;padding:3px 9px;margin-left:auto;white-space:nowrap}
+.status--ok{background:var(--green);color:#fff}
+.status--todo{background:var(--white);color:var(--ink-2);border:1px solid var(--line-2)}
+
+/* ---------- bloc exigence dans une carte ---------- */
+.req{border-top:1px solid var(--line);margin:0 0 16px;padding-top:14px}
+.req + .req{margin-top:0}
+.req b{display:block;font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--green-ink);margin-bottom:3px;font-weight:700}
+.req span{font-size:.87rem;color:var(--ink-2)}
+
+/* ---------- bandeau d'etat sur une page de brique ---------- */
+.banner{display:flex;align-items:center;gap:14px;background:var(--card);
+  border:1px solid var(--line);border-left:4px solid var(--green);
+  border-radius:0 8px 8px 0;padding:16px 20px;margin:0 0 34px}
+.banner .lab{font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-2)}
+.banner .val{font-size:1.05rem;font-weight:700;color:var(--green-ink)}
+.banner .sep{margin-left:auto;text-align:right}
+
+/* ---------- carte pleine largeur (document de reference) ---------- */
+.card--full{grid-column:1 / -1}
+.card--full .chaps{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 16px}

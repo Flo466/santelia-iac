@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brique 1 — Cluster Proxmox VE et haute disponibilité</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="masthead">
+  <div class="wrap">
+    <p class="eyebrow">Sant&eacute;lia &middot; brique 1 sur 4 &middot; haute disponibilit&eacute;</p>
+    <h1>Cluster Proxmox VE et continuit&eacute; des VM critiques</h1>
+    <p class="lede">Trois n&oelig;uds en cluster, r&eacute;plication des volumes et groupe de haute disponibilit&eacute;. La continuit&eacute; est d&eacute;montr&eacute;e par la panne&nbsp;: un n&oelig;ud est coup&eacute;, la reprise est chronom&eacute;tr&eacute;e, et le quorum reste tenu pendant l'incident.</p>
+    <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 7 octobre 2026</p>
+  </div>
+</header>
+<main class="wrap">
+
+<a class="back" href="index.html">&larr; Sommaire</a>
+
+<div class="banner">
+  <div>
+    <div class="lab">Statut de la brique</div>
+    <div class="val">Livr&eacute;e et v&eacute;rifi&eacute;e</div>
+  </div>
+  <div class="sep">
+    <div class="lab">Indisponibilit&eacute; mesur&eacute;e</div>
+    <div class="val">2 min 24 s</div>
+  </div>
+</div>
+
+<blockquote>
+<p><strong>Test de recette</strong></p>
+<p>Simuler l'indisponibilit&eacute; d'un n&oelig;ud h&eacute;bergeant une machine virtuelle critique. Le service doit rester disponible ou &ecirc;tre r&eacute;tabli dans le d&eacute;lai cible, et la d&eacute;monstration doit s'appuyer sur un compte rendu horodat&eacute;.</p>
+</blockquote>
+
+<h2 class="sec-title">Documents de la brique</h2>
+
+<div class="grid">
+
+  <div class="card">
+    <span class="no">01 &nbsp;/&nbsp; ARCHITECTURE</span>
+    <h3><a href="01-cluster-proxmox.html">Configuration des trois n&oelig;uds</a></h3>
+    <p>Quorum &agrave; deux votes sur trois, pool de stockage nomm&eacute; de mani&egrave;re identique sur chaque n&oelig;ud pour rendre la r&eacute;plication native possible. Les &eacute;carts assum&eacute;s sont d&eacute;clar&eacute;s pour que la recette reste d&eacute;fendable.</p>
+    <div class="pills">
+      <span class="pill">Corosync</span>
+      <span class="pill">quorum</span>
+      <span class="pill">ZFS</span>
+      <span class="pill">r&eacute;plication</span>
+    </div>
+    <div class="foot">
+      <span class="go">Consulter &nbsp;&rarr;</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="no">02 &nbsp;/&nbsp; MISE EN &OElig;UVRE</span>
+    <h3><a href="02-vm-test-ha.html">Machine de test&nbsp;: construction et provisionnement</a></h3>
+    <p>Image syst&egrave;me, provisionnement automatique et service t&eacute;moin. Le socle reproductible sur lequel repose toute la d&eacute;monstration de bascule, et les pi&egrave;ges d'identit&eacute; li&eacute;s au clonage.</p>
+    <div class="pills">
+      <span class="pill">cloud-init</span>
+      <span class="pill">clone</span>
+      <span class="pill">service t&eacute;moin</span>
+    </div>
+    <div class="foot">
+      <span class="go">Consulter &nbsp;&rarr;</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="no">03 &nbsp;/&nbsp; RECETTE</span>
+    <h3><a href="03-test-recette-HA.html">Simulation de panne de n&oelig;ud</a></h3>
+    <p>La panne est provoqu&eacute;e, la reprise est chronom&eacute;tr&eacute;e, et le quorum reste tenu pendant l'incident. Horodatages et preuves brutes sont joints en annexe du document.</p>
+    <div class="pills">
+      <span class="pill">bascule HA</span>
+      <span class="pill">RTO</span>
+      <span class="pill">quorum</span>
+      <span class="pill">horodatage</span>
+    </div>
+    <div class="foot">
+      <span class="go">Consulter &nbsp;&rarr;</span>
+      <span class="status status--ok">Mesur&eacute;</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="no">04 &nbsp;/&nbsp; EXPLOITATION</span>
+    <h3><a href="04-journal-commandes.html">Journal des commandes ex&eacute;cut&eacute;es</a></h3>
+    <p>La s&eacute;quence compl&egrave;te de mise en &oelig;uvre, environnement par environnement, telle qu'elle a &eacute;t&eacute; jou&eacute;e. De quoi rejouer l'ensemble sans rien deviner.</p>
+    <div class="pills">
+      <span class="pill">proc&eacute;dure</span>
+      <span class="pill">rejeu</span>
+      <span class="pill">d&eacute;pannage</span>
+    </div>
+    <div class="foot">
+      <span class="go">Consulter &nbsp;&rarr;</span>
+    </div>
+  </div>
+
+</div>
+
+<article>
+<h2>Ce que d&eacute;montre la brique</h2>
+<ul>
+  <li>Un cluster de trois n&oelig;uds&nbsp;: la perte d'un n&oelig;ud laisse le service op&eacute;rationnel, sans QDevice ni stockage partag&eacute;.</li>
+  <li>La r&eacute;plication des volumes entre n&oelig;uds, sur un pool nomm&eacute; de mani&egrave;re identique pour que la reprise soit possible ailleurs.</li>
+  <li>Un groupe de haute disponibilit&eacute; avec priorit&eacute;s de n&oelig;uds, pour que la reprise ait lieu au bon endroit.</li>
+  <li>Une bascule provoqu&eacute;e et chronom&eacute;tr&eacute;e, avec relev&eacute; de l'&eacute;tat du quorum pendant l'incident.</li>
+  <li>Des &eacute;carts assum&eacute;s et &eacute;crits&nbsp;: sans eux, la recette ne r&eacute;siste pas &agrave; une question un peu pr&eacute;cise.</li>
+</ul>
+
+<h2>Limite de la maquette</h2>
+<p>Les trois n&oelig;uds sont h&eacute;berg&eacute;s sur une seule machine physique. La maquette d&eacute;montre donc le <strong>m&eacute;canisme</strong> de quorum, de r&eacute;plication et de bascule, mais pas la r&eacute;sistance &agrave; la panne de l'h&ocirc;te lui-m&ecirc;me. Cet &eacute;cart est d&eacute;clar&eacute; explicitement dans le document d'architecture, parce qu'une recette doit rester d&eacute;fendable.</p>
+</article>
+
+</main>
+<footer><div class="wrap"><p>Sant&eacute;lia &middot; documentation technique &middot; 7 octobre 2026</p></div></footer>
+</body>
+</html>

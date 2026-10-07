@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cahier des charges technique &amp; fonctionnel</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="masthead">
+  <div class="wrap">
+    <p class="eyebrow">Sant&eacute;lia &middot; Proxmox VE &middot; haute disponibilit&eacute;</p>
+    <h1>Cahier des charges technique &amp; fonctionnel</h1>
+    <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 07/10/2026</p>
+  </div>
+</header>
+<main class="wrap">
+<a class="back" href="index.html">&larr; Sommaire</a>
+<article>
+<blockquote>
+<p>Dossier de référence du projet — Groupe Santélia Modernisation,
+automatisation, disponibilité et sécurisation de l’infrastructure</p>
+</blockquote>
+<table>
+<tbody>
+<tr>
+<td><strong>Client</strong></td>
+<td>Groupe Santélia</td>
+</tr>
+<tr>
+<td><strong>Périmètre</strong></td>
+<td>Évry, Corbeil-Essonnes, Ris-Orangis</td>
+</tr>
+<tr>
+<td><strong>Budget / délai</strong></td>
+<td>15 000 € max / 2 à 3 mois</td>
+</tr>
+<tr>
+<td><strong>Groupe</strong></td>
+<td>Groupe 2</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="contexte-du-projet">1. Contexte du projet</h2>
+<p>Le groupe Santélia exploite trois cliniques privées situées à Évry,
+Corbeil-Essonnes et Ris-Orangis. Une panne survenue au mois de mars a
+bloqué la prise de rendez-vous pendant plus de six heures sur le site
+d’Évry. Cet incident met en évidence le besoin de renforcer la
+continuité de service et de réduire les interventions manuelles sur les
+serveurs.</p>
+<p><strong>Audit / échéance :</strong> le projet doit être stabilisé
+dans un délai de 2 à 3 mois afin de laisser une marge avant l’audit
+prévu à M+4.</p>
+<p>Aujourd’hui, les serveurs sont configurés manuellement, au cas par
+cas. Santélia souhaite une infrastructure plus standardisée, supervisée
+et automatisée, tout en conservant l’Active Directory existant pour la
+gestion des accès.</p>
+<p><strong>Objectif global :</strong> améliorer la disponibilité du DPI
+(Dossier Patient Informatisé), accélérer le rétablissement en cas
+d’incident et automatiser les opérations récurrentes.</p>
+<hr />
+<h2 id="périmètre-du-projet">2. Périmètre du projet</h2>
+<h3 id="périmètre-et-services-concernés">2.1 Périmètre et services
+concernés</h3>
+<ul>
+<li>3 établissements : cliniques d’Évry, de Corbeil-Essonnes et de
+Ris-Orangis.</li>
+<li>Services critiques : DPI, prise de rendez-vous et services
+nécessaires à leur fonctionnement.</li>
+<li>Postes supervisés : les 30 postes mentionnés dans le besoin
+client.</li>
+<li>Accès / identités : conservation de l’Active Directory
+existant.</li>
+</ul>
+<h3 id="socle-technologique-retenu">2.2 Socle technologique retenu</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Brique / outil</th>
+<th>Solution retenue</th>
+<th>Rôle &amp; justification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>IaC / Automatisation</strong></td>
+<td>Ansible</td>
+<td>Automatiser et standardiser les configurations des serveurs et des
+applications ; utiliser Ansible Vault pour les secrets.</td>
+</tr>
+<tr>
+<td><strong>Virtualisation / HA</strong></td>
+<td>Proxmox VE HA</td>
+<td>Héberger les VM critiques dans une architecture de haute
+disponibilité afin de limiter les interruptions.</td>
+</tr>
+<tr>
+<td><strong>Sauvegarde / 3-2-1</strong></td>
+<td>Proxmox Backup Server</td>
+<td>Centraliser les sauvegardes et prévoir une copie secondaire afin de
+répondre à la stratégie 3-2-1.</td>
+</tr>
+<tr>
+<td><strong>Supervision</strong></td>
+<td>Zabbix</td>
+<td>Centraliser la supervision, les seuils et les alertes, notamment
+pour les 30 postes concernés.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="inclus-hors-périmètre">2.3 Inclus / hors périmètre</h3>
+<ul>
+<li><strong>Inclus :</strong> configuration, intégration, tests,
+recette, documentation et transmission à l’équipe technique ; mise à
+disposition d’un environnement de test avant production.</li>
+<li><strong>Hors périmètre :</strong> migration complète vers un cloud
+public, refonte complète de l’Active Directory et reconstruction globale
+du réseau au-delà des besoins nécessaires aux 4 briques.</li>
+</ul>
+<hr />
+<h2 id="exigences-fonctionnelles">3. Exigences fonctionnelles</h2>
+<p>Le système doit faire ce qui suit. Chaque exigence est priorisée
+selon la méthode MoSCoW demandée dans la séance 3.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Exigence</th>
+<th>Priorité (MoSCoW)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Permettre l’accès continu au DPI grâce à une architecture de haute
+disponibilité des VM critiques.</td>
+<td><strong>Must</strong></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Réaliser et restaurer les sauvegardes selon une stratégie 3-2-1 avec
+Proxmox Backup Server, tout en maintenant l’accès aux données pendant la
+sauvegarde.</td>
+<td><strong>Must</strong></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Automatiser et standardiser la configuration des serveurs et des
+applications avec Ansible, avec protection des secrets via Ansible
+Vault.</td>
+<td><strong>Must</strong></td>
+</tr>
+<tr>
+<td>4</td>
+<td>Superviser en temps réel les équipements et les 30 postes concernés,
+avec remontée d’alertes dans Zabbix.</td>
+<td><strong>Should</strong></td>
+</tr>
+<tr>
+<td>5</td>
+<td>Conserver l’Active Directory existant pour les identités et les
+droits, et assurer la traçabilité des accès.</td>
+<td><strong>Should</strong></td>
+</tr>
+<tr>
+<td>6</td>
+<td>Mettre à disposition un environnement de test / validation avant la
+mise en production.</td>
+<td><strong>Should</strong></td>
+</tr>
+<tr>
+<td>7</td>
+<td>Prévoir, en option, un tableau de bord synthétique destiné à la
+direction.</td>
+<td><strong>Could</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="exigences-non-fonctionnelles">4. Exigences
+non-fonctionnelles</h2>
+<p>Ces exigences décrivent le comportement attendu et sont formulées
+avec des critères mesurables conformément aux consignes du TP.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Exigence</th>
+<th>Critère de mesure</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Disponibilité du service critique</td>
+<td><em>à confirmer</em></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Rétablissement en cas d’incident</td>
+<td>Retour du service critique dans un délai cible de 5 à 10
+minutes.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Supervision en temps réel</td>
+<td>Les 30 postes concernés sont visibles dans Zabbix et leurs
+informations remontent correctement.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Délai de mise en œuvre</td>
+<td>Solution déployée et opérationnelle dans un délai maximal de 2 à 3
+mois.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Traçabilité des accès</td>
+<td><em>à confirmer</em></td>
+</tr>
+<tr>
+<td>6</td>
+<td>Continuité d’alimentation</td>
+<td>Les équipements critiques sont protégés par les onduleurs prévus
+dans l’architecture.</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Les critères des lignes 1 et 5 n’ont pas été récupérés lors de
+l’extraction du document d’origine. À compléter depuis le PDF source
+avant publication.</p>
+</blockquote>
+<hr />
+<h2 id="contraintes-techniques-et-budgétaires">5. Contraintes techniques
+et budgétaires</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Contrainte</th>
+<th>Valeur / impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Budget maximal</strong></td>
+<td>15 000 € pour l’ensemble du projet.</td>
+</tr>
+<tr>
+<td><strong>Délai</strong></td>
+<td>Déploiement prévu sur 2 à 3 mois maximum.</td>
+</tr>
+<tr>
+<td><strong>Compétences internes</strong></td>
+<td>Équipe principalement composée de techniciens ; la solution doit
+rester simple, exploitable et documentée.</td>
+</tr>
+<tr>
+<td><strong>Existant</strong></td>
+<td>Active Directory déjà en place pour la gestion des accès.</td>
+</tr>
+<tr>
+<td><strong>Données de santé</strong></td>
+<td>Le projet concerne des données sensibles ; le cadre réglementaire et
+les exigences de sécurité applicables doivent être respectés.</td>
+</tr>
+<tr>
+<td><strong>Continuité de service</strong></td>
+<td>L’architecture doit limiter l’impact d’une panne et atteindre le
+temps de rétablissement demandé.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="critères-dacceptation-recette">6. Critères d’acceptation /
+recette</h2>
+<p>La recette vérifie chaque brique séparément puis leur fonctionnement
+conjoint. Les tests sont réalisés sur l’environnement de validation
+avant la mise en production.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Brique</th>
+<th>Test de recette</th>
+<th>Résultat attendu</th>
+<th>Preuve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>HA / Proxmox VE</strong></td>
+<td>Simuler l’indisponibilité d’un nœud hébergeant une VM critique.</td>
+<td>Le service reste disponible ou est rétabli dans le délai cible.</td>
+<td>Compte rendu + horodatage.</td>
+</tr>
+<tr>
+<td><strong>Sauvegarde / PBS</strong></td>
+<td>Lancer une sauvegarde puis tester une restauration sur une VM ou un
+jeu de données de test.</td>
+<td>Sauvegarde exploitable et restauration réussie.</td>
+<td>Journal de sauvegarde + preuve de restauration.</td>
+</tr>
+<tr>
+<td><strong>Supervision / Zabbix</strong></td>
+<td>Vérifier la remontée et déclencher une alerte sur un équipement ou
+service de test.</td>
+<td>Les 30 postes concernés sont visibles et l’alerte remonte
+correctement.</td>
+<td>Capture / export Zabbix + journal.</td>
+</tr>
+<tr>
+<td><strong>IaC / Ansible</strong></td>
+<td>Déployer ou reconfigurer une machine de test à partir d’un playbook
+puis rejouer le playbook.</td>
+<td>Configuration identique et standardisée, sans action manuelle
+supplémentaire.</td>
+<td>Playbook + sortie d’exécution + état final.</td>
+</tr>
+</tbody>
+</table>
+<h3
+id="indicateurs-complémentaires-proposés-à-valider-avec-le-client">6.1
+Indicateurs complémentaires proposés — à valider avec le client</h3>
+<p>Les indicateurs ci-dessous reprennent des idées de précision
+technique apportées lors des échanges de groupe. Ils sont proposés pour
+la recette et ne sont pas présentés comme des exigences client déjà
+validées.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Domaine</th>
+<th>Indicateur proposé</th>
+<th>Cible de recette à valider</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sauvegarde</td>
+<td>RPO (perte de données)</td>
+<td>Cible proposée : &lt; 15 min.</td>
+</tr>
+<tr>
+<td>Sauvegarde</td>
+<td>Temps de restauration</td>
+<td>Cible proposée : restauration d’une VM critique &lt; 30 min.</td>
+</tr>
+<tr>
+<td>Ansible</td>
+<td>Temps de déploiement / reconfiguration</td>
+<td>Cible proposée : nouvelle configuration appliquée &lt; 15 min.</td>
+</tr>
+<tr>
+<td>Zabbix</td>
+<td>Réactivité des alertes</td>
+<td>Cible proposée : alerte envoyée à la DSI &lt; 2 min.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="planning-prévisionnel-de-mise-en-œuvre">7. Planning prévisionnel
+de mise en œuvre</h2>
+<p>Le planning reste compatible avec la contrainte de 2 à 3 mois et
+prévoit une phase de tests et de recette avant la mise en
+production.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Contenu</th>
+<th>Période</th>
+<th>Livrable / jalon</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1. Cadrage &amp; conception</strong></td>
+<td>Validation du besoin, architecture cible et dépendances entre les 4
+briques.</td>
+<td>S1 – S2</td>
+<td>Architecture et plan d’action validés.</td>
+</tr>
+<tr>
+<td><strong>2. Haute disponibilité</strong></td>
+<td>Préparation de la HA Proxmox VE et intégration des VM
+critiques.</td>
+<td>S2 – S4</td>
+<td>HA opérationnelle sur l’environnement cible.</td>
+</tr>
+<tr>
+<td><strong>3. Sauvegarde</strong></td>
+<td>Mise en place de Proxmox Backup Server et stratégie 3-2-1.</td>
+<td>S3 – S5</td>
+<td>Sauvegardes + premier test de restauration.</td>
+</tr>
+<tr>
+<td><strong>4. Supervision</strong></td>
+<td>Déploiement de Zabbix, intégration des équipements et des 30
+postes.</td>
+<td>S4 – S6</td>
+<td>Supervision centralisée et alertes.</td>
+</tr>
+<tr>
+<td><strong>5. IaC</strong></td>
+<td>Écriture des playbooks Ansible et standardisation des
+configurations.</td>
+<td>S5 – S8</td>
+<td>Playbooks validés et documentés.</td>
+</tr>
+<tr>
+<td><strong>6. Intégration &amp; recette</strong></td>
+<td>Tests croisés, sécurité, documentation, formation et
+corrections.</td>
+<td>S8 – S10</td>
+<td>PV de recette + dossier d’exploitation.</td>
+</tr>
+<tr>
+<td><strong>7. Mise en production</strong></td>
+<td>Déploiement final et accompagnement de l’équipe.</td>
+<td>S10 – S12</td>
+<td>Solution en production dans le délai maximal.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="synthèse-des-solutions-et-justification">8. Synthèse des
+solutions et justification</h2>
+<p>Les quatre briques sont complémentaires. Le choix porte sur une
+architecture cohérente : Proxmox VE HA traite la continuité des VM,
+Proxmox Backup Server la sauvegarde et la restauration, Zabbix la
+supervision et Ansible l’automatisation / standardisation.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Solution</th>
+<th>Rôle dans le projet</th>
+<th>Justification par rapport au besoin</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Proxmox VE HA</strong></td>
+<td>Haute disponibilité des VM</td>
+<td>Répond à l’objectif de continuité de service du DPI et à la
+réduction du temps d’interruption.</td>
+</tr>
+<tr>
+<td><strong>Proxmox Backup Server</strong></td>
+<td>Sauvegarde / restauration</td>
+<td>Centralise les sauvegardes et permet de structurer la stratégie
+3-2-1 avec une copie secondaire.</td>
+</tr>
+<tr>
+<td><strong>Zabbix</strong></td>
+<td>Supervision / alertes</td>
+<td>Centralise la visibilité sur les équipements et les 30 postes
+concernés.</td>
+</tr>
+<tr>
+<td><strong>Ansible</strong></td>
+<td>IaC / automatisation</td>
+<td>Réduit la configuration manuelle et standardise les déploiements sur
+les environnements concernés.</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Point technique important :</strong> Ansible ne remplace pas
+la HA, la sauvegarde ou la supervision ; il automatise leur déploiement
+et leur configuration lorsqu’il est utilisé à cette fin.</p>
+</blockquote>
+<hr />
+<h2 id="réponse-synthétique-à-lappel-doffres-bonus">9. Réponse
+synthétique à l’appel d’offres — bonus</h2>
+<p>En nous plaçant du côté du prestataire, nous répondons en priorité
+aux exigences Must et vérifions que les options proposées restent
+compatibles avec l’enveloppe maximale de 15 000 €.</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Exigence reçue</th>
+<th>Priorité</th>
+<th>Réponse</th>
+<th>Justification courte</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Accès continu au DPI via haute disponibilité des VM</td>
+<td>Must</td>
+<td><strong>Couvert</strong></td>
+<td>Proxmox VE HA est retenu comme brique de continuité de service.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Sauvegarde 3-2-1 et restauration</td>
+<td>Must</td>
+<td><strong>Couvert</strong></td>
+<td>PBS + copie secondaire prévue dans la stratégie de sauvegarde.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Supervision centralisée des 30 postes</td>
+<td>Should</td>
+<td><strong>Couvert</strong></td>
+<td>Zabbix est retenu pour la supervision et les alertes.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Automatisation des serveurs et applications</td>
+<td>Must</td>
+<td><strong>Couvert</strong></td>
+<td>Ansible automatise et standardise les configurations via des
+playbooks.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="préparation-de-la-restitution-orale-5-minutes">10. Préparation
+de la restitution orale — 5 minutes</h2>
+<p>Le support de séance demande une restitution en trois points :
+contexte en une phrase, 2 à 3 exigences clés avec leur priorité MoSCoW,
+puis prochaine étape.</p>
+<p><strong>Pitch proposé</strong></p>
+<blockquote>
+<p>Santélia exploite trois cliniques et a subi une panne de plus de six
+heures sur le site d’Évry, alors que les serveurs sont aujourd’hui
+configurés manuellement. Notre cahier des charges vise à renforcer la
+continuité de service et à automatiser l’administration des
+infrastructures.</p>
+</blockquote>
+<blockquote>
+<p>Les exigences clés sont : l’accès continu au DPI grâce à la haute
+disponibilité — Must ; la sauvegarde 3-2-1 et la restauration — Must ;
+et l’automatisation de la configuration des serveurs avec Ansible —
+Must. La supervision Zabbix est classée Should pour centraliser la
+visibilité et les alertes.</p>
+</blockquote>
+<blockquote>
+<p>La prochaine étape est l’intégration des quatre briques, puis les
+tests de recette : panne contrôlée sur une VM, restauration d’une
+sauvegarde, vérification de la supervision et exécution des playbooks
+Ansible.</p>
+</blockquote>
+<hr />
+<h2 id="grille-de-relecture-croisée">11. Grille de relecture
+croisée</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Critère</th>
+<th>OK / À revoir</th>
+<th>Commentaire</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Toutes les rubriques sont complétées</td>
+<td>OK</td>
+<td>Sections 1 à 12 renseignées.</td>
+</tr>
+<tr>
+<td>Document clair et bien structuré</td>
+<td>OK</td>
+<td>Titres, tableaux et priorités lisibles.</td>
+</tr>
+<tr>
+<td>Toutes les exigences fonctionnelles ont une priorité MoSCoW</td>
+<td>OK</td>
+<td>Chaque ligne du tableau est classée.</td>
+</tr>
+<tr>
+<td>Les exigences non fonctionnelles sont mesurables</td>
+<td>OK</td>
+<td>Disponibilité, rétablissement, supervision, délai et traçabilité
+sont vérifiables.</td>
+</tr>
+<tr>
+<td>Cohérence avec les séances 1-2</td>
+<td>OK</td>
+<td>Les besoins repris correspondent au besoin Santélia consolidé.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="conclusion">12. Conclusion</h2>
+<p>Le cahier des charges formalise les besoins de Santélia autour de
+quatre briques complémentaires. Proxmox VE HA vise à limiter les
+interruptions des VM critiques ; Proxmox Backup Server structure la
+sauvegarde et la restauration ; Zabbix apporte la supervision ; et
+Ansible automatise et standardise l’administration. L’ensemble doit
+respecter un budget maximal de 15 000 € et un délai de 2 à 3 mois, avec
+une recette permettant de démontrer objectivement la conformité aux
+exigences.</p>
+</article>
+</main>
+<footer><div class="wrap"><p>Sant&eacute;lia &middot; documentation technique &middot; 07/10/2026</p></div></footer>
+</body>
+</html>

@@ -9,9 +9,9 @@
 <body>
 <header class="masthead">
   <div class="wrap">
-    <p class="eyebrow">Sant&eacute;lia &middot; Proxmox VE &middot; haute disponibilit&eacute;</p>
-    <h1>Haute disponibilité des machines virtuelles</h1>
-    <p class="lede">Architecture du cluster, construction de la machine de test, et compte rendu de recette mesur&eacute;. La continuit&eacute; de service est d&eacute;montr&eacute;e par la panne, pas par la configuration.</p>
+    <p class="eyebrow">Sant&eacute;lia &middot; dossier technique</p>
+    <h1>Infrastructure virtualis&eacute;e et haute disponibilit&eacute;</h1>
+    <p class="lede">Quatre briques, quatre cibles de recette. Chaque brique est d&eacute;crite, mise en &oelig;uvre, puis v&eacute;rifi&eacute;e par un test mesur&eacute;. Ce qui n'est pas encore fait est annonc&eacute; comme tel.</p>
     <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 7 octobre 2026</p>
   </div>
 </header>
@@ -19,93 +19,121 @@
 
 <blockquote>
 <p><strong>Contexte</strong></p>
-<p>Le service critique doit rester accessible m&ecirc;me si un serveur d&eacute;faille. La brique de continuit&eacute; repose sur un cluster de trois n&oelig;uds Proxmox VE&nbsp;: la perte d'un n&oelig;ud laisse le cluster op&eacute;rationnel, sans dispositif externe de vote. La d&eacute;monstration attendue par la recette n'est pas l'installation, mais la <strong>bascule mesur&eacute;e</strong>&nbsp;: provoquer la panne, chronom&eacute;trer la reprise, et prouver que le service r&eacute;pond de nouveau.</p>
+<p>Le service critique doit rester accessible m&ecirc;me si un serveur d&eacute;faille, les donn&eacute;es doivent pouvoir &ecirc;tre restaur&eacute;es, les &eacute;quipements doivent &ecirc;tre supervis&eacute;s et les configurations doivent &ecirc;tre reproductibles. La recette ne juge pas l'installation, mais la capacit&eacute; &agrave; <strong>d&eacute;montrer</strong> chaque propri&eacute;t&eacute; par un test&nbsp;: provoquer la panne et chronom&eacute;trer la reprise, restaurer une sauvegarde, d&eacute;clencher une alerte, rejouer un d&eacute;ploiement.</p>
 </blockquote>
 
 <div class="kpis">
-  <div class="kpi"><div class="n">3</div><div class="l">n&oelig;uds Proxmox</div></div>
-  <div class="kpi"><div class="n">2</div><div class="l">votes pour le quorum</div></div>
-  <div class="kpi"><div class="n">144 s</div><div class="l">indisponibilit&eacute; mesur&eacute;e</div></div>
-  <div class="kpi"><div class="n">4</div><div class="l">documents</div></div>
+  <div class="kpi"><div class="n">4</div><div class="l">briques</div></div>
+  <div class="kpi"><div class="n">1</div><div class="l">livr&eacute;e &agrave; ce jour</div></div>
+  <div class="kpi"><div class="n">2 min 24 s</div><div class="l">indisponibilit&eacute; mesur&eacute;e</div></div>
+  <div class="kpi"><div class="n">3</div><div class="l">n&oelig;uds en cluster</div></div>
 </div>
 
-<h2 class="sec-title">Documents</h2>
+<h2 class="sec-title">Document de r&eacute;f&eacute;rence</h2>
 
 <div class="grid">
 
-  <div class="card">
-    <span class="no">01 &nbsp;/&nbsp; ARCHITECTURE</span>
-    <h3><a href="01-cluster-proxmox.html">Architecture du cluster Proxmox</a></h3>
-    <p>Trois n&oelig;uds imbriqu&eacute;s, quorum &agrave; deux sur trois, pool de stockage de m&ecirc;me nom sur chaque n&oelig;ud pour la r&eacute;plication native. Les &eacute;carts assum&eacute;s sont d&eacute;clar&eacute;s pour que la recette reste d&eacute;fendable.</p>
-    <div class="pills">
-      <span class="pill">Corosync</span>
-      <span class="pill">quorum</span>
-      <span class="pill">ZFS</span>
-      <span class="pill">r&eacute;plication</span>
+  <a class="card card--full" href="cdc-santelia.html">
+    <span class="no">CAHIER DES CHARGES &nbsp;/&nbsp; DOSSIER CLIENT</span>
+    <h3>Cahier des charges technique &amp; fonctionnel</h3>
+    <p>Le document qui cadre tout le projet&nbsp;: le contexte du client, le p&eacute;rim&egrave;tre retenu, les exigences fonctionnelles prioris&eacute;es selon la m&eacute;thode MoSCoW, les exigences non-fonctionnelles et leurs crit&egrave;res de mesure, les contraintes budg&eacute;taires, les crit&egrave;res d'acceptation par brique, le planning pr&eacute;visionnel et la synth&egrave;se des solutions retenues.</p>
+    <div class="chaps">
+      <span class="pill">contexte</span>
+      <span class="pill">p&eacute;rim&egrave;tre</span>
+      <span class="pill">MoSCoW</span>
+      <span class="pill">recette</span>
+      <span class="pill">planning</span>
+      <span class="pill">budget</span>
     </div>
     <div class="foot">
       <span class="go">Consulter &nbsp;&rarr;</span>
+    </div>
+  </a>
+
+</div>
+
+<h2 class="sec-title">Les quatre briques</h2>
+
+<div class="grid">
+
+  <a class="card" href="ha-proxmox-ve.html">
+    <span class="no">01 &nbsp;/&nbsp; HAUTE DISPONIBILIT&Eacute;</span>
+    <h3>Cluster Proxmox VE et continuit&eacute; des VM critiques</h3>
+    <p>Trois n&oelig;uds en cluster, quorum tenu &agrave; deux votes sur trois, r&eacute;plication des volumes entre n&oelig;uds et groupe de haute disponibilit&eacute;. La perte d'un n&oelig;ud laisse le cluster op&eacute;rationnel, sans dispositif externe de vote.</p>
+    <div class="req">
+      <b>Test de recette</b>
+      <span>Simuler l'indisponibilit&eacute; d'un n&oelig;ud h&eacute;bergeant une VM critique.</span>
+    </div>
+    <div class="req">
+      <b>Preuve attendue</b>
+      <span>Compte rendu et horodatage de la bascule.</span>
+    </div>
+    <div class="foot">
+      <span class="go">Consulter &nbsp;&rarr;</span>
+      <span class="status status--ok">Livr&eacute;</span>
+    </div>
+  </a>
+
+  <div class="card">
+    <span class="no">02 &nbsp;/&nbsp; SAUVEGARDE</span>
+    <h3>Proxmox Backup Server et strat&eacute;gie de copie</h3>
+    <p>Sauvegarde structur&eacute;e avec copie secondaire, pour que la perte d'un site de stockage ne fasse pas perdre les donn&eacute;es. Le test porte sur la restauration r&eacute;elle, pas sur l'existence des sauvegardes.</p>
+    <div class="req">
+      <b>Test de recette</b>
+      <span>Lancer une sauvegarde, puis restaurer et v&eacute;rifier que la machine red&eacute;marre.</span>
+    </div>
+    <div class="req">
+      <b>Preuve attendue</b>
+      <span>Journal de sauvegarde et preuve de restauration.</span>
+    </div>
+    <div class="foot">
+      <span class="status status--todo">&Agrave; faire</span>
     </div>
   </div>
 
   <div class="card">
-    <span class="no">02 &nbsp;/&nbsp; MISE EN &OElig;UVRE</span>
-    <h3><a href="02-vm-test-ha.html">Machine de test&nbsp;: construction et provisionnement</a></h3>
-    <p>Image cloud, provisionnement automatique, service t&eacute;moin. Le socle reproductible sur lequel repose toute la d&eacute;monstration de bascule, et les pi&egrave;ges d'identit&eacute; li&eacute;s au clonage.</p>
-    <div class="pills">
-      <span class="pill">cloud-init</span>
-      <span class="pill">clone</span>
-      <span class="pill">nginx</span>
-      <span class="pill">reproductibilit&eacute;</span>
+    <span class="no">03 &nbsp;/&nbsp; SUPERVISION</span>
+    <h3>Supervision centralis&eacute;e et remont&eacute;e d'alerte</h3>
+    <p>Les &eacute;quipements du parc sont visibles depuis un point unique, et une anomalie d&eacute;clenche une alerte. La supervision est h&eacute;berg&eacute;e hors de l'infrastructure supervis&eacute;e, sans quoi elle dispara&icirc;t avec ce qu'elle surveille.</p>
+    <div class="req">
+      <b>Test de recette</b>
+      <span>V&eacute;rifier la remont&eacute;e des &eacute;quipements et d&eacute;clencher une alerte.</span>
+    </div>
+    <div class="req">
+      <b>Preuve attendue</b>
+      <span>Export de la console de supervision et journal d'alerte.</span>
     </div>
     <div class="foot">
-      <span class="go">Consulter &nbsp;&rarr;</span>
+      <span class="status status--todo">&Agrave; faire</span>
     </div>
   </div>
 
   <div class="card">
-    <span class="no">03 &nbsp;/&nbsp; RECETTE</span>
-    <h3><a href="03-test-recette-HA.html">Test de recette&nbsp;: simulation de panne de n&oelig;ud</a></h3>
-    <p>La panne est provoqu&eacute;e, la reprise est chronom&eacute;tr&eacute;e, et le quorum reste tenu pendant l'incident. Horodatages et preuves brutes sont joints en annexe.</p>
-    <div class="pills">
-      <span class="pill">bascule HA</span>
-      <span class="pill">RTO</span>
-      <span class="pill">quorum</span>
-      <span class="pill">horodatage</span>
+    <span class="no">04 &nbsp;/&nbsp; AUTOMATISATION</span>
+    <h3>D&eacute;ploiement reproductible par Ansible</h3>
+    <p>L'&eacute;tat attendu des serveurs et des applications est d&eacute;crit dans des r&ocirc;les. Une machine est d&eacute;ploy&eacute;e par le code, puis le projet est rejou&eacute; pour v&eacute;rifier qu'aucune configuration ne repose sur une intervention manuelle.</p>
+    <div class="req">
+      <b>Test de recette</b>
+      <span>D&eacute;ployer une machine de test, puis rejouer le projet complet.</span>
+    </div>
+    <div class="req">
+      <b>Preuve attendue</b>
+      <span>Projet, sortie d'ex&eacute;cution et &eacute;tat final identique.</span>
     </div>
     <div class="foot">
-      <span class="go">Consulter &nbsp;&rarr;</span>
-    </div>
-  </div>
-
-  <div class="card">
-    <span class="no">04 &nbsp;/&nbsp; EXPLOITATION</span>
-    <h3><a href="04-journal-commandes.html">Journal des commandes ex&eacute;cut&eacute;es</a></h3>
-    <p>La s&eacute;quence compl&egrave;te de mise en &oelig;uvre, environnement par environnement, telle qu'elle a &eacute;t&eacute; jou&eacute;e. De quoi rejouer l'ensemble sans rien deviner.</p>
-    <div class="pills">
-      <span class="pill">proc&eacute;dure</span>
-      <span class="pill">rejeu</span>
-      <span class="pill">d&eacute;pannage</span>
-    </div>
-    <div class="foot">
-      <span class="go">Consulter &nbsp;&rarr;</span>
+      <span class="status status--todo">&Agrave; faire</span>
     </div>
   </div>
 
 </div>
 
 <article>
-<h2>Ce que d&eacute;montre la d&eacute;marche</h2>
-<ul>
-  <li>Un cluster de trois n&oelig;uds&nbsp;: la perte d'un n&oelig;ud laisse le service op&eacute;rationnel, sans QDevice ni stockage partag&eacute;.</li>
-  <li>La r&eacute;plication des volumes entre n&oelig;uds, sur un pool de stockage nomm&eacute; de mani&egrave;re identique pour que la reprise soit possible ailleurs.</li>
-  <li>Un groupe de haute disponibilit&eacute; avec priorit&eacute;s de n&oelig;uds, pour que la reprise ait lieu au bon endroit.</li>
-  <li>Une bascule provoqu&eacute;e et chronom&eacute;tr&eacute;e, avec relev&eacute; de l'&eacute;tat du quorum pendant l'incident.</li>
-  <li>Des &eacute;carts assum&eacute;s et &eacute;crits&nbsp;: sans eux, la recette ne r&eacute;siste pas &agrave; une question un peu pr&eacute;cise.</li>
-</ul>
+<h2>Pourquoi c'est d&eacute;coup&eacute; ainsi</h2>
+<p>Les quatre briques r&eacute;pondent &agrave; quatre besoins distincts, et chacune porte son propre test. Les m&eacute;langer rendrait la recette inv&eacute;rifiable&nbsp;: on ne peut pas d&eacute;montrer qu'une sauvegarde est exploitable en regardant un cluster de haute disponibilit&eacute;.</p>
+<p>Elles sont aussi compl&eacute;mentaires. La haute disponibilit&eacute; traite la panne d'un n&oelig;ud, la sauvegarde traite la perte de donn&eacute;es, la supervision traite la panne silencieuse, et l'automatisation traite la d&eacute;rive de configuration.</p>
 
 <h2>Un mot sur la m&eacute;thode</h2>
-<p>Une architecture de haute disponibilit&eacute; qui n'a jamais &eacute;t&eacute; mise en panne ne d&eacute;montre rien. La d&eacute;marche consiste donc &agrave; provoquer l'incident, &agrave; mesurer ce qui se passe, puis &agrave; &eacute;crire les points de vigilance identifi&eacute;s avec la mesure qui les traite.</p>
+<p>Une architecture qui n'a jamais &eacute;t&eacute; mise en panne ne d&eacute;montre rien. La d&eacute;marche consiste donc &agrave; provoquer l'incident, &agrave; mesurer ce qui se passe, puis &agrave; &eacute;crire les points de vigilance identifi&eacute;s avec la mesure qui les traite.</p>
 <p>C'est ce qui distingue une maquette d'une architecture&nbsp;: la maquette fonctionne, l'architecture sait aussi ce qui doit la faire tomber, et ce qu'il faut v&eacute;rifier ensuite.</p>
 </article>
 
