@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Santélia — Sauvegarde et restauration</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="masthead">
+  <div class="wrap">
+    <p class="eyebrow">Sant&eacute;lia &middot; Proxmox VE &middot; haute disponibilit&eacute;</p>
+    <h1>Santélia — Sauvegarde et restauration</h1>
+    <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 08/10/2026</p>
+  </div>
+</header>
+<main class="wrap">
+<a class="back" href="index.html">&larr; Sommaire</a>
+<article>
+<blockquote>
+<p>Brique 02 — Proxmox Backup Server. Stratégie de copie et restauration
+testée. Mise à jour : 08/10/2026</p>
+</blockquote>
+<hr />
+<h2 id="objet">1. Objet</h2>
+<p>Le cahier des charges identifie la sauvegarde comme le second besoin
+du projet : centraliser les sauvegardes, prévoir une copie secondaire,
+et permettre la restauration des données.</p>
+<p>Le test de recette associé consiste à <strong>lancer une sauvegarde
+puis à tester une restauration</strong>, avec pour preuves le journal de
+sauvegarde et la preuve de restauration.</p>
+<p>Un point de vocabulaire à poser d’emblée, parce qu’il prête à
+confusion : cette brique ne traite pas la continuité de service.
+Celle-ci relève de la haute disponibilité, qui permet à une machine de
+redémarrer ailleurs. La sauvegarde répond à une question différente :
+comment revenir à un état antérieur connu.</p>
+<hr />
+<h2 id="architecture-retenue">2. Architecture retenue</h2>
+<h3 id="le-principe-3-2-1">2.1 Le principe 3-2-1</h3>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Copie</th>
+<th>Emplacement</th>
+<th>Support</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1</strong></td>
+<td>Volumes du cluster</td>
+<td>Disques de l’hôte</td>
+<td>Donnée vivante, protégée par réplication entre nœuds</td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td><strong>Serveur de sauvegarde</strong></td>
+<td>Machine dédiée sur l’hôte</td>
+<td>Sauvegarde primaire, dédupliquée</td>
+</tr>
+<tr>
+<td><strong>3</strong></td>
+<td><strong>Copie secondaire</strong></td>
+<td>Machine physique distincte</td>
+<td>Copie hors du premier support</td>
+</tr>
+</tbody>
+</table>
+<p>Le point qui fait la différence : un serveur de sauvegarde installé
+sur la machine qu’il protège ne protège de rien. Si l’hôte tombe, la
+donnée et sa sauvegarde disparaissent ensemble. C’est ce qui justifie la
+troisième copie sur une machine distincte.</p>
+<h3 id="sauvegarde-et-réplication-deux-besoins-distincts">2.2 Sauvegarde
+et réplication : deux besoins distincts</h3>
+<p>La réplication entre nœuds apporte de la
+<strong>disponibilité</strong>. Elle ne protège pas de la perte de
+données, car elle <strong>réplique aussi les erreurs</strong> : une
+suppression ou une corruption se propage d’un nœud à l’autre.</p>
+<p>La sauvegarde répond à un autre besoin, celui de <strong>revenir à un
+état antérieur connu</strong>. Les deux mécanismes sont complémentaires
+et ne se substituent pas l’un à l’autre.</p>
+<h3 id="deux-niveaux-de-virtualisation-deux-périmètres">2.3 Deux niveaux
+de virtualisation, deux périmètres</h3>
+<p>L’infrastructure comporte deux couches d’hyperviseurs : l’hôte
+physique d’un côté, et le cluster de trois nœuds qu’il héberge de
+l’autre. Chacune dispose de sa propre base de configuration et de sa
+propre liste de stockages.</p>
+<p>Conséquence pratique : un stockage déclaré au niveau de l’hôte n’est
+pas visible depuis le cluster, et inversement. Cette distinction a
+provoqué une erreur lors de la mise en œuvre, traitée au point de
+vigilance n° 5.</p>
+<hr />
+<h2 id="mise-en-œuvre">3. Mise en œuvre</h2>
+<h3 id="récupération-et-contrôle-de-limage">3.1 Récupération et contrôle
+de l’image</h3>
+<p>Version retenue : <strong>Proxmox Backup Server 4.2-1</strong>.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Étape</th>
+<th>Opération</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Téléchargement</td>
+<td>Récupération de l’image depuis les dépôts officiels</td>
+</tr>
+<tr>
+<td><strong>Contrôle d’intégrité</strong></td>
+<td>Comparaison de l’empreinte de la somme de contrôle avec la valeur
+publiée</td>
+</tr>
+<tr>
+<td>Résultat</td>
+<td><strong>Empreintes identiques — fichier conforme et non
+altéré</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Le téléchargement a échoué à la première tentative : le certificat
+présenté par le serveur de distribution ne correspondait pas au nom de
+domaine demandé. La vérification a dû être désactivée pour permettre
+l’opération, ce qui supprime la garantie d’origine du fichier. D’où le
+contrôle systématique de l’empreinte avant toute utilisation.</p>
+<h3 id="machine-dédiée">3.2 Machine dédiée</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Élément</th>
+<th>Valeur</th>
+<th>Justification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Processeurs virtuels</td>
+<td>2</td>
+<td>Traitements de déduplication en tâche de fond</td>
+</tr>
+<tr>
+<td>Mémoire</td>
+<td>2048 Mo</td>
+<td>Cache de déduplication</td>
+</tr>
+<tr>
+<td>Disque système</td>
+<td>20 Go</td>
+<td>Système et application</td>
+</tr>
+<tr>
+<td>Disque de données</td>
+<td><strong>40 Go</strong></td>
+<td>Entrepôt de sauvegarde</td>
+</tr>
+</tbody>
+</table>
+<p>Deux choix d’architecture. Une <strong>machine virtuelle</strong>
+plutôt qu’un conteneur, car l’application nécessite un accès direct au
+stockage. Et le disque de données est ajouté <strong>après</strong>
+l’installation : l’installateur ne dispose ainsi que d’un seul disque,
+ce qui supprime toute ambiguïté sur le disque à préparer.</p>
+<h3 id="protection-du-stockage-alloué">3.3 Protection du stockage
+alloué</h3>
+<p>L’allocation du premier disque a émis un avertissement : la
+protection contre la saturation du stockage allégé n’était pas
+active.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Paramètre</th>
+<th>Valeur appliquée</th>
+<th>Valeur par défaut</th>
+<th>Objet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Seuil de déclenchement</td>
+<td><strong>80 %</strong></td>
+<td>100 % (protection inactive)</td>
+<td>Déclenche l’extension avant la saturation</td>
+</tr>
+<tr>
+<td>Pourcentage d’extension</td>
+<td><strong>10 %</strong></td>
+<td>20 %</td>
+<td>Volume ajouté à chaque déclenchement</td>
+</tr>
+<tr>
+<td>Démon de surveillance</td>
+<td>En cours d’exécution</td>
+<td>—</td>
+<td>Déclenche effectivement l’extension</td>
+</tr>
+</tbody>
+</table>
+<p>Le pourcentage s’applique à la <strong>taille du pool</strong> et non
+à l’espace libre du groupe de volumes.</p>
+<table>
+<thead>
+<tr>
+<th>Élément</th>
+<th>Valeur</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Taille du pool</td>
+<td>141,23 Gio</td>
+</tr>
+<tr>
+<td>Extension demandée à 20 %</td>
+<td>~28,2 Gio</td>
+</tr>
+<tr>
+<td>Espace libre du groupe de volumes</td>
+<td><strong>16,00 Gio</strong></td>
+</tr>
+<tr>
+<td>Extension demandée à 10 %</td>
+<td><strong>~14,1 Gio</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Un réglage à 20 % aurait demandé 28 Gio pour 16 disponibles :
+l’extension aurait échoué <strong>sans message d’erreur</strong>, en
+laissant croire à une protection effective.</p>
+<p>Preuve de la correction : l’avertissement apparaissait lors de la
+création du premier disque, il a <strong>disparu</strong> lors de la
+création du second.</p>
+<h3 id="compte-de-service-et-confiance">3.4 Compte de service et
+confiance</h3>
+<p>Principe appliqué : <strong>moindre privilège</strong>. L’hyperviseur
+ne dispose que des droits nécessaires sur cet entrepôt, et d’aucun droit
+d’administration du serveur.</p>
+<table>
+<thead>
+<tr>
+<th>Élément</th>
+<th>Valeur</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Compte</td>
+<td>Compte de service dédié</td>
+</tr>
+<tr>
+<td>Chemin d’application</td>
+<td>Sur l’entrepôt uniquement</td>
+</tr>
+<tr>
+<td>Rôles</td>
+<td>Écriture des sauvegardes et lecture pour restauration</td>
+</tr>
+</tbody>
+</table>
+<p>La connexion est en outre <strong>authentifiée par l’empreinte du
+certificat</strong> du serveur. Cette empreinte est comparée à celle
+présentée lors du raccordement : sans ce contrôle, une interception
+réseau pourrait rediriger les sauvegardes vers un serveur tiers, qui les
+accepterait sans difficulté.</p>
+<p>Réserve : l’empreinte change si le certificat est régénéré, notamment
+en cas de modification du nom de machine. Le raccordement doit alors
+être refait.</p>
+<h3 id="raccordement-du-cluster">3.5 Raccordement du cluster</h3>
+<p>Le stockage a d’abord été déclaré au niveau de l’<strong>hôte
+physique</strong>. Ce dernier ne faisant pas partie du cluster, la
+sauvegarde des machines applicatives était impossible : le stockage
+n’existait pas du point de vue des nœuds. Déclaration corrigée au niveau
+du cluster, le stockage devenant visible sur les trois nœuds.</p>
+<p>Le contrôle de l’état du stockage valide simultanément quatre
+éléments : la connectivité réseau, l’authentification du compte,
+l’adéquation des permissions et la conformité de l’empreinte du
+certificat.</p>
+<h3 id="sauvegarde-en-mode-instantané">3.6 Sauvegarde en mode
+instantané</h3>
+<p>Sauvegarde exécutée sans interruption de service, sur la machine
+critique.</p>
+<table>
+<thead>
+<tr>
+<th>Indicateur</th>
+<th>Valeur</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Statut</td>
+<td><strong>Terminée avec succès</strong></td>
+</tr>
+<tr>
+<td>Durée</td>
+<td><strong>12 secondes</strong></td>
+</tr>
+<tr>
+<td>Données traitées</td>
+<td>8 Gio</td>
+</tr>
+<tr>
+<td>Débit</td>
+<td>745 Mio/s</td>
+</tr>
+<tr>
+<td>Données creuses</td>
+<td>6,47 Gio (80 %)</td>
+</tr>
+<tr>
+<td><strong>Données réutilisées</strong></td>
+<td><strong>6,59 Gio (82 %)</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Point notable : le journal mentionne l’appel à l’<strong>agent
+invité</strong> pour geler puis libérer le système de fichiers avant et
+après la capture. Sans cet agent, la sauvegarde resterait utilisable
+mais serait seulement « cohérente à l’arraché », comparable à un arrêt
+brutal. Sa présence garantit une sauvegarde <strong>cohérente
+applicative</strong>, condition d’une restauration fiable.</p>
+<h3 id="restauration-vers-une-machine-distincte">3.7 Restauration vers
+une machine distincte</h3>
+<p>La restauration a été faite vers un <strong>identifiant de machine
+différent</strong>, afin de préserver l’originale et de permettre la
+comparaison.</p>
+<table>
+<thead>
+<tr>
+<th>Indicateur</th>
+<th>Valeur</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Données restaurées</td>
+<td>8 Gio</td>
+</tr>
+<tr>
+<td><strong>Durée</strong></td>
+<td><strong>9,27 secondes</strong></td>
+</tr>
+<tr>
+<td><strong>Débit</strong></td>
+<td><strong>884 Mo/s</strong></td>
+</tr>
+<tr>
+<td>Vérification d’intégrité</td>
+<td>Index de sauvegarde téléchargé et vérifié</td>
+</tr>
+<tr>
+<td>Résultat</td>
+<td>Restauration complète, configuration conforme</td>
+</tr>
+</tbody>
+</table>
+<p>La copie restaurée a été démarrée et le service témoin interrogé
+depuis plusieurs points du réseau. Elle est
+<strong>fonctionnelle</strong>.</p>
+<hr />
+<h2 id="points-de-vigilance-identifiés">4. Points de vigilance
+identifiés</h2>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Point</th>
+<th>Constat</th>
+<th>Conséquence</th>
+<th>Mesure appliquée</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Téléchargement sans vérification de certificat</td>
+<td>Le certificat du serveur de distribution ne correspond pas au nom de
+domaine demandé</td>
+<td>Risque d’installation d’une image altérée</td>
+<td>Contrôle systématique de l’empreinte cryptographique</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Sur-allocation du stockage</td>
+<td>La somme des tailles annoncées dépasse la capacité du pool</td>
+<td>Saturation possible : arrêt de toutes les machines en erreur
+d’entrée-sortie</td>
+<td>Extension automatique activée, protection désactivée par défaut</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Marge d’extension bornée</td>
+<td>L’extension puise dans l’espace libre du groupe de volumes</td>
+<td>Après une première extension, la protection ne peut plus rien
+étendre</td>
+<td>Espace résiduel conservé en réserve</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Erreur de saisie sur l’identifiant de compte</td>
+<td>Identifiant créé avec le royaume en double, rôle sans effet</td>
+<td>Compte inutilisable, permissions inopérantes</td>
+<td>Suppression et recréation. Illustre la nécessité d’automatiser ces
+créations</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Stockage déclaré sur le mauvais périmètre</td>
+<td>Déclaration au niveau de l’hôte, hors du cluster applicatif</td>
+<td>Sauvegarde des machines applicatives impossible</td>
+<td>Déclaration corrigée au niveau du cluster</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Identité réseau dupliquée après restauration</td>
+<td>La copie restaurée reprend l’adresse matérielle et réseau de
+l’originale</td>
+<td>Mise en service simultanée : conflit d’identité, machine injoignable
+sans message d’erreur</td>
+<td>Extinction de l’originale avant démarrage de la copie, ou
+renumérotation</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Arrêt impossible d’une ressource en haute disponibilité</td>
+<td>La commande d’arrêt directe est arbitrée par le gestionnaire, qui
+relance la machine</td>
+<td>L’arrêt attendu n’a pas lieu, confusion sur l’état réel</td>
+<td>Passage par le gestionnaire de disponibilité pour les arrêts et
+démarrages</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Adresse IPv6 globale exposée sur une machine</td>
+<td>Le système invité obtient automatiquement une adresse IPv6
+publique</td>
+<td>La machine devient directement adressable depuis Internet, hors de
+la traduction d’adresses qui protège IPv4</td>
+<td>À traiter : désactivation de l’attribution automatique ou filtrage
+explicite</td>
+</tr>
+</tbody>
+</table>
+<h3 id="détail-du-point-n-6">Détail du point n° 6</h3>
+<p>Une restauration restitue l’identité réseau de la machine : adresse
+matérielle, adresse réseau et identifiant système. C’est souhaitable
+lorsqu’on restaure une machine à la place d’une autre, et problématique
+si l’on veut faire cohabiter l’originale et sa copie.</p>
+<p>Symptôme observé en conditions réelles : machine restaurée
+parfaitement fonctionnelle, agent invité répondant, interrogation depuis
+l’hyperviseur réussie, mais service <strong>injoignable depuis le poste
+de travail</strong>, sans aucun message d’erreur.</p>
+<p>La résolution est venue de l’expiration naturelle des tables de
+commutation réseau, dont la durée de vie est limitée. Le service s’est
+rétabli sans intervention, ce qui rend ce type de panne particulièrement
+difficile à diagnostiquer.</p>
+<p>Règle d’exploitation qui en découle : <strong>toute restauration
+exige une renumérotation avant mise en service simultanée</strong>.</p>
+<h3 id="détail-du-point-n-8">Détail du point n° 8</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Type d’adresse</th>
+<th>Portée</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>IPv4 privée</td>
+<td>Sortie par traduction d’adresses, non joignable depuis Internet</td>
+</tr>
+<tr>
+<td><strong>IPv6 globale</strong></td>
+<td><strong>Adresse publique, joignable directement depuis
+Internet</strong></td>
+</tr>
+</tbody>
+</table>
+<p>La maîtrise d’accès par traduction d’adresses, souvent considérée
+comme une protection, ne s’applique pas au protocole IPv6. Une machine
+de l’infrastructure est exposée directement, et seule la configuration
+du pare-feu la protège.</p>
+<p>Cette situation illustre une <strong>fausse sensation de
+sécurité</strong> : l’infrastructure semble protégée, alors qu’un second
+protocole contourne le mécanisme.</p>
+<hr />
+<h2 id="résultats-de-recette">5. Résultats de recette</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Indicateur</th>
+<th>Cible</th>
+<th>Mesure</th>
+<th>Statut</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sauvegarde exécutée</td>
+<td>Succès</td>
+<td>12 secondes, archive créée</td>
+<td>Conforme</td>
+</tr>
+<tr>
+<td>Restauration testée</td>
+<td>Succès</td>
+<td>9,27 secondes à 884 Mo/s</td>
+<td>Conforme</td>
+</tr>
+<tr>
+<td>Copie restaurée fonctionnelle</td>
+<td>Service rendu</td>
+<td>Service interrogé depuis deux chemins</td>
+<td>Conforme</td>
+</tr>
+<tr>
+<td>Cohérence de la sauvegarde</td>
+<td>Applicative</td>
+<td>Agent invité sollicité</td>
+<td>Conforme</td>
+</tr>
+<tr>
+<td>Taux de déduplication</td>
+<td>—</td>
+<td>82 % de données réutilisées</td>
+<td>Conforme</td>
+</tr>
+<tr>
+<td>Copie secondaire présente</td>
+<td>Oui</td>
+<td>À mettre en place</td>
+<td>En cours</td>
+</tr>
+<tr>
+<td>Rétention configurée</td>
+<td>Oui</td>
+<td>À mettre en place</td>
+<td>En cours</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="suite-donnée">6. Suite donnée</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Étape</th>
+<th>Objet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Copie secondaire</td>
+<td>Troisième copie du 3-2-1, sur une machine physique distincte</td>
+</tr>
+<tr>
+<td>Job planifié</td>
+<td>Sauvegarde automatique avec politique de rétention</td>
+</tr>
+<tr>
+<td>Chiffrement de l’entrepôt</td>
+<td>Protection des sauvegardes au repos, avec sauvegarde de la clé hors
+du serveur</td>
+</tr>
+<tr>
+<td>Élargissement du périmètre</td>
+<td>Étendre la sauvegarde aux autres machines de l’infrastructure</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="annexe-séquence-des-commandes">Annexe — Séquence des
+commandes</h2>
+<h3 id="sur-lhôte-physique">Sur l’hôte physique</h3>
+<pre><code>wget --no-check-certificate https://download.proxmox.com/iso/proxmox-backup-server_4.2-1.iso
+sha256sum proxmox-backup-server_4.2-1.iso</code></pre>
+<p>Comparer l’empreinte obtenue à celle publiée par l’éditeur.</p>
+<pre><code>qm create 320 --name pbs01 --memory 2048 --balloon 0 --cores 2 --cpu host \
+  --scsi0 local-lvm:20,discard=on,iothread=1 \
+  --ide2 local:iso/proxmox-backup-server_4.2-1.iso,media=cdrom \
+  --boot &#39;order=scsi0;ide2&#39; --net0 virtio,bridge=vmbr0 --agent enabled=1 --onboot 1
+
+qm set 320 --scsi1 local-lvm:40,discard=on,iothread=1</code></pre>
+<h3 id="protection-du-stockage">Protection du stockage</h3>
+<pre><code>lvmconfig --type current activation/thin_pool_autoextend_threshold
+lvmconfig --type current activation/thin_pool_autoextend_percent
+
+lvs &lt;pool&gt; -o lv_name,lv_size,data_percent,metadata_percent
+vgs</code></pre>
+<h3 id="sur-le-serveur-de-sauvegarde">Sur le serveur de sauvegarde</h3>
+<pre><code>proxmox-backup-manager datastore list
+proxmox-backup-manager cert info | grep -i fingerprint
+proxmox-backup-manager user list
+proxmox-backup-manager acl list</code></pre>
+<h3 id="sur-le-cluster">Sur le cluster</h3>
+<pre><code>pvesm status
+pvesm list &lt;stockage-pbs&gt;
+
+vzdump &lt;vmid&gt; --storage &lt;stockage-pbs&gt; --mode snapshot --compress zstd
+qmrestore &lt;stockage-pbs&gt;:backup/vm/&lt;vmid&gt;/&lt;horodatage&gt; &lt;vmid-cible&gt; --storage &lt;stockage-zfs&gt;
+
+qm agent &lt;vmid-cible&gt; network-get-interfaces</code></pre>
+<hr />
+<p><em>Documentation publiée depuis le dépôt du projet — version du
+08/10/2026.</em></p>
+</article>
+</main>
+<footer><div class="wrap"><p>Sant&eacute;lia &middot; documentation technique &middot; 08/10/2026</p></div></footer>
+</body>
+</html>
