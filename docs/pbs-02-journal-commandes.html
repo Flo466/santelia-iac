@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Santélia — Journal des commandes : sauvegarde</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="masthead">
+  <div class="wrap">
+    <p class="eyebrow">Sant&eacute;lia &middot; dossier technique</p>
+    <h1>Santélia — Journal des commandes : sauvegarde</h1>
+    <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 08/10/2026</p>
+  </div>
+</header>
+<main class="wrap">
+<a class="back" href="index.html">&larr; Sommaire</a>
+<article>
+<blockquote>
+<p>Brique 02 — séquence complète de mise en œuvre, par environnement
+d’exécution. Mise à jour : 08/10/2026</p>
+</blockquote>
+<hr />
+<h2 id="préambule-trois-environnements-trois-périmètres">Préambule —
+Trois environnements, trois périmètres</h2>
+<p>Les commandes ne s’exécutent pas au même endroit, et confondre les
+deux premiers est la principale source d’erreur sur ce montage.</p>
+<table>
+<thead>
+<tr>
+<th>Environnement</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Hôte physique</strong></td>
+<td>Porte le cluster et la machine de sauvegarde</td>
+</tr>
+<tr>
+<td><strong>Cluster</strong></td>
+<td>Héberge les machines applicatives à sauvegarder</td>
+</tr>
+<tr>
+<td><strong>Serveur de sauvegarde</strong></td>
+<td>Stocke les sauvegardes</td>
+</tr>
+</tbody>
+</table>
+<p>Un stockage déclaré sur l’hôte n’est <strong>pas</strong> visible
+depuis le cluster, et inversement. C’est ce qui a provoqué l’échec de la
+première sauvegarde, traitée au point de vigilance n° 5.</p>
+<hr />
+<h2 id="a.1-récupération-de-limage-dinstallation-sur-lhôte">A.1
+Récupération de l’image d’installation — sur l’hôte</h2>
+<pre><code>cd /var/lib/vz/template/iso
+
+wget --no-check-certificate https://download.proxmox.com/iso/proxmox-backup-server_4.2-1.iso
+
+sha256sum proxmox-backup-server_4.2-1.iso</code></pre>
+<p><strong>Contrôle :</strong> comparer l’empreinte obtenue à celle
+publiée par l’éditeur. La vérification du certificat ayant dû être
+désactivée, ce contrôle devient obligatoire.</p>
+<hr />
+<h2 id="a.2-création-de-la-machine-sur-lhôte">A.2 Création de la machine
+— sur l’hôte</h2>
+<pre><code>qm create 320 \
+  --name pbs01 \
+  --ostype l26 \
+  --memory 2048 --balloon 0 \
+  --sockets 1 --cores 2 --cpu host \
+  --scsihw virtio-scsi-single \
+  --scsi0 local-lvm:20,discard=on,iothread=1 \
+  --ide2 local:iso/proxmox-backup-server_4.2-1.iso,media=cdrom \
+  --boot &#39;order=scsi0;ide2&#39; \
+  --net0 virtio,bridge=vmbr0 \
+  --agent enabled=1 \
+  --onboot 1</code></pre>
+<p><strong>Ajout du disque de données</strong>, après l’installation
+:</p>
+<pre><code>qm set 320 --scsi1 local-lvm:40,discard=on,iothread=1
+qm config 320 | grep scsi</code></pre>
+<p><strong>Contrôle de l’adresse réseau</strong> avant installation
+:</p>
+<pre><code>ping -c2 &lt;adresse-cible&gt;</code></pre>
+<p>L’absence de réponse au format « destination injoignable » confirme
+que l’adresse est libre.</p>
+<hr />
+<h2 id="a.3-protection-du-stockage-sur-lhôte">A.3 Protection du stockage
+— sur l’hôte</h2>
+<p><strong>Constat initial :</strong></p>
+<pre><code>grep -rn &quot;thin_pool_autoextend&quot; /etc/lvm/
+
+lvmconfig --type current activation/thin_pool_autoextend_threshold
+lvmconfig --type default activation/thin_pool_autoextend_threshold
+lvmconfig --type default activation/thin_pool_autoextend_percent</code></pre>
+<p>Aucune valeur n’est définie dans la configuration courante, les
+valeurs par défaut sont donc inactives : le seuil effectif est de 100 %,
+l’extension automatique ne se déclenche jamais.</p>
+<p><strong>Correction appliquée :</strong></p>
+<pre><code>grep -n &quot;^activation {&quot; /etc/lvm/lvm.conf
+nano +&lt;numero&gt; /etc/lvm/lvm.conf</code></pre>
+<p>Section <code>activation</code>, ajouter le seuil et le pourcentage
+calibré.</p>
+<p><strong>Application et contrôle :</strong></p>
+<pre><code>systemctl restart lvm2-monitor
+pgrep -a dmeventd
+lvmconfig --type current activation/thin_pool_autoextend_threshold
+
+lvs &lt;pool&gt; -o lv_name,lv_size,data_percent,metadata_percent
+vgs</code></pre>
+<p>Le démon de surveillance n’est <strong>pas</strong> déclaré comme
+service indépendant sur cette version : son contrôle s’effectue par
+recherche de processus.</p>
+<hr />
+<h2
+id="a.4-accès-à-linterface-par-tunnel-ssh-sur-le-poste-de-travail">A.4
+Accès à l’interface par tunnel SSH — sur le poste de travail</h2>
+<p><strong>Configuration retenue :</strong></p>
+<pre><code>Host &lt;alias-hote&gt;
+    HostName &lt;hote-physique&gt;
+    User root
+    IdentityFile ~/.ssh/id_ed25519
+    LocalForward 8007 &lt;adresse-pbs&gt;:8007
+    ControlMaster auto
+    ControlPath ~/.ssh/cm-%r@%h
+    ControlPersist 12h</code></pre>
+<p><strong>Contrôles :</strong></p>
+<pre><code>ssh -G &lt;alias-hote&gt; | grep -E &quot;^(hostname|user|localforward|control)&quot;
+
+ssh -Nf &lt;alias-hote&gt;
+ssh -O check &lt;alias-hote&gt;
+ss -tlnp | grep 8007</code></pre>
+<p>L’écoute doit se faire <strong>exclusivement sur l’adresse de
+bouclage</strong>, ce qui confirme que le port de l’interface
+d’administration n’est jamais exposé sur le réseau.</p>
+<hr />
+<h2 id="a.5-entrepôt-de-données-sur-le-serveur-de-sauvegarde">A.5
+Entrepôt de données — sur le serveur de sauvegarde</h2>
+<pre><code>proxmox-backup-manager datastore list
+proxmox-backup-manager cert info | grep -i fingerprint</code></pre>
+<p><strong>Relevé de l’empreinte du certificat</strong> — elle servira à
+authentifier le serveur lors du raccordement.</p>
+<p><strong>Préparation du stockage</strong>, depuis l’interface : onglet
+<code>Stockage et disques</code>, puis création d’un répertoire sur le
+disque de données.</p>
+<p><strong>Contrôle :</strong></p>
+<pre><code>df -h | grep datastore
+lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT</code></pre>
+<p>Le répertoire est référencé <strong>par identifiant unique</strong>
+et non par nom de disque, ce qui rend le montage stable dans le
+temps.</p>
+<hr />
+<h2 id="a.6-compte-de-service-sur-le-serveur-de-sauvegarde">A.6 Compte
+de service — sur le serveur de sauvegarde</h2>
+<pre><code>proxmox-backup-manager user list
+proxmox-backup-manager acl list</code></pre>
+<p>Le compte doit apparaître au format
+<code>&lt;utilisateur&gt;@&lt;royaume&gt;</code>, sans doublon de
+royaume. Les permissions portent sur le seul entrepôt concerné, avec un
+rôle d’écriture et un rôle de lecture. Le principe appliqué est le
+moindre privilège.</p>
+<hr />
+<h2 id="a.7-raccordement-du-cluster-sur-un-nœud-du-cluster">A.7
+Raccordement du cluster — sur un nœud du cluster</h2>
+<pre><code>pvesm status
+pvesm list &lt;stockage-pbs&gt;</code></pre>
+<p>L’état « actif » du stockage valide simultanément quatre éléments :
+connectivité réseau, authentification du compte, adéquation des
+permissions et conformité de l’empreinte du certificat.</p>
+<hr />
+<h2 id="a.8-sauvegarde">A.8 Sauvegarde</h2>
+<pre><code>vzdump &lt;vmid&gt; --storage &lt;stockage-pbs&gt; --mode snapshot --compress zstd</code></pre>
+<p>Le mode instantané sauvegarde sans interrompre le service. Le journal
+doit mentionner l’appel à l’<strong>agent invité</strong> pour geler
+puis libérer le système de fichiers : c’est ce qui garantit une
+sauvegarde cohérente applicative.</p>
+<pre><code>pvesm list &lt;stockage-pbs&gt;</code></pre>
+<hr />
+<h2 id="a.9-restauration">A.9 Restauration</h2>
+<p><strong>Vers un identifiant de machine distinct</strong>, afin de
+préserver l’originale :</p>
+<pre><code>qmrestore &lt;stockage-pbs&gt;:backup/vm/&lt;vmid&gt;/&lt;horodatage&gt; &lt;vmid-cible&gt; --storage &lt;stockage-zfs&gt;</code></pre>
+<p><strong>Contrôles après restauration :</strong></p>
+<pre><code>qm config &lt;vmid-cible&gt;
+qm list</code></pre>
+<p><strong>Test fonctionnel :</strong></p>
+<pre><code>qm agent &lt;vmid-cible&gt; network-get-interfaces
+ping -c2 &lt;adresse-cible&gt;
+curl -s http://&lt;adresse-cible&gt;/&lt;chemin-temoin&gt;</code></pre>
+<p><strong>Attention :</strong> la copie restaurée reprend l’identité
+réseau de l’originale, adresse matérielle comprise. Le contrôle des
+interfaces le confirme. Toute mise en service simultanée exige une
+renumérotation.</p>
+<p><strong>Arrêt d’une ressource gérée en haute disponibilité :</strong>
+la commande d’arrêt directe est arbitrée par le gestionnaire, qui
+relance la machine. L’arrêt effectif passe par le gestionnaire.</p>
+<hr />
+<h2 id="a.10-copie-secondaire">A.10 Copie secondaire</h2>
+<p><em>(à compléter — troisième copie de la stratégie 3-2-1)</em></p>
+<hr />
+<p><em>Documentation publiée depuis le dépôt du projet — version du
+08/10/2026.</em></p>
+</article>
+</main>
+<footer><div class="wrap"><p>Sant&eacute;lia &middot; documentation technique &middot; 08/10/2026</p></div></footer>
+</body>
+</html>

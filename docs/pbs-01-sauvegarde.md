@@ -201,56 +201,9 @@ Cette situation illustre une **fausse sensation de sécurité** : l'infrastructu
 
 ---
 
-## Annexe — Séquence des commandes
+## 7. Journal des commandes
 
-### Sur l'hôte physique
-
-```
-wget --no-check-certificate https://download.proxmox.com/iso/proxmox-backup-server_4.2-1.iso
-sha256sum proxmox-backup-server_4.2-1.iso
-```
-
-Comparer l'empreinte obtenue à celle publiée par l'éditeur.
-
-```
-qm create 320 --name pbs01 --memory 2048 --balloon 0 --cores 2 --cpu host \
-  --scsi0 local-lvm:20,discard=on,iothread=1 \
-  --ide2 local:iso/proxmox-backup-server_4.2-1.iso,media=cdrom \
-  --boot 'order=scsi0;ide2' --net0 virtio,bridge=vmbr0 --agent enabled=1 --onboot 1
-
-qm set 320 --scsi1 local-lvm:40,discard=on,iothread=1
-```
-
-### Protection du stockage
-
-```
-lvmconfig --type current activation/thin_pool_autoextend_threshold
-lvmconfig --type current activation/thin_pool_autoextend_percent
-
-lvs <pool> -o lv_name,lv_size,data_percent,metadata_percent
-vgs
-```
-
-### Sur le serveur de sauvegarde
-
-```
-proxmox-backup-manager datastore list
-proxmox-backup-manager cert info | grep -i fingerprint
-proxmox-backup-manager user list
-proxmox-backup-manager acl list
-```
-
-### Sur le cluster
-
-```
-pvesm status
-pvesm list <stockage-pbs>
-
-vzdump <vmid> --storage <stockage-pbs> --mode snapshot --compress zstd
-qmrestore <stockage-pbs>:backup/vm/<vmid>/<horodatage> <vmid-cible> --storage <stockage-zfs>
-
-qm agent <vmid-cible> network-get-interfaces
-```
+La séquence complète de mise en œuvre, environnement par environnement, est regroupée dans le document **Journal des commandes : sauvegarde**, qui accompagne celui-ci. Il permet de rejouer l'ensemble du montage sans rien deviner, et sert de matière première à l'automatisation de cette brique.
 
 ---
 
