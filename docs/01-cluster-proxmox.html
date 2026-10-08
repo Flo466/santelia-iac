@@ -93,13 +93,6 @@ vacille</td>
 <h2 id="architecture">3. Architecture</h2>
 <p>Un hyperviseur physique héberge <strong>trois nœuds Proxmox VE
 imbriqués</strong>, virtuellement séparés.</p>
-<figure>
-<img src="figures/fig-01-architecture-macro.svg"
-alt="Vue macro de l’infrastructure — le cluster et le serveur de sauvegarde sur un premier châssis, la supervision et la copie secondaire sur un second." />
-<figcaption aria-hidden="true">Vue macro de l’infrastructure — le
-cluster et le serveur de sauvegarde sur un premier châssis, la
-supervision et la copie secondaire sur un second.</figcaption>
-</figure>
 <table>
 <thead>
 <tr>
@@ -513,13 +506,6 @@ C’est précisément ce qu’apporte la solution à <strong>trois
 nœuds</strong> : une majorité atteignable sans dispositif externe. Une
 solution à deux nœuds aurait nécessité un <strong>QDevice</strong>
 supplémentaire pour obtenir la même résilience.</p>
-<figure>
-<img src="figures/fig-02-bloc1-haute-disponibilite.svg"
-alt="Logique de la brique haute disponibilité — quorum à deux votes sur trois, réplication des volumes, et déroulé mesuré de la bascule." />
-<figcaption aria-hidden="true">Logique de la brique haute disponibilité
-— quorum à deux votes sur trois, réplication des volumes, et déroulé
-mesuré de la bascule.</figcaption>
-</figure>
 <h3 id="piège-rencontré-à-documenter">Piège rencontré, à documenter</h3>
 <p>La jonction d’un nœud échoue si le <strong>fichier de résolution
 local</strong> contient encore les informations de la machine d’origine.
