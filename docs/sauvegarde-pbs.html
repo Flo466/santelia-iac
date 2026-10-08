@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Santélia &mdash; Sauvegarde et restauration</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="masthead">
+  <div class="wrap">
+    <p class="eyebrow">Sant&eacute;lia &middot; dossier technique</p>
+    <h1>Sauvegarde et restauration</h1>
+    <p class="lede">Brique 02 &mdash; Proxmox Backup Server. La sauvegarde ne vaut que par la restauration qu'elle permet. Le test porte donc sur une restauration r&eacute;ellement ex&eacute;cut&eacute;e et chronom&eacute;tr&eacute;e.</p>
+    <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 8 octobre 2026</p>
+  </div>
+</header>
+<main class="wrap">
+<a class="back" href="index.html">&larr; Sommaire</a>
+
+<div class="kpis">
+  <div class="kpi"><div class="n">12 s</div><div class="l">sauvegarde mesur&eacute;e</div></div>
+  <div class="kpi"><div class="n">9,27 s</div><div class="l">restauration mesur&eacute;e</div></div>
+  <div class="kpi"><div class="n">82 %</div><div class="l">d&eacute;duplication</div></div>
+  <div class="kpi"><div class="n">8</div><div class="l">points de vigilance</div></div>
+</div>
+
+<blockquote>
+<p><strong>Statut de la brique</strong></p>
+<p>Sauvegarde et restauration <strong>test&eacute;es et conformes</strong>. La strat&eacute;gie 3-2-1 reste <strong>incompl&egrave;te</strong>&nbsp;: la copie secondaire, la politique de r&eacute;tention et le chiffrement de l'entrep&ocirc;t restent &agrave; mettre en place. Ces trois points sont d&eacute;clar&eacute;s comme tels dans le document, plut&ocirc;t que pr&eacute;sent&eacute;s comme termin&eacute;s.</p>
+</blockquote>
+
+<h2 class="sec-title">Document de la brique</h2>
+
+<div class="grid">
+
+  <a class="card card--full" href="pbs-01-sauvegarde.html">
+    <span class="no">02.1 &nbsp;/&nbsp; MISE EN &OElig;UVRE</span>
+    <h3>Sauvegarde et restauration</h3>
+    <p>Le serveur de sauvegarde d&eacute;di&eacute;, la protection du stockage allou&eacute;, le compte de service &agrave; privil&egrave;ges minimaux, la confiance dans le certificat, puis la sauvegarde en mode instantan&eacute; et la restauration vers une machine distincte. Les huit points de vigilance identifi&eacute;s en conditions r&eacute;elles sont document&eacute;s, dont deux rel&egrave;vent de la s&eacute;curit&eacute;.</p>
+    <div class="pills">
+      <span class="pill">Proxmox Backup Server</span>
+      <span class="pill">3-2-1</span>
+      <span class="pill">d&eacute;duplication</span>
+      <span class="pill">restauration</span>
+      <span class="pill">certificat</span>
+      <span class="pill">moindre privil&egrave;ge</span>
+    </div>
+    <div class="foot">
+      <span class="go">Consulter &nbsp;&rarr;</span>
+    </div>
+  </a>
+
+</div>
+
+<h2 class="sec-title">Reste &agrave; mettre en place</h2>
+
+<div class="grid">
+
+  <div class="card">
+    <span class="no">COPIE SECONDAIRE</span>
+    <h3>Troisi&egrave;me copie de la strat&eacute;gie 3-2-1</h3>
+    <p>Un serveur de sauvegarde install&eacute; sur la machine qu'il prot&egrave;ge ne prot&egrave;ge de rien&nbsp;: si l'h&ocirc;te tombe, la donn&eacute;e et sa sauvegarde dispara&icirc;ssent ensemble. La copie secondaire est donc h&eacute;berg&eacute;e sur une machine physique distincte.</p>
+    <div class="foot">
+      <span class="status status--todo">&Agrave; faire</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="no">R&Eacute;TENTION</span>
+    <h3>Job planifi&eacute; et politique de r&eacute;tention</h3>
+    <p>La sauvegarde a &eacute;t&eacute; lanc&eacute;e manuellement pour la recette. Reste &agrave; la planifier et &agrave; d&eacute;finir la profondeur d'historique conserv&eacute;e, sans quoi les sauvegardes s'empilent sans fin.</p>
+    <div class="foot">
+      <span class="status status--todo">&Agrave; faire</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="no">CHIFFREMENT</span>
+    <h3>Protection des sauvegardes au repos</h3>
+    <p>Le chiffrement de l'entrep&ocirc;t prot&egrave;ge les donn&eacute;es stock&eacute;es. Contrepartie &agrave; assumer&nbsp;: la cl&eacute; doit &ecirc;tre conserv&eacute;e hors du serveur, faute de quoi les sauvegardes deviennent d&eacute;finitivement illisibles.</p>
+    <div class="foot">
+      <span class="status status--todo">&Agrave; faire</span>
+    </div>
+  </div>
+
+</div>
+
+<article>
+<h2>Ce que la brique d&eacute;montre</h2>
+<ul>
+  <li>Une sauvegarde <strong>coh&eacute;rente applicative</strong>, obtenue par l'appel &agrave; l'agent invit&eacute; qui g&egrave;le puis lib&egrave;re le syst&egrave;me de fichiers avant et apr&egrave;s la capture. Sans lui, la sauvegarde resterait utilisable mais serait comparable &agrave; un arr&ecirc;t brutal.</li>
+  <li>Une <strong>restauration r&eacute;ellement ex&eacute;cut&eacute;e</strong>, vers une machine distincte de l'originale, et une machine qui red&eacute;marre et rend son service.</li>
+  <li>Une <strong>d&eacute;duplication efficace</strong>, avec plus de quatre cinqui&egrave;mes des donn&eacute;es r&eacute;utilis&eacute;es d&egrave;s la premi&egrave;re passe.</li>
+  <li>Un <strong>compte de service &agrave; privil&egrave;ges minimaux</strong> et une connexion authentifi&eacute;e par l'empreinte du certificat du serveur.</li>
+  <li><strong>Huit points de vigilance</strong> identifi&eacute;s en conditions r&eacute;elles, dont une adresse IPv6 globale expos&eacute;e hors du m&eacute;canisme de traduction d'adresses.</li>
+</ul>
+
+<h2>Une distinction qu'il faut garder en t&ecirc;te</h2>
+<p>La r&eacute;plication entre n&oelig;uds, d&eacute;j&agrave; en place, apporte de la <strong>disponibilit&eacute;</strong>. Elle ne prot&egrave;ge pas de la perte de donn&eacute;es, car elle r&eacute;plique aussi les erreurs&nbsp;: une suppression ou une corruption se propage d'un n&oelig;ud &agrave; l'autre.</p>
+<p>La sauvegarde r&eacute;pond &agrave; un besoin diff&eacute;rent, celui de <strong>revenir &agrave; un &eacute;tat ant&eacute;rieur connu</strong>. Les deux m&eacute;canismes sont compl&eacute;mentaires et ne se substituent pas l'un &agrave; l'autre.</p>
+</article>
+
+</main>
+<footer><div class="wrap"><p>Sant&eacute;lia &middot; documentation technique &middot; 8 octobre 2026</p></div></footer>
+</body>
+</html>
