@@ -17,6 +17,8 @@ Un point de vocabulaire à poser d'emblée, parce qu'il prête à confusion : ce
 
 ## 2. Architecture retenue
 
+![Vue macro de l'infrastructure — le cluster et le serveur de sauvegarde sur un premier châssis, la supervision et la copie secondaire sur un second.](figures/fig-01-architecture-macro.svg)
+
 ### 2.1 Le principe 3-2-1
 
 | Copie | Emplacement | Support | Rôle |
@@ -26,6 +28,8 @@ Un point de vocabulaire à poser d'emblée, parce qu'il prête à confusion : ce
 | **3** | **Copie secondaire** | Machine physique distincte | Copie hors du premier support |
 
 Le point qui fait la différence : un serveur de sauvegarde installé sur la machine qu'il protège ne protège de rien. Si l'hôte tombe, la donnée et sa sauvegarde disparaissent ensemble. C'est ce qui justifie la troisième copie sur une machine distincte.
+
+![Stratégie 3-2-1 — les trois copies, leur support, et les mesures relevées sur la sauvegarde et la restauration.](figures/fig-03-bloc2-sauvegarde.svg)
 
 ### 2.2 Sauvegarde et réplication : deux besoins distincts
 

@@ -34,6 +34,8 @@ Cette brique répond à l'exigence n° 1 du cahier des charges, classée **Must*
 
 Un hyperviseur physique héberge **trois nœuds Proxmox VE imbriqués**, virtuellement séparés.
 
+![Vue macro de l'infrastructure — le cluster et le serveur de sauvegarde sur un premier châssis, la supervision et la copie secondaire sur un second.](figures/fig-01-architecture-macro.svg)
+
 | Nœud | Rôle | vCPU | RAM | Disque |
 | --- | --- | --- | --- | --- |
 | `pve-a` | Nœud principal | 2 | 4 Gio | 24 Gio |
@@ -208,6 +210,8 @@ Le cluster a été créé et assemblé le **05/10/2026**. Il est **quorate** ave
 ### Bénéfice du quorum à deux sur trois
 
 La perte d'un nœud laisse le cluster **opérationnel**. C'est précisément ce qu'apporte la solution à **trois nœuds** : une majorité atteignable sans dispositif externe. Une solution à deux nœuds aurait nécessité un **QDevice** supplémentaire pour obtenir la même résilience.
+
+![Logique de la brique haute disponibilité — quorum à deux votes sur trois, réplication des volumes, et déroulé mesuré de la bascule.](figures/fig-02-bloc1-haute-disponibilite.svg)
 
 ### Piège rencontré, à documenter
 

@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1300" height="700" viewBox="0 0 1300 700">
+<rect width="1300" height="700" fill="#ffffff"/>
+<text x="40" y="50" font-size="20" fill="#14180f" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="bold" text-anchor="start">Brique 02 — sauvegarde, stratégie 3-2-1</text>
+<text x="40" y="76" font-size="12" fill="#4d5648" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="normal" text-anchor="start">Trois copies, deux supports distincts, une hors du premier support. Le test porte sur la restauration.</text>
+<rect x="40" y="110" width="370" height="240" rx="8" fill="#f1f7ed" stroke="#2f6b45" stroke-width="1.5"/>
+<text x="64" y="140" font-size="13" fill="#1c3c26" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="bold" text-anchor="start">Copie 1 — donnée vivante</text>
+<rect x="70" y="160" width="310" height="90" rx="8" fill="#eaf3e4" stroke="#b7d0a6" stroke-width="1.5"/>
+<text x="225.0" y="185" font-size="11" fill="#14180f" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="bold" text-anchor="middle">Volumes du cluster</text>
+<text x="225.0" y="200" font-size="11" fill="#14180f" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="bold" text-anchor="middle"></text>
+<text x="225.0" y="215" font-size="11" fill="#14180f" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="bold" text-anchor="middle">Disques de l'hôte</text>
+<text x="225.0" y="230" font-size="11" fill="#14180f" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="bold" text-anchor="middle">protégés par réplication</text>
+<text x="70" y="278" font-size="11" fill="#4d5648" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="normal" text-anchor="start">Ne protège pas de la perte de données :</text>
+<text x="70" y="298" font-size="11" fill="#4d5648" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="normal" text-anchor="start">la réplication propage aussi les erreurs.</text>
+<rect x="430" y="110" width="370" height="240" rx="8" fill="#f1f7ed" stroke="#2f6b45" stroke-width="1.5"/>
+<text x="454" y="140" font-size="13" fill="#1c3c26" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="bold" text-anchor="start">Copie 2 — sauvegarde primaire</text>
+<rect x="460" y="160" width="310" height="90" rx="8" fill="#eaf3e4" stroke="#b7d0a6" stroke-width="1.5"/>
+<text x="615.0" y="185" font-size="11" fill="#14180f" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="bold" text-anchor="middle">PBS01</text>
+<text x="615.0" y="200" font-size="11" fill="#14180f" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="bold" text-anchor="middle"></text>
+<text x="615.0" y="215" font-size="11" fill="#14180f" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="bold" text-anchor="middle">Entrepôt dédupliqué</text>
+<text x="615.0" y="230" font-size="11" fill="#14180f" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="bold" text-anchor="middle">sur le serveur physique</text>
+<text x="460" y="278" font-size="11" fill="#4d5648" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="normal" text-anchor="start">Sauvegarde instantanée, sans</text>
+<text x="460" y="298" font-size="11" fill="#4d5648" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="normal" text-anchor="start">interruption de service.</text>
+<rect x="820" y="110" width="400" height="240" rx="8" fill="#f1f7ed" stroke="#b7d0a6" stroke-width="1.5" stroke-dasharray="6 4"/>
+<text x="844" y="140" font-size="13" fill="#1c3c26" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="bold" text-anchor="start">Copie 3 — hors du premier support</text>
+<rect x="850" y="160" width="340" height="90" rx="8" fill="#f4f9f0" stroke="#b7d0a6" stroke-width="1.5" stroke-dasharray="6 4"/>
+<text x="1020.0" y="193" font-size="11" fill="#14180f" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="bold" text-anchor="middle">PBS02</text>
+<text x="1020.0" y="208" font-size="11" fill="#14180f" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="bold" text-anchor="middle"></text>
+<text x="1020.0" y="223" font-size="11" fill="#14180f" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="bold" text-anchor="middle">sur une machine physique distincte</text>
+<text x="850" y="278" font-size="11" fill="#4d5648" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="normal" text-anchor="start">À mettre en place.</text>
+<text x="850" y="298" font-size="11" fill="#4d5648" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="normal" text-anchor="start">C'est elle qui donne son sens au 3-2-1.</text>
+<line x1="410" y1="200" x2="430" y2="200" stroke="#2f6b45" stroke-width="1.5"/>
+<text x="420" y="192" font-size="10" fill="#1c3c26" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="normal" text-anchor="middle">sauvegarde</text>
+<line x1="800" y1="200" x2="820" y2="200" stroke="#2f6b45" stroke-width="1.5" stroke-dasharray="6 4"/>
+<text x="810" y="192" font-size="10" fill="#1c3c26" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="normal" text-anchor="middle">sync</text>
+<rect x="40" y="390" width="560" height="260" rx="8" fill="#f1f7ed" stroke="#2f6b45" stroke-width="1.5"/>
+<text x="64" y="420" font-size="14" fill="#14180f" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="bold" text-anchor="start">Mesures relevées</text>
+<rect x="70" y="440" width="500" height="30" rx="6" fill="#eaf3e4" stroke="#b7d0a6" stroke-width="1.5"/>
+<text x="84" y="460" font-size="11.5" fill="#14180f" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="normal" text-anchor="start">Sauvegarde — 12 secondes, 8 Gio traités</text>
+<rect x="70" y="478" width="500" height="30" rx="6" fill="#eaf3e4" stroke="#b7d0a6" stroke-width="1.5"/>
+<text x="84" y="498" font-size="11.5" fill="#14180f" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="normal" text-anchor="start">Déduplication — 82 % de données réutilisées</text>
+<rect x="70" y="516" width="500" height="30" rx="6" fill="#eaf3e4" stroke="#b7d0a6" stroke-width="1.5"/>
+<text x="84" y="536" font-size="11.5" fill="#14180f" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="normal" text-anchor="start">Restauration — 9,27 secondes à 884 Mo/s</text>
+<rect x="70" y="554" width="500" height="30" rx="6" fill="#e3efdb" stroke="#2f6b45" stroke-width="1.5"/>
+<text x="84" y="574" font-size="11.5" fill="#14180f" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="normal" text-anchor="start">Cohérence applicative — agent invité sollicité</text>
+<rect x="70" y="592" width="500" height="30" rx="6" fill="#eaf3e4" stroke="#b7d0a6" stroke-width="1.5"/>
+<text x="84" y="612" font-size="11.5" fill="#14180f" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="normal" text-anchor="start">Huit points de vigilance identifiés</text>
+<text x="640" y="420" font-size="12" fill="#14180f" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="bold" text-anchor="start">Ce que la sauvegarde apporte,</text>
+<text x="640" y="442" font-size="12" fill="#14180f" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="bold" text-anchor="start">et que la réplication n'apporte pas</text>
+<text x="640" y="470" font-size="11.5" fill="#4d5648" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="normal" text-anchor="start">Revenir à un état antérieur connu.</text>
+<text x="640" y="494" font-size="11.5" fill="#4d5648" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="normal" text-anchor="start">La réplication traite la panne d'un nœud,</text>
+<text x="640" y="514" font-size="11.5" fill="#4d5648" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="normal" text-anchor="start">la sauvegarde traite la perte de données.</text>
+<text x="640" y="534" font-size="11.5" fill="#4d5648" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="normal" text-anchor="start">Les deux mécanismes sont complémentaires</text>
+<text x="640" y="554" font-size="11.5" fill="#4d5648" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif" font-weight="normal" text-anchor="start">et ne se substituent pas l'un à l'autre.</text>
+</svg>

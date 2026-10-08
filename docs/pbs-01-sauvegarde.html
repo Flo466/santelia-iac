@@ -36,6 +36,13 @@ redémarrer ailleurs. La sauvegarde répond à une question différente :
 comment revenir à un état antérieur connu.</p>
 <hr />
 <h2 id="architecture-retenue">2. Architecture retenue</h2>
+<figure>
+<img src="figures/fig-01-architecture-macro.svg"
+alt="Vue macro de l’infrastructure — le cluster et le serveur de sauvegarde sur un premier châssis, la supervision et la copie secondaire sur un second." />
+<figcaption aria-hidden="true">Vue macro de l’infrastructure — le
+cluster et le serveur de sauvegarde sur un premier châssis, la
+supervision et la copie secondaire sur un second.</figcaption>
+</figure>
 <h3 id="le-principe-3-2-1">2.1 Le principe 3-2-1</h3>
 <table>
 <colgroup>
@@ -77,6 +84,13 @@ comment revenir à un état antérieur connu.</p>
 sur la machine qu’il protège ne protège de rien. Si l’hôte tombe, la
 donnée et sa sauvegarde disparaissent ensemble. C’est ce qui justifie la
 troisième copie sur une machine distincte.</p>
+<figure>
+<img src="figures/fig-03-bloc2-sauvegarde.svg"
+alt="Stratégie 3-2-1 — les trois copies, leur support, et les mesures relevées sur la sauvegarde et la restauration." />
+<figcaption aria-hidden="true">Stratégie 3-2-1 — les trois copies, leur
+support, et les mesures relevées sur la sauvegarde et la
+restauration.</figcaption>
+</figure>
 <h3 id="sauvegarde-et-réplication-deux-besoins-distincts">2.2 Sauvegarde
 et réplication : deux besoins distincts</h3>
 <p>La réplication entre nœuds apporte de la
