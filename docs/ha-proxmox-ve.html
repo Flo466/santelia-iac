@@ -114,6 +114,28 @@
   <li>Des &eacute;carts assum&eacute;s et &eacute;crits&nbsp;: sans eux, la recette ne r&eacute;siste pas &agrave; une question un peu pr&eacute;cise.</li>
 </ul>
 
+<h2>La brique en images</h2>
+
+<figure>
+  <img src="figures/fig-04-datacenter-resume.png" alt="Vue d'ensemble du centre de donn&eacute;es&nbsp;: les trois n&oelig;uds du cluster et l'&eacute;tat de sant&eacute; du quorum">
+  <figcaption>Les trois n&oelig;uds du cluster vus depuis le centre de donn&eacute;es, avec l'&eacute;tat de sant&eacute; du quorum.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig-05-datacenter-ha.png" alt="Groupe de haute disponibilit&eacute;&nbsp;: la machine virtuelle critique, son n&oelig;ud d'accueil et l'&eacute;tat de la ressource">
+  <figcaption>Le groupe de haute disponibilit&eacute;&nbsp;: la machine critique rattach&eacute;e &agrave; son groupe, le n&oelig;ud qui l'h&eacute;berge, et le quorum maintenu.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig-06-datacenter-replication.png" alt="T&acirc;che de r&eacute;plication&nbsp;: le volume de la machine critique r&eacute;pliqu&eacute; vers un second n&oelig;ud toutes les quinze minutes">
+  <figcaption>La r&eacute;plication des volumes vers un second n&oelig;ud, &agrave; quinze minutes d'intervalle. Elle apporte de la disponibilit&eacute;, pas une protection contre la perte de donn&eacute;es.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig-07-vue-pools-noeuds.png" alt="Les n&oelig;uds du cluster vus comme machines virtuelles depuis l'h&ocirc;te qui les porte">
+  <figcaption>Les trois n&oelig;uds vus depuis l'h&ocirc;te qui les porte. C'est l'&eacute;cart assum&eacute; de la maquette&nbsp;: les n&oelig;uds sont virtuels et partagent une seule machine physique.</figcaption>
+</figure>
+
 <h2>Limite de la maquette</h2>
 <p>Les trois n&oelig;uds sont h&eacute;berg&eacute;s sur une seule machine physique. La maquette d&eacute;montre donc le <strong>m&eacute;canisme</strong> de quorum, de r&eacute;plication et de bascule, mais pas la r&eacute;sistance &agrave; la panne de l'h&ocirc;te lui-m&ecirc;me. Cet &eacute;cart est d&eacute;clar&eacute; explicitement dans le document d'architecture, parce qu'une recette doit rester d&eacute;fendable.</p>
 </article>

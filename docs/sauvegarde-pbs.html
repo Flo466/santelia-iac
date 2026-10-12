@@ -129,6 +129,45 @@
   <li><strong>Huit points de vigilance</strong> identifi&eacute;s en conditions r&eacute;elles, dont une adresse IPv6 globale expos&eacute;e hors du m&eacute;canisme de traduction d'adresses.</li>
 </ul>
 
+<h2>Le serveur primaire en images</h2>
+
+<figure>
+  <img src="figures/fig-08-pbs01-dashboard.png" alt="Tableau de bord du serveur de sauvegarde primaire&nbsp;: usage mat&eacute;riel et activit&eacute; r&eacute;cente">
+  <figcaption>Le serveur de sauvegarde primaire&nbsp;: usage mat&eacute;riel, activit&eacute; r&eacute;cente et version en service.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig-09-pbs01-content.png" alt="Contenu de l'entrep&ocirc;t primaire&nbsp;: les points de restauration de la machine critique, avec leur horodatage">
+  <figcaption>Le contenu de l'entrep&ocirc;t primaire&nbsp;: les points de restauration de la machine critique et leur horodatage.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig-10-pbs01-access-control.png" alt="Comptes et r&ocirc;les d&eacute;clar&eacute;s sur le serveur primaire">
+  <figcaption>Les comptes d&eacute;clar&eacute;s sur le serveur primaire et le r&ocirc;le attach&eacute; &agrave; chacun. Aucun ne dispose d'un droit d'administration.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig-11-pbs01-summary.png" alt="R&eacute;sum&eacute; de l'entrep&ocirc;t primaire&nbsp;: occupation et statistiques d'utilisation">
+  <figcaption>Le r&eacute;sum&eacute; de l'entrep&ocirc;t primaire&nbsp;: occupation r&eacute;elle et statistiques d'utilisation.</figcaption>
+</figure>
+
+<h2>La copie secondaire en images</h2>
+
+<figure>
+  <img src="figures/fig-12-pbs02-tableau-de-bord.png" alt="Tableau de bord du serveur de sauvegarde secondaire, h&eacute;berg&eacute; sur une machine physique distincte">
+  <figcaption>Le serveur secondaire, sur une machine physique distincte. C'est la vue qui atteste que la troisi&egrave;me copie ne vit pas sur le m&ecirc;me h&ocirc;te que les deux premi&egrave;res.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig-13-pbs02-entrepot-copie.png" alt="Contenu de l'entrep&ocirc;t de la copie&nbsp;: l'archive re&ccedil;ue du serveur primaire">
+  <figcaption>Le contenu de l'entrep&ocirc;t de la copie&nbsp;: l'archive re&ccedil;ue du serveur primaire, distincte de son entrep&ocirc;t d'origine.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig-14-pbs02-taches-synchro.png" alt="T&acirc;che de synchronisation&nbsp;: la copie est tir&eacute;e par le serveur secondaire, sans droit d'&eacute;criture chez la source">
+  <figcaption>La t&acirc;che de synchronisation. Elle est tir&eacute;e par le serveur secondaire, qui ne d&eacute;tient aucun droit d'&eacute;criture sur le serveur primaire.</figcaption>
+</figure>
+
 <h2>Une distinction qu'il faut garder en t&ecirc;te</h2>
 <p>La r&eacute;plication entre n&oelig;uds, d&eacute;j&agrave; en place, apporte de la <strong>disponibilit&eacute;</strong>. Elle ne prot&egrave;ge pas de la perte de donn&eacute;es, car elle r&eacute;plique aussi les erreurs&nbsp;: une suppression ou une corruption se propage d'un n&oelig;ud &agrave; l'autre.</p>
 <p>La sauvegarde r&eacute;pond &agrave; un besoin diff&eacute;rent, celui de <strong>revenir &agrave; un &eacute;tat ant&eacute;rieur connu</strong>. Les deux m&eacute;canismes sont compl&eacute;mentaires et ne se substituent pas l'un &agrave; l'autre.</p>
