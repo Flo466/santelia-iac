@@ -11,8 +11,8 @@
   <div class="wrap">
     <p class="eyebrow">Sant&eacute;lia &middot; brique 2 sur 4 &middot; sauvegarde</p>
     <h1>Sauvegarde et restauration des donn&eacute;es</h1>
-    <p class="lede">Serveur de sauvegarde d&eacute;di&eacute;, entrep&ocirc;t d&eacute;dupliqu&eacute; et restauration r&eacute;ellement ex&eacute;cut&eacute;e. La strat&eacute;gie 3-2-1 est pos&eacute;e&nbsp;; la copie secondaire, la r&eacute;tention et le chiffrement restent &agrave; mettre en place, et sont annonc&eacute;s comme tels.</p>
-    <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 8 octobre 2026</p>
+    <p class="lede">Serveur de sauvegarde d&eacute;di&eacute;, entrep&ocirc;t d&eacute;dupliqu&eacute; et restauration r&eacute;ellement ex&eacute;cut&eacute;e. La strat&eacute;gie 3-2-1 est compl&egrave;te&nbsp;: trois copies, deux supports, une hors du support primaire. Seul le chiffrement de l'entrep&ocirc;t reste &agrave; mettre en place.</p>
+    <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 12 octobre 2026</p>
   </div>
 </header>
 <main class="wrap">
@@ -26,6 +26,10 @@
   <div class="sep">
     <div class="lab">Restauration mesur&eacute;e</div>
     <div class="val">9,27 s</div>
+  </div>
+  <div class="sep">
+    <div class="lab">Copie secondaire</div>
+    <div class="val">En place</div>
   </div>
 </div>
 
@@ -46,10 +50,11 @@
   <a class="card" href="pbs-01-sauvegarde.html">
     <span class="no">02.1 &nbsp;/&nbsp; MISE EN &OElig;UVRE</span>
     <h3>Sauvegarde et restauration</h3>
-    <p>Le serveur de sauvegarde d&eacute;di&eacute;, la protection du stockage allou&eacute;, le compte de service &agrave; privil&egrave;ges minimaux, la confiance dans le certificat, puis la sauvegarde en mode instantan&eacute; et la restauration vers une machine distincte. Les huit points de vigilance identifi&eacute;s en conditions r&eacute;elles sont document&eacute;s, dont deux rel&egrave;vent de la s&eacute;curit&eacute;.</p>
+    <p>Deux serveurs de sauvegarde sur deux machines physiques distinctes. La protection du stockage allou&eacute;, les comptes de service &agrave; privil&egrave;ges minimaux, la confiance dans le certificat, la sauvegarde en mode instantan&eacute;, la restauration vers une machine distincte, puis la copie secondaire qui se resynchronise toutes les demi-heures. Les huit points de vigilance identifi&eacute;s en conditions r&eacute;elles sont document&eacute;s, dont deux rel&egrave;vent de la s&eacute;curit&eacute;.</p>
     <div class="pills">
       <span class="pill">Proxmox Backup Server</span>
       <span class="pill">3-2-1</span>
+      <span class="pill">copie secondaire</span>
       <span class="pill">d&eacute;duplication</span>
       <span class="pill">restauration</span>
       <span class="pill">certificat</span>
@@ -64,12 +69,13 @@
   <a class="card" href="pbs-02-journal-commandes.html">
     <span class="no">02.2 &nbsp;/&nbsp; EXPLOITATION</span>
     <h3>Journal des commandes&nbsp;: sauvegarde</h3>
-    <p>La s&eacute;quence compl&egrave;te de mise en &oelig;uvre, environnement par environnement, telle qu'elle a &eacute;t&eacute; jou&eacute;e. L'ordre des op&eacute;rations y est d&eacute;terminant&nbsp;: d&eacute;clarer le stockage au bon niveau, contr&ocirc;ler l'empreinte du certificat, et v&eacute;rifier que la sauvegarde reste coh&eacute;rente applicative gr&acirc;ce &agrave; l'agent invit&eacute;.</p>
+    <p>La s&eacute;quence compl&egrave;te de mise en &oelig;uvre, environnement par environnement, telle qu'elle a &eacute;t&eacute; jou&eacute;e. L'ordre des op&eacute;rations y est d&eacute;terminant&nbsp;: d&eacute;clarer le stockage au bon niveau, contr&ocirc;ler l'empreinte du certificat, et v&eacute;rifier que la sauvegarde reste coh&eacute;rente applicative gr&acirc;ce &agrave; l'agent invit&eacute;. Le raccordement des deux serveurs, la d&eacute;claration de l'empreinte et la t&acirc;che de synchronisation y figurent, relev&eacute;s &agrave; l'appui.</p>
     <div class="pills">
       <span class="pill">proc&eacute;dure</span>
       <span class="pill">rejeu</span>
       <span class="pill">vzdump</span>
       <span class="pill">qmrestore</span>
+      <span class="pill">synchronisation</span>
     </div>
     <div class="foot">
       <span class="go">Consulter &nbsp;&rarr;</span>
@@ -83,27 +89,27 @@
 <div class="grid">
 
   <div class="card">
-    <span class="no">COPIE SECONDAIRE</span>
-    <h3>Troisi&egrave;me copie de la strat&eacute;gie 3-2-1</h3>
-    <p>Un serveur de sauvegarde install&eacute; sur la machine qu'il prot&egrave;ge ne prot&egrave;ge de rien&nbsp;: si l'h&ocirc;te tombe, la donn&eacute;e et sa sauvegarde dispara&icirc;ssent ensemble. La copie secondaire est donc h&eacute;berg&eacute;e sur une machine physique distincte.</p>
-    <div class="foot">
-      <span class="status status--todo">&Agrave; faire</span>
-    </div>
-  </div>
-
-  <div class="card">
-    <span class="no">R&Eacute;TENTION</span>
-    <h3>Job planifi&eacute; et politique de r&eacute;tention</h3>
-    <p>La sauvegarde a &eacute;t&eacute; lanc&eacute;e manuellement pour la recette. Reste &agrave; la planifier et &agrave; d&eacute;finir la profondeur d'historique conserv&eacute;e, sans quoi les sauvegardes s'empilent sans fin.</p>
-    <div class="foot">
-      <span class="status status--todo">&Agrave; faire</span>
-    </div>
-  </div>
-
-  <div class="card">
     <span class="no">CHIFFREMENT</span>
     <h3>Protection des sauvegardes au repos</h3>
     <p>Le chiffrement de l'entrep&ocirc;t prot&egrave;ge les donn&eacute;es stock&eacute;es. Contrepartie &agrave; assumer&nbsp;: la cl&eacute; doit &ecirc;tre conserv&eacute;e hors du serveur, faute de quoi les sauvegardes deviennent d&eacute;finitivement illisibles.</p>
+    <div class="foot">
+      <span class="status status--todo">&Agrave; faire</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="no">STOCKAGE D&Eacute;DI&Eacute;</span>
+    <h3>Isoler la copie secondaire</h3>
+    <p>La copie secondaire cohabite aujourd'hui avec un d&eacute;p&ocirc;t de sauvegarde de fichiers sur le m&ecirc;me volume&nbsp;: la perte de ce volume les emporterait tous les deux. Un stockage distinct met la copie hors de port&eacute;e de cet incident.</p>
+    <div class="foot">
+      <span class="status status--todo">&Agrave; faire</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="no">P&Eacute;RIM&Egrave;TRE</span>
+    <h3>&Eacute;largir la sauvegarde</h3>
+    <p>La sauvegarde couvre la machine critique produite par la brique pr&eacute;c&eacute;dente. L'&eacute;tendre aux autres machines de l'infrastructure reste &agrave; faire, avec la m&ecirc;me cha&icirc;ne de copie.</p>
     <div class="foot">
       <span class="status status--todo">&Agrave; faire</span>
     </div>
@@ -116,8 +122,10 @@
 <ul>
   <li>Une sauvegarde <strong>coh&eacute;rente applicative</strong>, obtenue par l'appel &agrave; l'agent invit&eacute; qui g&egrave;le puis lib&egrave;re le syst&egrave;me de fichiers avant et apr&egrave;s la capture. Sans lui, la sauvegarde resterait utilisable mais serait comparable &agrave; un arr&ecirc;t brutal.</li>
   <li>Une <strong>restauration r&eacute;ellement ex&eacute;cut&eacute;e</strong>, vers une machine distincte de l'originale, et une machine qui red&eacute;marre et rend son service.</li>
-  <li>Une <strong>d&eacute;duplication efficace</strong>, avec plus de quatre cinqui&egrave;mes des donn&eacute;es r&eacute;utilis&eacute;es d&egrave;s la premi&egrave;re passe.</li>
+  <li>Une <strong>d&eacute;duplication efficace</strong>, avec plus de quatre cinqui&egrave;mes des donn&eacute;es r&eacute;utilis&eacute;es d&egrave;s la premi&egrave;re passe, et 98&nbsp;% &agrave; la seconde.</li>
   <li>Un <strong>compte de service &agrave; privil&egrave;ges minimaux</strong> et une connexion authentifi&eacute;e par l'empreinte du certificat du serveur.</li>
+  <li>Une <strong>copie secondaire sur une machine physique distincte</strong>, qui tire ses donn&eacute;es du serveur primaire sans d&eacute;tenir le moindre droit d'&eacute;criture chez lui, et ne retransf&egrave;re que ce qu'elle ne poss&egrave;de pas d&eacute;j&agrave;.</li>
+  <li>Une <strong>fen&ecirc;tre de perte ma&icirc;tris&eacute;e</strong>, calcul&eacute;e sur le maillon le plus lent de la cha&icirc;ne et non sur la fr&eacute;quence de la copie.</li>
   <li><strong>Huit points de vigilance</strong> identifi&eacute;s en conditions r&eacute;elles, dont une adresse IPv6 globale expos&eacute;e hors du m&eacute;canisme de traduction d'adresses.</li>
 </ul>
 
@@ -126,6 +134,6 @@
 <p>La sauvegarde r&eacute;pond &agrave; un besoin diff&eacute;rent, celui de <strong>revenir &agrave; un &eacute;tat ant&eacute;rieur connu</strong>. Les deux m&eacute;canismes sont compl&eacute;mentaires et ne se substituent pas l'un &agrave; l'autre.</p>
 </article>
 </main>
-<footer><div class="wrap"><p>Sant&eacute;lia &middot; documentation technique &middot; 8 octobre 2026</p></div></footer>
+<footer><div class="wrap"><p>Sant&eacute;lia &middot; documentation technique &middot; 12 octobre 2026</p></div></footer>
 </body>
 </html>

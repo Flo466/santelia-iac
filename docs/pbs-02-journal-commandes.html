@@ -19,14 +19,18 @@
 <article>
 <blockquote>
 <p>Brique 02 — séquence complète de mise en œuvre, par environnement
-d’exécution. Mise à jour : 08/10/2026</p>
+d’exécution. Mise à jour : 12/10/2026</p>
 </blockquote>
 <hr />
-<h2 id="préambule-trois-environnements-trois-périmètres">Préambule —
-Trois environnements, trois périmètres</h2>
-<p>Les commandes ne s’exécutent pas au même endroit, et confondre les
-deux premiers est la principale source d’erreur sur ce montage.</p>
+<h2 id="préambule-cinq-environnements-cinq-périmètres">Préambule — Cinq
+environnements, cinq périmètres</h2>
+<p>Les commandes ne s’exécutent pas au même endroit, et les confondre
+est la principale source d’erreur sur ce montage.</p>
 <table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
 <thead>
 <tr>
 <th>Environnement</th>
@@ -35,22 +39,39 @@ deux premiers est la principale source d’erreur sur ce montage.</p>
 </thead>
 <tbody>
 <tr>
+<td><strong>Poste de travail</strong></td>
+<td>Mesures, accès client, tunnels</td>
+</tr>
+<tr>
 <td><strong>Hôte physique</strong></td>
-<td>Porte le cluster et la machine de sauvegarde</td>
+<td>Porte le cluster et le serveur de sauvegarde primaire</td>
 </tr>
 <tr>
 <td><strong>Cluster</strong></td>
 <td>Héberge les machines applicatives à sauvegarder</td>
 </tr>
 <tr>
-<td><strong>Serveur de sauvegarde</strong></td>
+<td><strong>Serveur de sauvegarde primaire</strong></td>
 <td>Stocke les sauvegardes</td>
+</tr>
+<tr>
+<td><strong>Serveur de sauvegarde secondaire</strong></td>
+<td>Porte la copie, hors du support primaire</td>
 </tr>
 </tbody>
 </table>
-<p>Un stockage déclaré sur l’hôte n’est <strong>pas</strong> visible
-depuis le cluster, et inversement. C’est ce qui a provoqué l’échec de la
-première sauvegarde, traitée au point de vigilance n° 3.</p>
+<p>Deux conséquences pratiques en découlent, et elles ont chacune
+provoqué une erreur en séance.</p>
+<p><strong>Un stockage déclaré sur l’hôte n’est pas visible depuis le
+cluster</strong>, et inversement. C’est ce qui a fait échouer la
+première sauvegarde, traité au point de vigilance n° 3 du document de
+synthèse.</p>
+<p><strong>La commande d’administration du serveur de sauvegarde n’est
+pas dans le chemin d’exécution d’un utilisateur ordinaire.</strong> Elle
+réside dans le répertoire des commandes réservées aux comptes
+privilégiés. Sans élévation, le shell répond simplement que la commande
+est introuvable. Toutes les commandes de cette famille se lancent donc
+avec élévation.</p>
 <hr />
 <h2 id="a.1-récupération-de-limage-dinstallation-sur-lhôte">A.1
 Récupération de l’image d’installation — sur l’hôte</h2>
@@ -197,11 +218,477 @@ renumérotation.</p>
 la commande d’arrêt directe est arbitrée par le gestionnaire, qui
 relance la machine. L’arrêt effectif passe par le gestionnaire.</p>
 <hr />
-<h2 id="a.10-copie-secondaire">A.10 Copie secondaire</h2>
-<p><em>(à compléter — troisième copie de la stratégie 3-2-1)</em></p>
+<h2
+id="a.10-installation-du-serveur-de-sauvegarde-secondaire-sur-une-machine-physique-distincte">A.10
+Installation du serveur de sauvegarde secondaire — sur une machine
+physique distincte</h2>
+<p>Le second serveur est le point qui rend la stratégie 3-2-1 réelle.
+Tant qu’il n’existe qu’un seul serveur de sauvegarde, et qu’il vit sur
+la machine qu’il protège, la sauvegarde disparaît avec la donnée.</p>
+<p><strong>Installation en paquet natif</strong>, sans hyperviseur : la
+machine est dédiée, elle n’a pas à héberger d’autres charges.</p>
+<pre><code>apt update
+apt install proxmox-backup-server</code></pre>
+<p><strong>Choix demandé pendant l’installation.</strong> L’agent de
+messagerie intégré demande son type de configuration. Retenir «
+<strong>système local uniquement</strong> ».</p>
+<table>
+<thead>
+<tr>
+<th>Élément</th>
+<th>Valeur retenue</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Type de configuration de messagerie</td>
+<td>Système local uniquement</td>
+</tr>
+<tr>
+<td>Nom de messagerie système</td>
+<td><code>&lt;nom-complet-de-la-machine&gt;.local</code></td>
+</tr>
+</tbody>
+</table>
+<p>Le serveur n’a aucun besoin d’émettre du courrier vers l’extérieur :
+il n’en produit que pour ses propres notifications, qui restent
+consultables localement. Choisir une configuration ouverte au réseau
+aurait conduit l’agent à tenter des remises vers des serveurs distants,
+à se faire refuser, et à remplir le journal d’erreurs sans aucun
+bénéfice.</p>
+<p><strong>Contrôles après installation :</strong></p>
+<pre><code>systemctl status proxmox-backup-proxy --no-pager | head -5
+ss -tlnp | grep 8007
+ip -br addr</code></pre>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Contrôle</th>
+<th>Valeur attendue</th>
+<th>Objet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Service</td>
+<td>actif</td>
+<td>L’interface répond</td>
+</tr>
+<tr>
+<td>Port <strong>8007</strong></td>
+<td>en écoute</td>
+<td>L’interface est joignable</td>
+</tr>
+<tr>
+<td>Adresse principale</td>
+<td><strong>inchangée</strong></td>
+<td>La configuration réseau n’a pas été altérée</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Le troisième contrôle est le plus important des
+trois.</strong> L’installation installe un nouveau jeu d’outils réseau,
+susceptible de reprendre la gestion des interfaces et de casser la
+configuration existante. C’est le risque identifié au point de vigilance
+n° 5 du document de synthèse. L’adresse inchangée confirme que la
+protection appliquée a tenu, et que la machine reste joignable.</p>
+<hr />
+<h2 id="a.11-entrepôt-de-la-copie-sur-le-serveur-secondaire">A.11
+Entrepôt de la copie — sur le serveur secondaire</h2>
+<p>L’entrepôt de la copie est posé dans un sous-répertoire, jamais à la
+racine : il cohabite sur le même volume avec un dépôt de sauvegarde de
+fichiers déjà en exploitation, et les deux ne doivent pas se
+mélanger.</p>
+<p><strong>Préparation du répertoire :</strong></p>
+<pre><code>id backup
+sudo mkdir -p /mnt/backup/pbs-datastore
+sudo chown backup:backup /mnt/backup/pbs-datastore
+sudo chmod 0750 /mnt/backup/pbs-datastore
+ls -ld /mnt/backup/pbs-datastore</code></pre>
+<p>Relevé :</p>
+<pre><code>drwxr-x--- 2 backup backup 4096  /mnt/backup/pbs-datastore</code></pre>
+<p><strong>Lecture :</strong> le propriétaire est le compte de service
+créé par l’installation, et les droits sont restreints au propriétaire.
+Ces deux points sont <strong>obligatoires</strong> : un entrepôt qui
+n’appartient pas au compte de service est refusé à la création.</p>
+<p><strong>Création de l’entrepôt :</strong></p>
+<pre><code>sudo proxmox-backup-manager datastore create &lt;entrepot-copie&gt; /mnt/backup/pbs-datastore
+sudo proxmox-backup-manager datastore list</code></pre>
+<p>Relevé :</p>
+<pre><code>TASK OK
+│ santelia-copie │ /mnt/backup/pbs-datastore │</code></pre>
+<p>La création affiche une progression d’amorçage de la structure de
+blocs, puis se termine par <code>TASK OK</code>. L’entrepôt est
+dédupliqué par blocs, comme celui du serveur primaire.</p>
+<hr />
+<h2
+id="a.12-comptes-de-service-de-la-synchronisation-deux-comptes-deux-rôles">A.12
+Comptes de service de la synchronisation — deux comptes, deux rôles</h2>
+<p>La copie mobilise <strong>deux comptes distincts</strong>, un par
+serveur, et aucun des deux ne dispose d’un droit d’administration.</p>
+<p><strong>Sur le serveur secondaire — droit d’écriture sur l’entrepôt
+copié :</strong></p>
+<pre><code>sudo proxmox-backup-manager user create &lt;compte-sync&gt;@pbs --password &#39;&lt;mot-de-passe&gt;&#39;
+sudo proxmox-backup-manager acl update /datastore/&lt;entrepot-copie&gt; DatastoreBackup --auth-id &lt;compte-sync&gt;@pbs
+sudo proxmox-backup-manager user list
+sudo proxmox-backup-manager acl list</code></pre>
+<p>Relevés :</p>
+<pre><code>│ pbs-sync@pbs │      1 │  never │</code></pre>
+<pre><code>│ pbs-sync@pbs │ /datastore/santelia-copie │         1 │ DatastoreBackup │</code></pre>
+<p><strong>Sur le serveur primaire — droit de lecture seule sur
+l’entrepôt source :</strong></p>
+<pre><code>proxmox-backup-manager user create &lt;compte-lecture&gt;@pbs --password &#39;&lt;mot-de-passe&gt;&#39;
+proxmox-backup-manager acl update /datastore/&lt;entrepot-primaire&gt; DatastoreReader --auth-id &lt;compte-lecture&gt;@pbs
+proxmox-backup-manager user list
+proxmox-backup-manager acl list</code></pre>
+<p>Relevés :</p>
+<pre><code>│ pbs-reader@pbs │ /datastore/datastore-santelia │         1 │ DatastoreReader │
+│ pve-backup@pbs │ /datastore/datastore-santelia │         1 │ DatastoreBackup │
+│ pve-backup@pbs │ /datastore/datastore-santelia │         1 │ DatastoreReader │</code></pre>
+<p><strong>Lecture du partage des rôles :</strong></p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Compte</th>
+<th>Serveur</th>
+<th>Rôle</th>
+<th>Usage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pve-backup@pbs</code></td>
+<td>Primaire</td>
+<td>écriture et lecture</td>
+<td>Le cluster qui dépose ses sauvegardes</td>
+</tr>
+<tr>
+<td><code>pbs-reader@pbs</code></td>
+<td>Primaire</td>
+<td><strong>lecture seule</strong></td>
+<td>Le serveur secondaire qui tire la copie</td>
+</tr>
+<tr>
+<td><code>pbs-sync@pbs</code></td>
+<td>Secondaire</td>
+<td>écriture</td>
+<td>Le compte local d’écriture de la copie</td>
+</tr>
+</tbody>
+</table>
+<p>Le compte de lecture ne porte <strong>aucun</strong> rôle d’écriture.
+C’est le moindre privilège appliqué : la synchronisation est une
+opération de lecture par nature, elle n’a aucune raison de pouvoir
+écrire chez la source.</p>
+<p><strong>Contrôle de forme :</strong> l’identifiant apparaît au format
+<code>&lt;utilisateur&gt;@&lt;royaume&gt;</code>, avec un seul royaume.
+Un royaume en double rend le compte inutilisable, erreur relevée au
+point de vigilance n° 2 du document de synthèse.</p>
+<hr />
+<h2
+id="a.13-empreinte-du-certificat-et-déclaration-du-dépôt-distant">A.13
+Empreinte du certificat et déclaration du dépôt distant</h2>
+<p><strong>Relevé de l’empreinte, sur le serveur primaire :</strong></p>
+<pre><code>proxmox-backup-manager cert info | grep -i fingerprint</code></pre>
+<pre><code>Fingerprint (sha256): 78:05:ce:aa:b3:32:56:40:9b:27:8c:0f:12:78:cd:2f:e9:1a:39:71:96:d2:
+                     10:04:dd:f3:00:ac:e2:d4:0f:26</code></pre>
+<p><strong>Déclaration du dépôt distant, sur le serveur secondaire
+:</strong></p>
+<pre><code>sudo proxmox-backup-manager remote create &lt;nom-remote&gt; \
+  --host &lt;adresse-primaire&gt; \
+  --auth-id &lt;compte-lecture&gt;@pbs \
+  --password &#39;&lt;mot-de-passe&gt;&#39; \
+  --fingerprint &lt;empreinte-sha256&gt;</code></pre>
+<p><strong>Contrôle :</strong></p>
+<pre><code>sudo proxmox-backup-manager remote list
+sudo proxmox-backup-manager remote show &lt;nom-remote&gt;</code></pre>
+<p>Relevé :</p>
+<pre><code>│ name        │ pbs01
+│ auth-id     │ pbs-reader@pbs
+│ host        │ 192.168.1.161
+│ fingerprint │ 78:05:ce:aa:b3:32:56:40:9b:27:8c:0f:12:78:cd:2f:e9:1a:39:71:96:d2:10:04:…</code></pre>
+<p><strong>Point de méthode.</strong> L’empreinte se passe <strong>sans
+guillemets</strong> : elle ne contient que des deux-points et des
+caractères hexadécimaux, rien que le shell puisse interpréter. Le mot de
+passe, à l’inverse, se passe <strong>entre guillemets simples</strong> :
+sans eux, les caractères spéciaux qu’il contient sont interprétés par le
+shell et la commande part en arrière-plan.</p>
+<p><strong>Pourquoi cette empreinte compte.</strong> Sans elle, le
+serveur secondaire accepterait le certificat que lui présenterait
+n’importe quel serveur répondant à cette adresse. Une interception
+réseau suffirait à rediriger la copie vers un serveur tiers, qui
+l’accepterait sans rien signaler. C’est le point de contrôle de
+confiance décrit au point de vigilance n° 8 du document de synthèse.</p>
+<hr />
+<h2 id="a.14-tâche-de-synchronisation-sur-le-serveur-secondaire">A.14
+Tâche de synchronisation — sur le serveur secondaire</h2>
+<p><strong>Création de la tâche :</strong></p>
+<pre><code>sudo proxmox-backup-manager sync-job create &lt;nom-tache&gt; \
+  --remote &lt;nom-remote&gt; \
+  --remote-store &lt;entrepot-primaire&gt; \
+  --store &lt;entrepot-copie&gt; \
+  --schedule &#39;*/30&#39;
+
+sudo proxmox-backup-manager sync-job list
+sudo proxmox-backup-manager sync-job show &lt;nom-tache&gt;</code></pre>
+<p>Relevé :</p>
+<pre><code>│ id           │ copie-depuis-pbs01
+│ remote-store │ datastore-santelia
+│ store        │ santelia-copie
+│ remote       │ pbs01
+│ schedule     │ */30</code></pre>
+<p><strong>Le sens de la copie.</strong> La tâche est
+<strong>tirée</strong> par le serveur secondaire, elle n’est pas poussée
+par le primaire. Le serveur primaire n’a donc aucune connaissance de la
+copie, et aucun droit sur elle : un compte en lecture seule lui suffit.
+C’est ce qui rend la copie robuste, et c’est ce que la colonne de
+direction vide confirme.</p>
+<p><strong>Exécution manuelle, pour la recette :</strong></p>
+<pre><code>sudo proxmox-backup-manager sync-job run &lt;nom-tache&gt;</code></pre>
+<p><strong>Première passe — transfert initial :</strong></p>
+<pre><code>Found 1 groups to sync (out of 1 total)
+[vm/100]: 2026-10-08T10:36:00Z: start sync
+[vm/100]: 2026-10-08T10:36:00Z/drive-scsi0.img.fidx: downloaded 442.898 MiB (108.618 MiB/s)
+[vm/100]: 2026-10-08T10:36:00Z: sync done
+[vm/100]: percentage done: 100.00% (1/1 snapshots)
+Summary: sync job pulled 442.898 MiB in 363 chunks (average rate: 108.618 MiB/s)
+TASK OK</code></pre>
+<p><strong>Seconde passe — reprise après une nouvelle sauvegarde
+:</strong></p>
+<pre><code>[vm/100]: re-sync snapshot 2026-10-08T10:36:00Z
+[vm/100]: 2026-10-08T10:36:00Z: no data changes
+[vm/100]: percentage done: 50.00% (1/2 snapshots)
+[vm/100]: 2026-10-12T13:02:02Z/drive-scsi0.img.fidx: downloaded 16.43 MiB (82.282 MiB/s)
+[vm/100]: 2026-10-12T13:02:02Z: sync done
+[vm/100]: percentage done: 100.00% (2/2 snapshots)
+Summary: sync job pulled 16.43 MiB in 32 chunks (average rate: 82.282 MiB/s)
+TASK OK</code></pre>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Passe</th>
+<th>Snapshot déjà présent</th>
+<th>Données transférées</th>
+<th>Blocs</th>
+<th>Débit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Première</td>
+<td>—</td>
+<td><strong>442,898 Mio</strong></td>
+<td>363</td>
+<td>108,618 Mio/s</td>
+</tr>
+<tr>
+<td>Seconde</td>
+<td>reconnu inchangé, laissé tel quel</td>
+<td><strong>16,43 Mio</strong></td>
+<td>32</td>
+<td>82,282 Mio/s</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Lecture — deux mécanismes se cumulent.</strong> L’archive
+déjà présente n’est pas retransférée : le serveur secondaire la
+reconnaît comme inchangée et la laisse en place. Et pour la nouvelle
+archive, seuls les blocs absents de son propre entrepôt traversent le
+réseau — 16,43 Mio pour 8 Gio de machine, exactement comme la
+déduplication à la source. Les deux serveurs travaillent donc en relais
+: le primaire déduplique à l’écriture, le secondaire déduplique à la
+lecture.</p>
+<hr />
+<h2 id="a.15-sauvegarde-planifiée-sur-un-nœud-du-cluster">A.15
+Sauvegarde planifiée — sur un nœud du cluster</h2>
+<p>La sauvegarde a été lancée manuellement pour la recette. Elle doit
+ensuite être planifiée, sans quoi elle ne se reproduit jamais, et la
+copie secondaire ne copie qu’une archive figée.</p>
+<p><strong>Création de la tâche planifiée :</strong></p>
+<pre><code>pvesh create /cluster/backup \
+  --storage &lt;stockage-pbs&gt; \
+  --vmid &lt;vmid&gt; \
+  --schedule &quot;02:00&quot; \
+  --mode snapshot \
+  --compress zstd \
+  --prune-backups &quot;keep-daily=7,keep-weekly=4,keep-monthly=3&quot; \
+  --comment &quot;&lt;libelle&gt;&quot;</code></pre>
+<p><strong>Contrôles :</strong></p>
+<pre><code>cat /etc/pve/jobs.cfg
+pvesh get /cluster/backup</code></pre>
+<p>Relevé :</p>
+<pre><code>vzdump: &lt;identifiant-de-tache&gt;
+       comment Sauvegarde quotidienne de la machine critique
+       schedule 02:00
+       compress zstd
+       enabled 1
+       mode snapshot
+       prune-backups keep-daily=7,keep-monthly=3,keep-weekly=4
+       storage pbs-santelia
+       vmid 100</code></pre>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Paramètre</th>
+<th>Valeur</th>
+<th>Objet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>schedule</code></td>
+<td><code>02:00</code></td>
+<td>Une exécution par jour</td>
+</tr>
+<tr>
+<td><code>mode</code></td>
+<td><code>snapshot</code></td>
+<td>Sauvegarde sans interruption de service</td>
+</tr>
+<tr>
+<td><code>compress</code></td>
+<td><code>zstd</code></td>
+<td>Compression avant transfert</td>
+</tr>
+<tr>
+<td><code>prune-backups</code></td>
+<td>7 quotidiennes, 4 hebdomadaires, 3 mensuelles</td>
+<td>Profondeur d’historique conservée</td>
+</tr>
+<tr>
+<td><code>enabled</code></td>
+<td><code>1</code></td>
+<td>La tâche est active</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Exécution manuelle de contrôle :</strong></p>
+<pre><code>vzdump &lt;vmid&gt; --storage &lt;stockage-pbs&gt; --mode snapshot --compress zstd</code></pre>
+<pre><code>INFO: backup mode: snapshot
+INFO: issuing guest-agent &#39;fs-freeze&#39; command
+INFO: issuing guest-agent &#39;fs-thaw&#39; command
+INFO: 100% (8.0 GiB of 8.0 GiB) in 8s, read: 1.5 GiB/s
+INFO: backup is sparse: 6.43 GiB (80%) total zero data
+INFO: backup was done incrementally, reused 7.88 GiB (98%)
+INFO: Finished Backup of VM 100 (00:00:09)
+INFO: Backup job finished successfully</code></pre>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Indicateur</th>
+<th>Valeur</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Durée</td>
+<td><strong>8 secondes</strong></td>
+</tr>
+<tr>
+<td>Données creuses</td>
+<td>6,43 Gio sur 8 (80 %)</td>
+</tr>
+<tr>
+<td><strong>Données réutilisées</strong></td>
+<td><strong>7,88 Gio (98 %)</strong></td>
+</tr>
+<tr>
+<td>Cohérence applicative</td>
+<td>Agent invité sollicité, gel et libération du système de
+fichiers</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Contrôle de la présence des points de restauration
+:</strong></p>
+<pre><code>pvesm list &lt;stockage-pbs&gt;</code></pre>
+<pre><code>Volid                                              Format   Type     Size         VMID
+pbs-santelia:backup/vm/100/2026-10-08T10:36:00Z    pbs-vm   backup   8589936103   100
+pbs-santelia:backup/vm/100/2026-10-12T13:02:02Z    pbs-vm   backup   8589936099   100</code></pre>
+<p>Deux points de restauration espacés dans le temps : c’est cette
+régularité qui rend la fenêtre de perte annoncée tenable.</p>
+<p><strong>Contrôle de la copie côté serveur secondaire :</strong></p>
+<pre><code>sudo du -sh /mnt/backup/pbs-datastore
+sudo proxmox-backup-manager datastore list
+df -h /mnt/backup</code></pre>
+<pre><code>718M    /mnt/backup/pbs-datastore
+Sys. de fichiers Taille Utilisé Dispo Uti% Monté sur
+/dev/sdb1          457G     20G  414G   5% /mnt/backup</code></pre>
+<p>L’entrepôt de la copie occupe une fraction de la capacité disponible
+: la marge est large pour les machines suivantes.</p>
+<hr />
+<h2 id="a.16-fenêtre-de-perte-de-bout-en-bout">A.16 Fenêtre de perte, de
+bout en bout</h2>
+<p>Trois mécanismes agissent à trois rythmes différents. Ils ne se
+cumulent pas, et c’est le plus lent qui impose la fenêtre de perte de la
+stratégie.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Mécanisme</th>
+<th>Rythme</th>
+<th>Ce qu’il apporte</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Réplication des volumes</td>
+<td>15 min</td>
+<td>Disponibilité. Ne protège pas de la perte de données</td>
+</tr>
+<tr>
+<td>Sauvegarde sur le serveur primaire</td>
+<td>Quotidienne</td>
+<td>Point de restauration exploitable</td>
+</tr>
+<tr>
+<td>Synchronisation de la copie</td>
+<td>30 min</td>
+<td>Propagation de l’archive la plus récente</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Fenêtre de perte au pire : 24 h 30.</strong> La
+synchronisation peut être parfaitement à jour et néanmoins ne contenir
+qu’une archive de la veille, si la sauvegarde nocturne n’a pas produit
+de nouvelle archive. La fréquence de la copie ne doit donc jamais être
+présentée comme la fenêtre de perte de la stratégie : le maillon le plus
+lent commande.</p>
 <hr />
 <p><em>Documentation publiée depuis le dépôt du projet — version du
-08/10/2026.</em></p>
+12/10/2026.</em></p>
 </article>
 </main>
 <footer><div class="wrap"><p>Sant&eacute;lia &middot; documentation technique &middot; 12/10/2026</p></div></footer>
