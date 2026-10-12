@@ -29,7 +29,14 @@
   </div>
 </div>
 
-<figure>
+<nav class="sommaire" aria-label="Sommaire de la page">
+  <span class="lab">Sur cette page</span>
+  <a href="#schema">Le sch&eacute;ma de la brique</a>
+  <a href="#documents">Documents de la brique</a>
+  <a href="#captures">La brique en images</a>
+</nav>
+
+<figure id="schema">
   <img src="figures/fig-02-bloc1-haute-disponibilite.svg" alt="Logique de la haute disponibilit&eacute;">
   <figcaption>Quorum &agrave; deux votes sur trois, r&eacute;plication des volumes, et d&eacute;roul&eacute; mesur&eacute; de la bascule.</figcaption>
 </figure>
@@ -39,7 +46,7 @@
 <p>Simuler l'indisponibilit&eacute; d'un n&oelig;ud h&eacute;bergeant une machine virtuelle critique. Le service doit rester disponible ou &ecirc;tre r&eacute;tabli dans le d&eacute;lai cible, et la d&eacute;monstration doit s'appuyer sur un compte rendu horodat&eacute;.</p>
 </blockquote>
 
-<h2 class="sec-title">Documents de la brique</h2>
+<h2 class="sec-title" id="documents">Documents de la brique</h2>
 
 <div class="grid">
 
@@ -114,7 +121,7 @@
   <li>Des &eacute;carts assum&eacute;s et &eacute;crits&nbsp;: sans eux, la recette ne r&eacute;siste pas &agrave; une question un peu pr&eacute;cise.</li>
 </ul>
 
-<h2>La brique en images</h2>
+<h2 id="captures">La brique en images</h2>
 
 <figure>
   <img src="figures/fig-04-datacenter-resume.png" alt="Vue d'ensemble du centre de donn&eacute;es&nbsp;: les trois n&oelig;uds du cluster et l'&eacute;tat de sant&eacute; du quorum">

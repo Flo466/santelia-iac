@@ -7,7 +7,8 @@
   --code-bg:#16201a;
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
-  --col:860px;
+  --col:1040px;
+  --col-fig:1360px;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -102,8 +103,14 @@ a:hover{color:var(--green-ink)}
 strong{font-weight:700}
 
 /* ============ images ============ */
-figure{margin:0 0 1.8em}
-figure img{max-width:100%;height:auto;display:block;border:1px solid var(--line);
+figure{
+  --fig-w:min(var(--col-fig), calc(100vw - 3rem));
+  width:var(--fig-w);
+  margin-left:calc((100% - var(--fig-w)) / 2);
+  margin-top:0;
+  margin-bottom:2em
+}
+figure img{width:100%;max-width:100%;height:auto;display:block;border:1px solid var(--line);
   border-radius:8px;background:var(--white)}
 figcaption{font-size:.83rem;color:var(--ink-2);margin-top:10px;font-style:italic}
 img{max-width:100%;height:auto}
@@ -160,7 +167,21 @@ footer p{margin:0}
   .back{display:none}
   a{color:#000;border:0}
   pre,pre.sourceCode{background:#f2f2f2;color:#000}
+  figure{width:auto;margin-left:0}
 }
 
 /* en cours : fond pastel, bord vert */
 .status--wip{background:var(--wash);color:var(--green-ink);border-color:var(--green)}
+
+/* ============ sommaire de page ============ */
+.sommaire{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 22px;
+  background:var(--wash);border:1px solid var(--line);border-left:4px solid var(--green);
+  border-radius:0 8px 8px 0;padding:13px 20px;margin:0 0 30px}
+.sommaire .lab{font-family:var(--mono);font-size:.64rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--green-ink);font-weight:700}
+.sommaire a{font-size:.87rem;font-weight:700}
+/* respiration quand on saute vers une ancre */
+h2[id],figure[id]{scroll-margin-top:18px}
+@media (prefers-reduced-motion:no-preference){
+  html{scroll-behavior:smooth}
+}

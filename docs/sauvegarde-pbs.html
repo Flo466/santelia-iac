@@ -33,7 +33,14 @@
   </div>
 </div>
 
-<figure>
+<nav class="sommaire" aria-label="Sommaire de la page">
+  <span class="lab">Sur cette page</span>
+  <a href="#schema">Le sch&eacute;ma de la brique</a>
+  <a href="#documents">Documents de la brique</a>
+  <a href="#captures">Les captures du montage</a>
+</nav>
+
+<figure id="schema">
   <img src="figures/fig-03-bloc2-sauvegarde.svg" alt="Strat&eacute;gie 3-2-1 et mesures de la sauvegarde">
   <figcaption>Strat&eacute;gie 3-2-1&nbsp;: les trois copies, leur support, et les mesures relev&eacute;es sur la sauvegarde et la restauration.</figcaption>
 </figure>
@@ -43,7 +50,7 @@
 <p>Lancer une sauvegarde, puis restaurer et v&eacute;rifier que la machine red&eacute;marre. Le r&eacute;sultat attendu est une sauvegarde exploitable et une restauration r&eacute;ussie, avec pour preuves le journal de sauvegarde et la preuve de restauration.</p>
 </blockquote>
 
-<h2 class="sec-title">Documents de la brique</h2>
+<h2 class="sec-title" id="documents">Documents de la brique</h2>
 
 <div class="grid">
 
@@ -129,7 +136,7 @@
   <li><strong>Huit points de vigilance</strong> identifi&eacute;s en conditions r&eacute;elles, dont une adresse IPv6 globale expos&eacute;e hors du m&eacute;canisme de traduction d'adresses.</li>
 </ul>
 
-<h2>Le serveur primaire en images</h2>
+<h2 id="captures">Le serveur primaire en images</h2>
 
 <figure>
   <img src="figures/fig-08-pbs01-dashboard.png" alt="Tableau de bord du serveur de sauvegarde primaire&nbsp;: usage mat&eacute;riel et activit&eacute; r&eacute;cente">
