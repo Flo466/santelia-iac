@@ -214,6 +214,8 @@ sauvegarde cohérente applicative.
 pvesm list <stockage-pbs>
 ```
 
+**Relevés d'exécution :** reportés en **annexe A.1, A.2 et A.4 du document de synthèse**.
+
 ---
 
 ## A.9 Restauration
@@ -245,6 +247,9 @@ renumérotation.
 
 **Arrêt d'une ressource gérée en haute disponibilité :** la commande d'arrêt directe est
 arbitrée par le gestionnaire, qui relance la machine. L'arrêt effectif passe par le gestionnaire.
+
+**Relevés d'exécution :** le journal complet de restauration, avec son débit et sa durée, est
+reporté en **annexe A.3 du document de synthèse**.
 
 ---
 
@@ -488,7 +493,7 @@ sudo proxmox-backup-manager sync-job run <nom-tache>
 ```
 
 **Relevés d'exécution :** les deux passes de synchronisation, leurs débits et leur tableau de
-synthèse sont reportés en **annexe A du document de synthèse « Sauvegarde et restauration »**.
+synthèse sont reportés en **annexe A.5 et A.6 du document de synthèse**.
 La présente section ne conserve que la mise en place de la tâche et ses contrôles.
 
 ---
@@ -546,9 +551,9 @@ vzdump: <identifiant-de-tache>
 vzdump <vmid> --storage <stockage-pbs> --mode snapshot --compress zstd
 ```
 
-**Relevés d'exécution :** journal de sauvegarde, liste des points de restauration présents et
-occupation de l'entrepôt copié sont reportés en **annexe A du document de synthèse**. La
-présente section ne conserve que la planification de la tâche et ses contrôles.
+**Relevés d'exécution :** journal de sauvegarde, points de restauration présents et occupation
+de l'entrepôt copié sont reportés en **annexe A.1, A.2, A.4 et A.7 du document de synthèse**.
+La présente section ne conserve que la planification de la tâche et ses contrôles.
 
 ---
 

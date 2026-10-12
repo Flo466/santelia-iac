@@ -198,6 +198,8 @@ doit mentionner l’appel à l’<strong>agent invité</strong> pour geler
 puis libérer le système de fichiers : c’est ce qui garantit une
 sauvegarde cohérente applicative.</p>
 <pre><code>pvesm list &lt;stockage-pbs&gt;</code></pre>
+<p><strong>Relevés d’exécution :</strong> reportés en <strong>annexe
+A.1, A.2 et A.4 du document de synthèse</strong>.</p>
 <hr />
 <h2 id="a.9-restauration">A.9 Restauration</h2>
 <p><strong>Vers un identifiant de machine distinct</strong>, afin de
@@ -217,6 +219,9 @@ renumérotation.</p>
 <p><strong>Arrêt d’une ressource gérée en haute disponibilité :</strong>
 la commande d’arrêt directe est arbitrée par le gestionnaire, qui
 relance la machine. L’arrêt effectif passe par le gestionnaire.</p>
+<p><strong>Relevés d’exécution :</strong> le journal complet de
+restauration, avec son débit et sa durée, est reporté en <strong>annexe
+A.3 du document de synthèse</strong>.</p>
 <hr />
 <h2
 id="a.10-installation-du-serveur-de-sauvegarde-secondaire-sur-une-machine-physique-distincte">A.10
@@ -458,9 +463,9 @@ direction vide confirme.</p>
 <pre><code>sudo proxmox-backup-manager sync-job run &lt;nom-tache&gt;</code></pre>
 <p><strong>Relevés d’exécution :</strong> les deux passes de
 synchronisation, leurs débits et leur tableau de synthèse sont reportés
-en <strong>annexe A du document de synthèse « Sauvegarde et restauration
-»</strong>. La présente section ne conserve que la mise en place de la
-tâche et ses contrôles.</p>
+en <strong>annexe A.5 et A.6 du document de synthèse</strong>. La
+présente section ne conserve que la mise en place de la tâche et ses
+contrôles.</p>
 <hr />
 <h2 id="a.15-sauvegarde-planifiée-sur-un-nœud-du-cluster">A.15
 Sauvegarde planifiée — sur un nœud du cluster</h2>
@@ -532,10 +537,10 @@ pvesh get /cluster/backup</code></pre>
 </table>
 <p><strong>Exécution manuelle de contrôle :</strong></p>
 <pre><code>vzdump &lt;vmid&gt; --storage &lt;stockage-pbs&gt; --mode snapshot --compress zstd</code></pre>
-<p><strong>Relevés d’exécution :</strong> journal de sauvegarde, liste
-des points de restauration présents et occupation de l’entrepôt copié
-sont reportés en <strong>annexe A du document de synthèse</strong>. La
-présente section ne conserve que la planification de la tâche et ses
+<p><strong>Relevés d’exécution :</strong> journal de sauvegarde, points
+de restauration présents et occupation de l’entrepôt copié sont reportés
+en <strong>annexe A.1, A.2, A.4 et A.7 du document de synthèse</strong>.
+La présente section ne conserve que la planification de la tâche et ses
 contrôles.</p>
 <hr />
 <h2 id="a.16-fenêtre-de-perte-de-bout-en-bout">A.16 Fenêtre de perte, de

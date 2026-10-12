@@ -25,7 +25,7 @@ redémarrer ailleurs. La sauvegarde répond à une autre question, revenir à un
 
 | Opération | Mesure |
 | --- | --- |
-| Sauvegarde | **12 secondes** (82 % réutilisé), puis **8 secondes** (98 % réutilisé) |
+| Sauvegarde | **12 secondes** (82 % réutilisé), puis **9 secondes** (98 % réutilisé) |
 | Déduplication | **82 %** à la première passe, **98 %** à la seconde |
 | Restauration | **9,27 secondes** à 884 Mo/s |
 | Copie secondaire | **442 Mio** au premier transfert, **16,43 Mio** au second |
@@ -182,7 +182,7 @@ découvre qu'au moment où l'on cherche à restaurer.
 
 | Indicateur | Mesure | Statut |
 | --- | --- | --- |
-| Sauvegarde exécutée | 12 s puis 8 s, archives créées | Conforme |
+| Sauvegarde exécutée | 12 s puis 9 s, archives créées | Conforme |
 | Restauration testée | 9,27 s à 884 Mo/s | Conforme |
 | Copie restaurée fonctionnelle | Service interrogé depuis deux chemins | Conforme |
 | Cohérence de la sauvegarde | Agent invité sollicité | Conforme |
@@ -223,15 +223,42 @@ regroupées en **annexe A** du présent document.
 ## Annexe A — Preuves brutes du test 3-2-1
 
 Relevés reproduits tels quels, sans retraitement. Ce sont les preuves exigées par la recette :
-journal de sauvegarde et preuve de restauration.
+journal de sauvegarde et preuve de restauration. Les durées citées dans les tableaux du document
+sont les durées de tâche, telles que Proxmox les enregistre, et non les seuls temps de transfert.
 
 | Copie | Support | Preuve correspondante |
 | --- | --- | --- |
 | **1** | Volumes du cluster | État du cluster, quorum et réplication — document de configuration du cluster |
-| **2** | Serveur de sauvegarde primaire | **A.1** et **A.2** |
-| **3** | Serveur de sauvegarde secondaire | **A.3** à **A.5** |
+| **2** | Serveur de sauvegarde primaire | **A.1** à **A.4** |
+| **3** | Serveur de sauvegarde secondaire | **A.5** à **A.7** |
 
-### A.1 Journal de sauvegarde — sur un nœud du cluster
+### A.1 Première sauvegarde — 08/10/2026
+
+```
+INFO: VM Name: vm-test-ha
+INFO: include disk 'scsi0' 'local-zfs:vm-100-disk-0' 8G
+INFO: backup mode: snapshot
+INFO: creating Proxmox Backup Server archive 'vm/100/2026-10-08T10:36:00Z'
+INFO: issuing guest-agent 'fs-freeze' command
+INFO: issuing guest-agent 'fs-thaw' command
+INFO: scsi0: dirty-bitmap status: created new
+INFO: 100% (8.0 GiB of 8.0 GiB) in 11s, read: 1.5 GiB/s
+INFO: backup is sparse: 6.47 GiB (80%) total zero data
+INFO: backup was done incrementally, reused 6.59 GiB (82%)
+INFO: transferred 8.00 GiB in 11 seconds (744.7 MiB/s)
+INFO: Finished Backup of VM 100 (00:00:12)
+INFO: Backup job finished successfully
+```
+
+**Lecture.** Le gel puis la libération du système de fichiers par l'agent invité attestent la
+cohérence applicative de la copie. Le `dirty-bitmap status: created new` indique qu'il s'agit de
+la toute première sauvegarde de cette machine : aucun historique de blocs modifiés n'existait
+avant elle. Les 82 % réutilisés ne proviennent donc pas d'une archive antérieure, mais de la
+**déduplication des blocs nuls** — les 6,59 Gio réutilisés correspondent aux 6,47 Gio de données
+creuses du disque. C'est ce qui explique qu'une première sauvegarde de 8 Gio se termine en
+12 secondes.
+
+### A.2 Sauvegarde suivante — 12/10/2026
 
 ```
 INFO: backup mode: snapshot
@@ -244,11 +271,31 @@ INFO: Finished Backup of VM 100 (00:00:09)
 INFO: Backup job finished successfully
 ```
 
-**Lecture :** l'appel à l'agent invité, qui gèle puis libère le système de fichiers, atteste la
-cohérence applicative de la copie. La ligne de réutilisation atteste la déduplication : sur
-8 Gio, 7,88 Gio étaient déjà présents dans l'entrepôt.
+**Lecture.** Cette fois la déduplication joue sur les deux tableaux : les blocs nuls, comme à la
+première passe, et les blocs déjà écrits dans l'entrepôt lors de cette passe. 7,88 Gio sur 8 sont
+réutilisés, soit 98 %.
 
-### A.2 Points de restauration présents dans l'entrepôt primaire
+### A.3 Restauration — 08/10/2026, vers la machine 101
+
+Le journal compte 320 lignes de progression. Extraits déterminants :
+
+```
+restore proxmox backup image: /usr/bin/pbs-restore --repository
+  pve-backup@pbs@192.168.1.161:datastore-santelia
+starting to restore snapshot 'vm/100/2026-10-08T10:36:00Z'
+progress 28% (read 2407530496 bytes, zeroes = 33% (805306368 bytes), duration 9 sec)
+[…]
+restore image complete (bytes=8589934592, duration=9.27s, speed=884.00MB/s)
+TASK OK
+```
+
+**Lecture — c'est la preuve de restauration.** L'archive restaurée est bien celle du 08/10,
+extraite de l'entrepôt du serveur de sauvegarde primaire, vers une machine d'identifiant
+distinct, la 101. Les 8 589 934 592 octets annoncés correspondent exactement aux 8 Gio du disque :
+la restauration est complète et non partielle. Le débit de 884 MiB/s sur 9,27 secondes est celui
+d'un entrepôt local, sans traversée de lien réseau.
+
+### A.4 Points de restauration présents dans l'entrepôt primaire
 
 ```
 Volid                                              Format   Type     Size         VMID
@@ -256,10 +303,10 @@ pbs-santelia:backup/vm/100/2026-10-08T10:36:00Z    pbs-vm   backup   8589936103 
 pbs-santelia:backup/vm/100/2026-10-12T13:02:02Z    pbs-vm   backup   8589936099   100
 ```
 
-**Lecture :** deux archives espacées dans le temps. C'est cette régularité qui rend la fenêtre de
-perte annoncée tenable.
+**Lecture :** deux archives espacées dans le temps, correspondant aux deux journaux ci-dessus.
+C'est cette régularité qui rend la fenêtre de perte annoncée tenable.
 
-### A.3 Première passe de synchronisation — transfert initial
+### A.5 Première passe de synchronisation — transfert initial
 
 ```
 Found 1 groups to sync (out of 1 total)
@@ -271,7 +318,7 @@ Summary: sync job pulled 442.898 MiB in 363 chunks (average rate: 108.618 MiB/s)
 TASK OK
 ```
 
-### A.4 Seconde passe de synchronisation — reprise après une nouvelle sauvegarde
+### A.6 Seconde passe de synchronisation — reprise après une nouvelle sauvegarde
 
 ```
 [vm/100]: re-sync snapshot 2026-10-08T10:36:00Z
@@ -295,7 +342,7 @@ archive, seuls les blocs absents de son propre entrepôt traversent le réseau �
 8 Gio de machine, exactement comme la déduplication à la source. Les deux serveurs travaillent
 donc en relais : le primaire déduplique à l'écriture, le secondaire déduplique à la lecture.
 
-### A.5 Occupation de l'entrepôt de la copie
+### A.7 Occupation de l'entrepôt de la copie
 
 ```
 718M    /mnt/backup/pbs-datastore
