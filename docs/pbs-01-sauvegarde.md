@@ -12,7 +12,8 @@ Le cahier des charges identifie la sauvegarde comme le second besoin du projet :
 les sauvegardes, prévoir une copie secondaire, et permettre la restauration des données.
 
 Le test de recette consiste à lancer une sauvegarde, puis à restaurer. Les preuves attendues
-sont le journal de sauvegarde et la preuve de restauration.
+sont le journal de sauvegarde et la preuve de restauration. Les relevés bruts
+correspondants sont reproduits en **annexe A**, en fin de document.
 
 Un point de vocabulaire, parce qu'il prête à confusion : cette brique ne traite pas la
 continuité de service. Celle-ci relève de la haute disponibilité, qui permet à une machine de
@@ -213,6 +214,97 @@ La séquence complète de mise en œuvre, environnement par environnement, est r
 document **Journal des commandes : sauvegarde**, qui accompagne celui-ci. Il couvre les cinq
 environnements d'exécution : poste de travail, hôte physique, cluster, serveur de sauvegarde
 primaire et serveur de sauvegarde secondaire.
+
+Les mesures d'exécution de la stratégie 3-2-1, sorties de ce journal pour ne pas l'alourdir, sont
+regroupées en **annexe A** du présent document.
+
+---
+
+## Annexe A — Preuves brutes du test 3-2-1
+
+Relevés reproduits tels quels, sans retraitement. Ce sont les preuves exigées par la recette :
+journal de sauvegarde et preuve de restauration.
+
+| Copie | Support | Preuve correspondante |
+| --- | --- | --- |
+| **1** | Volumes du cluster | État du cluster, quorum et réplication — document de configuration du cluster |
+| **2** | Serveur de sauvegarde primaire | **A.1** et **A.2** |
+| **3** | Serveur de sauvegarde secondaire | **A.3** à **A.5** |
+
+### A.1 Journal de sauvegarde — sur un nœud du cluster
+
+```
+INFO: backup mode: snapshot
+INFO: issuing guest-agent 'fs-freeze' command
+INFO: issuing guest-agent 'fs-thaw' command
+INFO: 100% (8.0 GiB of 8.0 GiB) in 8s, read: 1.5 GiB/s
+INFO: backup is sparse: 6.43 GiB (80%) total zero data
+INFO: backup was done incrementally, reused 7.88 GiB (98%)
+INFO: Finished Backup of VM 100 (00:00:09)
+INFO: Backup job finished successfully
+```
+
+**Lecture :** l'appel à l'agent invité, qui gèle puis libère le système de fichiers, atteste la
+cohérence applicative de la copie. La ligne de réutilisation atteste la déduplication : sur
+8 Gio, 7,88 Gio étaient déjà présents dans l'entrepôt.
+
+### A.2 Points de restauration présents dans l'entrepôt primaire
+
+```
+Volid                                              Format   Type     Size         VMID
+pbs-santelia:backup/vm/100/2026-10-08T10:36:00Z    pbs-vm   backup   8589936103   100
+pbs-santelia:backup/vm/100/2026-10-12T13:02:02Z    pbs-vm   backup   8589936099   100
+```
+
+**Lecture :** deux archives espacées dans le temps. C'est cette régularité qui rend la fenêtre de
+perte annoncée tenable.
+
+### A.3 Première passe de synchronisation — transfert initial
+
+```
+Found 1 groups to sync (out of 1 total)
+[vm/100]: 2026-10-08T10:36:00Z: start sync
+[vm/100]: 2026-10-08T10:36:00Z/drive-scsi0.img.fidx: downloaded 442.898 MiB (108.618 MiB/s)
+[vm/100]: 2026-10-08T10:36:00Z: sync done
+[vm/100]: percentage done: 100.00% (1/1 snapshots)
+Summary: sync job pulled 442.898 MiB in 363 chunks (average rate: 108.618 MiB/s)
+TASK OK
+```
+
+### A.4 Seconde passe de synchronisation — reprise après une nouvelle sauvegarde
+
+```
+[vm/100]: re-sync snapshot 2026-10-08T10:36:00Z
+[vm/100]: 2026-10-08T10:36:00Z: no data changes
+[vm/100]: percentage done: 50.00% (1/2 snapshots)
+[vm/100]: 2026-10-12T13:02:02Z/drive-scsi0.img.fidx: downloaded 16.43 MiB (82.282 MiB/s)
+[vm/100]: 2026-10-12T13:02:02Z: sync done
+[vm/100]: percentage done: 100.00% (2/2 snapshots)
+Summary: sync job pulled 16.43 MiB in 32 chunks (average rate: 82.282 MiB/s)
+TASK OK
+```
+
+| Passe | Snapshot déjà présent | Données transférées | Blocs | Débit |
+| --- | --- | --- | --- | --- |
+| Première | — | **442,898 Mio** | 363 | 108,618 Mio/s |
+| Seconde | reconnu inchangé, laissé tel quel | **16,43 Mio** | 32 | 82,282 Mio/s |
+
+**Lecture — deux mécanismes se cumulent.** L'archive déjà présente n'est pas retransférée : le
+serveur secondaire la reconnaît comme inchangée et la laisse en place. Et pour la nouvelle
+archive, seuls les blocs absents de son propre entrepôt traversent le réseau — 16,43 Mio pour
+8 Gio de machine, exactement comme la déduplication à la source. Les deux serveurs travaillent
+donc en relais : le primaire déduplique à l'écriture, le secondaire déduplique à la lecture.
+
+### A.5 Occupation de l'entrepôt de la copie
+
+```
+718M    /mnt/backup/pbs-datastore
+Sys. de fichiers Taille Utilisé Dispo Uti% Monté sur
+/dev/sdb1          457G     20G  414G   5% /mnt/backup
+```
+
+**Lecture :** la copie occupe une fraction de la capacité disponible. La marge est large pour les
+machines suivantes.
 
 ---
 

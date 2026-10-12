@@ -29,7 +29,8 @@ du projet : centraliser les sauvegardes, prévoir une copie secondaire,
 et permettre la restauration des données.</p>
 <p>Le test de recette consiste à lancer une sauvegarde, puis à
 restaurer. Les preuves attendues sont le journal de sauvegarde et la
-preuve de restauration.</p>
+preuve de restauration. Les relevés bruts correspondants sont reproduits
+en <strong>annexe A</strong>, en fin de document.</p>
 <p>Un point de vocabulaire, parce qu’il prête à confusion : cette brique
 ne traite pas la continuité de service. Celle-ci relève de la haute
 disponibilité, qui permet à une machine de redémarrer ailleurs. La
@@ -467,6 +468,139 @@ commandes : sauvegarde</strong>, qui accompagne celui-ci. Il couvre les
 cinq environnements d’exécution : poste de travail, hôte physique,
 cluster, serveur de sauvegarde primaire et serveur de sauvegarde
 secondaire.</p>
+<p>Les mesures d’exécution de la stratégie 3-2-1, sorties de ce journal
+pour ne pas l’alourdir, sont regroupées en <strong>annexe A</strong> du
+présent document.</p>
+<hr />
+<h2 id="annexe-a-preuves-brutes-du-test-3-2-1">Annexe A — Preuves brutes
+du test 3-2-1</h2>
+<p>Relevés reproduits tels quels, sans retraitement. Ce sont les preuves
+exigées par la recette : journal de sauvegarde et preuve de
+restauration.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Copie</th>
+<th>Support</th>
+<th>Preuve correspondante</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1</strong></td>
+<td>Volumes du cluster</td>
+<td>État du cluster, quorum et réplication — document de configuration
+du cluster</td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td>Serveur de sauvegarde primaire</td>
+<td><strong>A.1</strong> et <strong>A.2</strong></td>
+</tr>
+<tr>
+<td><strong>3</strong></td>
+<td>Serveur de sauvegarde secondaire</td>
+<td><strong>A.3</strong> à <strong>A.5</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="a.1-journal-de-sauvegarde-sur-un-nœud-du-cluster">A.1 Journal de
+sauvegarde — sur un nœud du cluster</h3>
+<pre><code>INFO: backup mode: snapshot
+INFO: issuing guest-agent &#39;fs-freeze&#39; command
+INFO: issuing guest-agent &#39;fs-thaw&#39; command
+INFO: 100% (8.0 GiB of 8.0 GiB) in 8s, read: 1.5 GiB/s
+INFO: backup is sparse: 6.43 GiB (80%) total zero data
+INFO: backup was done incrementally, reused 7.88 GiB (98%)
+INFO: Finished Backup of VM 100 (00:00:09)
+INFO: Backup job finished successfully</code></pre>
+<p><strong>Lecture :</strong> l’appel à l’agent invité, qui gèle puis
+libère le système de fichiers, atteste la cohérence applicative de la
+copie. La ligne de réutilisation atteste la déduplication : sur 8 Gio,
+7,88 Gio étaient déjà présents dans l’entrepôt.</p>
+<h3 id="a.2-points-de-restauration-présents-dans-lentrepôt-primaire">A.2
+Points de restauration présents dans l’entrepôt primaire</h3>
+<pre><code>Volid                                              Format   Type     Size         VMID
+pbs-santelia:backup/vm/100/2026-10-08T10:36:00Z    pbs-vm   backup   8589936103   100
+pbs-santelia:backup/vm/100/2026-10-12T13:02:02Z    pbs-vm   backup   8589936099   100</code></pre>
+<p><strong>Lecture :</strong> deux archives espacées dans le temps.
+C’est cette régularité qui rend la fenêtre de perte annoncée
+tenable.</p>
+<h3 id="a.3-première-passe-de-synchronisation-transfert-initial">A.3
+Première passe de synchronisation — transfert initial</h3>
+<pre><code>Found 1 groups to sync (out of 1 total)
+[vm/100]: 2026-10-08T10:36:00Z: start sync
+[vm/100]: 2026-10-08T10:36:00Z/drive-scsi0.img.fidx: downloaded 442.898 MiB (108.618 MiB/s)
+[vm/100]: 2026-10-08T10:36:00Z: sync done
+[vm/100]: percentage done: 100.00% (1/1 snapshots)
+Summary: sync job pulled 442.898 MiB in 363 chunks (average rate: 108.618 MiB/s)
+TASK OK</code></pre>
+<h3
+id="a.4-seconde-passe-de-synchronisation-reprise-après-une-nouvelle-sauvegarde">A.4
+Seconde passe de synchronisation — reprise après une nouvelle
+sauvegarde</h3>
+<pre><code>[vm/100]: re-sync snapshot 2026-10-08T10:36:00Z
+[vm/100]: 2026-10-08T10:36:00Z: no data changes
+[vm/100]: percentage done: 50.00% (1/2 snapshots)
+[vm/100]: 2026-10-12T13:02:02Z/drive-scsi0.img.fidx: downloaded 16.43 MiB (82.282 MiB/s)
+[vm/100]: 2026-10-12T13:02:02Z: sync done
+[vm/100]: percentage done: 100.00% (2/2 snapshots)
+Summary: sync job pulled 16.43 MiB in 32 chunks (average rate: 82.282 MiB/s)
+TASK OK</code></pre>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Passe</th>
+<th>Snapshot déjà présent</th>
+<th>Données transférées</th>
+<th>Blocs</th>
+<th>Débit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Première</td>
+<td>—</td>
+<td><strong>442,898 Mio</strong></td>
+<td>363</td>
+<td>108,618 Mio/s</td>
+</tr>
+<tr>
+<td>Seconde</td>
+<td>reconnu inchangé, laissé tel quel</td>
+<td><strong>16,43 Mio</strong></td>
+<td>32</td>
+<td>82,282 Mio/s</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Lecture — deux mécanismes se cumulent.</strong> L’archive
+déjà présente n’est pas retransférée : le serveur secondaire la
+reconnaît comme inchangée et la laisse en place. Et pour la nouvelle
+archive, seuls les blocs absents de son propre entrepôt traversent le
+réseau — 16,43 Mio pour 8 Gio de machine, exactement comme la
+déduplication à la source. Les deux serveurs travaillent donc en relais
+: le primaire déduplique à l’écriture, le secondaire déduplique à la
+lecture.</p>
+<h3 id="a.5-occupation-de-lentrepôt-de-la-copie">A.5 Occupation de
+l’entrepôt de la copie</h3>
+<pre><code>718M    /mnt/backup/pbs-datastore
+Sys. de fichiers Taille Utilisé Dispo Uti% Monté sur
+/dev/sdb1          457G     20G  414G   5% /mnt/backup</code></pre>
+<p><strong>Lecture :</strong> la copie occupe une fraction de la
+capacité disponible. La marge est large pour les machines suivantes.</p>
 <hr />
 <p><em>Documentation publiée depuis le dépôt du projet — version du
 12/10/2026.</em></p>

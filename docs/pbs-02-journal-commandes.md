@@ -487,41 +487,9 @@ la colonne de direction vide confirme.
 sudo proxmox-backup-manager sync-job run <nom-tache>
 ```
 
-**Première passe — transfert initial :**
-
-```
-Found 1 groups to sync (out of 1 total)
-[vm/100]: 2026-10-08T10:36:00Z: start sync
-[vm/100]: 2026-10-08T10:36:00Z/drive-scsi0.img.fidx: downloaded 442.898 MiB (108.618 MiB/s)
-[vm/100]: 2026-10-08T10:36:00Z: sync done
-[vm/100]: percentage done: 100.00% (1/1 snapshots)
-Summary: sync job pulled 442.898 MiB in 363 chunks (average rate: 108.618 MiB/s)
-TASK OK
-```
-
-**Seconde passe — reprise après une nouvelle sauvegarde :**
-
-```
-[vm/100]: re-sync snapshot 2026-10-08T10:36:00Z
-[vm/100]: 2026-10-08T10:36:00Z: no data changes
-[vm/100]: percentage done: 50.00% (1/2 snapshots)
-[vm/100]: 2026-10-12T13:02:02Z/drive-scsi0.img.fidx: downloaded 16.43 MiB (82.282 MiB/s)
-[vm/100]: 2026-10-12T13:02:02Z: sync done
-[vm/100]: percentage done: 100.00% (2/2 snapshots)
-Summary: sync job pulled 16.43 MiB in 32 chunks (average rate: 82.282 MiB/s)
-TASK OK
-```
-
-| Passe | Snapshot déjà présent | Données transférées | Blocs | Débit |
-| --- | --- | --- | --- | --- |
-| Première | — | **442,898 Mio** | 363 | 108,618 Mio/s |
-| Seconde | reconnu inchangé, laissé tel quel | **16,43 Mio** | 32 | 82,282 Mio/s |
-
-**Lecture — deux mécanismes se cumulent.** L'archive déjà présente n'est pas retransférée : le
-serveur secondaire la reconnaît comme inchangée et la laisse en place. Et pour la nouvelle
-archive, seuls les blocs absents de son propre entrepôt traversent le réseau — 16,43 Mio pour
-8 Gio de machine, exactement comme la déduplication à la source. Les deux serveurs travaillent
-donc en relais : le primaire déduplique à l'écriture, le secondaire déduplique à la lecture.
+**Relevés d'exécution :** les deux passes de synchronisation, leurs débits et leur tableau de
+synthèse sont reportés en **annexe A du document de synthèse « Sauvegarde et restauration »**.
+La présente section ne conserve que la mise en place de la tâche et ses contrôles.
 
 ---
 
@@ -578,55 +546,9 @@ vzdump: <identifiant-de-tache>
 vzdump <vmid> --storage <stockage-pbs> --mode snapshot --compress zstd
 ```
 
-```
-INFO: backup mode: snapshot
-INFO: issuing guest-agent 'fs-freeze' command
-INFO: issuing guest-agent 'fs-thaw' command
-INFO: 100% (8.0 GiB of 8.0 GiB) in 8s, read: 1.5 GiB/s
-INFO: backup is sparse: 6.43 GiB (80%) total zero data
-INFO: backup was done incrementally, reused 7.88 GiB (98%)
-INFO: Finished Backup of VM 100 (00:00:09)
-INFO: Backup job finished successfully
-```
-
-| Indicateur | Valeur |
-| --- | --- |
-| Durée | **8 secondes** |
-| Données creuses | 6,43 Gio sur 8 (80 %) |
-| **Données réutilisées** | **7,88 Gio (98 %)** |
-| Cohérence applicative | Agent invité sollicité, gel et libération du système de fichiers |
-
-**Contrôle de la présence des points de restauration :**
-
-```
-pvesm list <stockage-pbs>
-```
-
-```
-Volid                                              Format   Type     Size         VMID
-pbs-santelia:backup/vm/100/2026-10-08T10:36:00Z    pbs-vm   backup   8589936103   100
-pbs-santelia:backup/vm/100/2026-10-12T13:02:02Z    pbs-vm   backup   8589936099   100
-```
-
-Deux points de restauration espacés dans le temps : c'est cette régularité qui rend la fenêtre de
-perte annoncée tenable.
-
-**Contrôle de la copie côté serveur secondaire :**
-
-```
-sudo du -sh /mnt/backup/pbs-datastore
-sudo proxmox-backup-manager datastore list
-df -h /mnt/backup
-```
-
-```
-718M    /mnt/backup/pbs-datastore
-Sys. de fichiers Taille Utilisé Dispo Uti% Monté sur
-/dev/sdb1          457G     20G  414G   5% /mnt/backup
-```
-
-L'entrepôt de la copie occupe une fraction de la capacité disponible : la marge est large pour
-les machines suivantes.
+**Relevés d'exécution :** journal de sauvegarde, liste des points de restauration présents et
+occupation de l'entrepôt copié sont reportés en **annexe A du document de synthèse**. La
+présente section ne conserve que la planification de la tâche et ses contrôles.
 
 ---
 

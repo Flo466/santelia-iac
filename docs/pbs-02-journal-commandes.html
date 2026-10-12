@@ -456,66 +456,11 @@ C’est ce qui rend la copie robuste, et c’est ce que la colonne de
 direction vide confirme.</p>
 <p><strong>Exécution manuelle, pour la recette :</strong></p>
 <pre><code>sudo proxmox-backup-manager sync-job run &lt;nom-tache&gt;</code></pre>
-<p><strong>Première passe — transfert initial :</strong></p>
-<pre><code>Found 1 groups to sync (out of 1 total)
-[vm/100]: 2026-10-08T10:36:00Z: start sync
-[vm/100]: 2026-10-08T10:36:00Z/drive-scsi0.img.fidx: downloaded 442.898 MiB (108.618 MiB/s)
-[vm/100]: 2026-10-08T10:36:00Z: sync done
-[vm/100]: percentage done: 100.00% (1/1 snapshots)
-Summary: sync job pulled 442.898 MiB in 363 chunks (average rate: 108.618 MiB/s)
-TASK OK</code></pre>
-<p><strong>Seconde passe — reprise après une nouvelle sauvegarde
-:</strong></p>
-<pre><code>[vm/100]: re-sync snapshot 2026-10-08T10:36:00Z
-[vm/100]: 2026-10-08T10:36:00Z: no data changes
-[vm/100]: percentage done: 50.00% (1/2 snapshots)
-[vm/100]: 2026-10-12T13:02:02Z/drive-scsi0.img.fidx: downloaded 16.43 MiB (82.282 MiB/s)
-[vm/100]: 2026-10-12T13:02:02Z: sync done
-[vm/100]: percentage done: 100.00% (2/2 snapshots)
-Summary: sync job pulled 16.43 MiB in 32 chunks (average rate: 82.282 MiB/s)
-TASK OK</code></pre>
-<table>
-<colgroup>
-<col style="width: 20%" />
-<col style="width: 20%" />
-<col style="width: 20%" />
-<col style="width: 20%" />
-<col style="width: 20%" />
-</colgroup>
-<thead>
-<tr>
-<th>Passe</th>
-<th>Snapshot déjà présent</th>
-<th>Données transférées</th>
-<th>Blocs</th>
-<th>Débit</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Première</td>
-<td>—</td>
-<td><strong>442,898 Mio</strong></td>
-<td>363</td>
-<td>108,618 Mio/s</td>
-</tr>
-<tr>
-<td>Seconde</td>
-<td>reconnu inchangé, laissé tel quel</td>
-<td><strong>16,43 Mio</strong></td>
-<td>32</td>
-<td>82,282 Mio/s</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Lecture — deux mécanismes se cumulent.</strong> L’archive
-déjà présente n’est pas retransférée : le serveur secondaire la
-reconnaît comme inchangée et la laisse en place. Et pour la nouvelle
-archive, seuls les blocs absents de son propre entrepôt traversent le
-réseau — 16,43 Mio pour 8 Gio de machine, exactement comme la
-déduplication à la source. Les deux serveurs travaillent donc en relais
-: le primaire déduplique à l’écriture, le secondaire déduplique à la
-lecture.</p>
+<p><strong>Relevés d’exécution :</strong> les deux passes de
+synchronisation, leurs débits et leur tableau de synthèse sont reportés
+en <strong>annexe A du document de synthèse « Sauvegarde et restauration
+»</strong>. La présente section ne conserve que la mise en place de la
+tâche et ses contrôles.</p>
 <hr />
 <h2 id="a.15-sauvegarde-planifiée-sur-un-nœud-du-cluster">A.15
 Sauvegarde planifiée — sur un nœud du cluster</h2>
@@ -587,62 +532,11 @@ pvesh get /cluster/backup</code></pre>
 </table>
 <p><strong>Exécution manuelle de contrôle :</strong></p>
 <pre><code>vzdump &lt;vmid&gt; --storage &lt;stockage-pbs&gt; --mode snapshot --compress zstd</code></pre>
-<pre><code>INFO: backup mode: snapshot
-INFO: issuing guest-agent &#39;fs-freeze&#39; command
-INFO: issuing guest-agent &#39;fs-thaw&#39; command
-INFO: 100% (8.0 GiB of 8.0 GiB) in 8s, read: 1.5 GiB/s
-INFO: backup is sparse: 6.43 GiB (80%) total zero data
-INFO: backup was done incrementally, reused 7.88 GiB (98%)
-INFO: Finished Backup of VM 100 (00:00:09)
-INFO: Backup job finished successfully</code></pre>
-<table>
-<colgroup>
-<col style="width: 50%" />
-<col style="width: 50%" />
-</colgroup>
-<thead>
-<tr>
-<th>Indicateur</th>
-<th>Valeur</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Durée</td>
-<td><strong>8 secondes</strong></td>
-</tr>
-<tr>
-<td>Données creuses</td>
-<td>6,43 Gio sur 8 (80 %)</td>
-</tr>
-<tr>
-<td><strong>Données réutilisées</strong></td>
-<td><strong>7,88 Gio (98 %)</strong></td>
-</tr>
-<tr>
-<td>Cohérence applicative</td>
-<td>Agent invité sollicité, gel et libération du système de
-fichiers</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Contrôle de la présence des points de restauration
-:</strong></p>
-<pre><code>pvesm list &lt;stockage-pbs&gt;</code></pre>
-<pre><code>Volid                                              Format   Type     Size         VMID
-pbs-santelia:backup/vm/100/2026-10-08T10:36:00Z    pbs-vm   backup   8589936103   100
-pbs-santelia:backup/vm/100/2026-10-12T13:02:02Z    pbs-vm   backup   8589936099   100</code></pre>
-<p>Deux points de restauration espacés dans le temps : c’est cette
-régularité qui rend la fenêtre de perte annoncée tenable.</p>
-<p><strong>Contrôle de la copie côté serveur secondaire :</strong></p>
-<pre><code>sudo du -sh /mnt/backup/pbs-datastore
-sudo proxmox-backup-manager datastore list
-df -h /mnt/backup</code></pre>
-<pre><code>718M    /mnt/backup/pbs-datastore
-Sys. de fichiers Taille Utilisé Dispo Uti% Monté sur
-/dev/sdb1          457G     20G  414G   5% /mnt/backup</code></pre>
-<p>L’entrepôt de la copie occupe une fraction de la capacité disponible
-: la marge est large pour les machines suivantes.</p>
+<p><strong>Relevés d’exécution :</strong> journal de sauvegarde, liste
+des points de restauration présents et occupation de l’entrepôt copié
+sont reportés en <strong>annexe A du document de synthèse</strong>. La
+présente section ne conserve que la planification de la tâche et ses
+contrôles.</p>
 <hr />
 <h2 id="a.16-fenêtre-de-perte-de-bout-en-bout">A.16 Fenêtre de perte, de
 bout en bout</h2>
