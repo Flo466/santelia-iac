@@ -18,8 +18,8 @@
 <a class="back" href="index.html">&larr; Sommaire</a>
 <article>
 <blockquote>
-<p>Brique 02 — Proxmox Backup Server. Sauvegarde et restauration
-testées. Mise à jour : 08/10/2026</p>
+<p>Brique 02 — Proxmox Backup Server. Stratégie de copie et restauration
+testée. Mise à jour : 08/10/2026</p>
 </blockquote>
 <hr />
 <h2 id="objet">1. Objet</h2>
@@ -124,7 +124,7 @@ mécanismes sont complémentaires et ne se substituent pas l’un à
 l’autre.</p>
 <hr />
 <h2 id="points-de-vigilance">4. Points de vigilance</h2>
-<p>Huit points relevés en conditions réelles. Forme courte.</p>
+<p>Six points relevés en conditions réelles. Forme courte.</p>
 <table>
 <colgroup>
 <col style="width: 33%" />
@@ -146,49 +146,39 @@ l’autre.</p>
 </tr>
 <tr>
 <td>2</td>
-<td>Protection du stockage désactivée par défaut</td>
-<td>Extension automatique activée</td>
-</tr>
-<tr>
-<td>3</td>
-<td>Marge d’extension bornée</td>
-<td>Espace réservé conservé</td>
-</tr>
-<tr>
-<td>4</td>
 <td>Identifiant de compte saisi avec un doublon de royaume</td>
 <td>Suppression et recréation</td>
 </tr>
 <tr>
-<td>5</td>
+<td>3</td>
 <td>Stockage déclaré sur le mauvais niveau</td>
 <td>Déclaration corrigée au niveau du cluster</td>
 </tr>
 <tr>
-<td>6</td>
+<td>4</td>
 <td>Identité réseau reprise après restauration</td>
 <td>Extinction de l’originale, ou renumérotation</td>
 </tr>
 <tr>
-<td>7</td>
+<td>5</td>
 <td>Arrêt arbitré par le gestionnaire de disponibilité</td>
 <td>Passage par le gestionnaire</td>
 </tr>
 <tr>
-<td>8</td>
+<td>6</td>
 <td>Adresse IPv6 globale exposée</td>
 <td>Attribution à désactiver, ou filtrage explicite</td>
 </tr>
 </tbody>
 </table>
 <p>Deux d’entre eux méritent une phrase.</p>
-<p><strong>Le point 6.</strong> Une restauration restitue l’identité
+<p><strong>Le point 4.</strong> Une restauration restitue l’identité
 réseau de la machine, adresse matérielle comprise. Deux machines
 identiques sur le même segment provoquent un conflit, et le service
 devient injoignable sans aucun message d’erreur. Règle qui en découle :
 toute restauration exige une renumérotation avant mise en service
 simultanée.</p>
-<p><strong>Le point 8.</strong> Le système invité obtient
+<p><strong>Le point 6.</strong> Le système invité obtient
 automatiquement une adresse IPv6 publique, en plus de son adresse IPv4
 privée. La traduction d’adresses qui protège IPv4 ne s’applique pas à
 IPv6. L’infrastructure semble protégée, alors qu’un second protocole

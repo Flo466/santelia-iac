@@ -1,6 +1,6 @@
 # Santélia — Sauvegarde et restauration
 
-> Brique 02 — Proxmox Backup Server. Sauvegarde et restauration testées.
+> Brique 02 — Proxmox Backup Server. Stratégie de copie et restauration testée.
 > Mise à jour : 08/10/2026
 
 ---
@@ -62,30 +62,28 @@ La sauvegarde permet de revenir à un état antérieur connu. Les deux mécanism
 
 ## 4. Points de vigilance
 
-Huit points relevés en conditions réelles. Forme courte.
+Six points relevés en conditions réelles. Forme courte.
 
 | # | Point | Mesure appliquée |
 | --- | --- | --- |
 | 1 | Image téléchargée sans vérification du certificat | Contrôle systématique de l'empreinte |
-| 2 | Protection du stockage désactivée par défaut | Extension automatique activée |
-| 3 | Marge d'extension bornée | Espace réservé conservé |
-| 4 | Identifiant de compte saisi avec un doublon de royaume | Suppression et recréation |
-| 5 | Stockage déclaré sur le mauvais niveau | Déclaration corrigée au niveau du cluster |
-| 6 | Identité réseau reprise après restauration | Extinction de l'originale, ou renumérotation |
-| 7 | Arrêt arbitré par le gestionnaire de disponibilité | Passage par le gestionnaire |
-| 8 | Adresse IPv6 globale exposée | Attribution à désactiver, ou filtrage explicite |
+| 2 | Identifiant de compte saisi avec un doublon de royaume | Suppression et recréation |
+| 3 | Stockage déclaré sur le mauvais niveau | Déclaration corrigée au niveau du cluster |
+| 4 | Identité réseau reprise après restauration | Extinction de l'originale, ou renumérotation |
+| 5 | Arrêt arbitré par le gestionnaire de disponibilité | Passage par le gestionnaire |
+| 6 | Adresse IPv6 globale exposée | Attribution à désactiver, ou filtrage explicite |
 
 Deux d'entre eux méritent une phrase.
 
-**Le point 6.** Une restauration restitue l'identité réseau de la machine, adresse matérielle comprise. Deux machines identiques sur le même segment provoquent un conflit, et le service devient injoignable sans aucun message d'erreur. Règle qui en découle : toute restauration exige une renumérotation avant mise en service simultanée.
+**Le point 4.** Une restauration restitue l'identité réseau de la machine, adresse matérielle comprise. Deux machines identiques sur le même segment provoquent un conflit, et le service devient injoignable sans aucun message d'erreur. Règle qui en découle : toute restauration exige une renumérotation avant mise en service simultanée.
 
-**Le point 8.** Le système invité obtient automatiquement une adresse IPv6 publique, en plus de son adresse IPv4 privée. La traduction d'adresses qui protège IPv4 ne s'applique pas à IPv6. L'infrastructure semble protégée, alors qu'un second protocole contourne le mécanisme.
+**Le point 6.** Le système invité obtient automatiquement une adresse IPv6 publique, en plus de son adresse IPv4 privée. La traduction d'adresses qui protège IPv4 ne s'applique pas à IPv6. L'infrastructure semble protégée, alors qu'un second protocole contourne le mécanisme.
 
 Ce dernier point illustre une fausse sensation de sécurité, et il constitue le principal enseignement de sécurité de cette brique.
 
 ---
 
-## 5. Résultats de recette
+## 5. Recette et conformité
 
 | Indicateur | Mesure | Statut |
 | --- | --- | --- |

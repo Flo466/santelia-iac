@@ -15,7 +15,7 @@ Les commandes ne s'exécutent pas au même endroit, et confondre les deux premie
 | **Cluster** | Héberge les machines applicatives à sauvegarder |
 | **Serveur de sauvegarde** | Stocke les sauvegardes |
 
-Un stockage déclaré sur l'hôte n'est **pas** visible depuis le cluster, et inversement. C'est ce qui a provoqué l'échec de la première sauvegarde, traitée au point de vigilance n° 5.
+Un stockage déclaré sur l'hôte n'est **pas** visible depuis le cluster, et inversement. C'est ce qui a provoqué l'échec de la première sauvegarde, traitée au point de vigilance n° 3.
 
 ---
 
