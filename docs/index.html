@@ -25,7 +25,7 @@
 <div class="kpis">
   <div class="kpi"><div class="n">4</div><div class="l">briques</div></div>
   <div class="kpi"><div class="n">2</div><div class="l">en cours ou livr&eacute;es</div></div>
-  <div class="kpi"><div class="n">2 min 24 s</div><div class="l">indisponibilit&eacute; mesur&eacute;e</div></div>
+  <div class="kpi"><div class="n">2 min 24 s</div><div class="l">RTA constat&eacute; &middot; RTO cible</div></div>
   <div class="kpi"><div class="n">3</div><div class="l">n&oelig;uds en cluster</div></div>
 </div>
 
@@ -73,6 +73,10 @@
       <b>Preuve attendue</b>
       <span>Compte rendu et horodatage de la bascule.</span>
     </div>
+    <div class="req">
+      <b>Continuit&eacute; &middot; RTO</b>
+      <span>D&eacute;lai cible de 5 &agrave; 10 minutes. R&eacute;tablissement constat&eacute; en 2 min 24 s&nbsp;: cible tenue. <strong>PCA</strong> &mdash; le service repart ailleurs, sans &ecirc;tre reconstruit.</span>
+    </div>
     <div class="foot">
       <span class="go">Consulter &nbsp;&rarr;</span>
       <span class="status status--ok">Livr&eacute;</span>
@@ -91,9 +95,13 @@
       <b>Preuve attendue</b>
       <span>Journal de sauvegarde et preuve de restauration.</span>
     </div>
+    <div class="req">
+      <b>Reprise &middot; RPO</b>
+      <span>Perte de donn&eacute;es maximale de 24 h 30 au pire, copie secondaire comprise. <strong>PRA</strong> &mdash; le service est reconstruit &agrave; partir d'un &eacute;tat ant&eacute;rieur connu.</span>
+    </div>
     <div class="foot">
       <span class="go">Consulter &nbsp;&rarr;</span>
-      <span class="status status--wip">En cours</span>
+      <span class="status status--ok">Livr&eacute;</span>
     </div>
   </a>
 
@@ -137,6 +145,7 @@
 <h2>Pourquoi c'est d&eacute;coup&eacute; ainsi</h2>
 <p>Les quatre briques r&eacute;pondent &agrave; quatre besoins distincts, et chacune porte son propre test. Les m&eacute;langer rendrait la recette inv&eacute;rifiable&nbsp;: on ne peut pas d&eacute;montrer qu'une sauvegarde est exploitable en regardant un cluster de haute disponibilit&eacute;.</p>
 <p>Elles sont aussi compl&eacute;mentaires. La haute disponibilit&eacute; traite la panne d'un n&oelig;ud, la sauvegarde traite la perte de donn&eacute;es, la supervision traite la panne silencieuse, et l'automatisation traite la d&eacute;rive de configuration.</p>
+<p>Les deux premi&egrave;res se lisent sur deux registres distincts. La haute disponibilit&eacute; rel&egrave;ve du <strong>plan de continuit&eacute; d'activit&eacute; (PCA)</strong>&nbsp;: le service ne s'interrompt pas, il repart ailleurs. La sauvegarde rel&egrave;ve du <strong>plan de reprise d'activit&eacute; (PRA)</strong>&nbsp;: le service est reconstruit &agrave; partir d'un &eacute;tat ant&eacute;rieur connu. D'o&ugrave; deux indicateurs distincts, un <strong>RTO</strong> et un <strong>RPO</strong>, qui ne mesurent pas la m&ecirc;me chose et ne se d&eacute;duisent pas l'un de l'autre.</p>
 
 <h2>Un mot sur la m&eacute;thode</h2>
 <p>Une architecture qui n'a jamais &eacute;t&eacute; mise en panne ne d&eacute;montre rien. La d&eacute;marche consiste donc &agrave; provoquer l'incident, &agrave; mesurer ce qui se passe, puis &agrave; &eacute;crire les points de vigilance identifi&eacute;s avec la mesure qui les traite.</p>
