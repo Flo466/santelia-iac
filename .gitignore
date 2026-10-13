@@ -5,3 +5,8 @@ santelia-preuves/
 # Documents generes : seules les sources .md et les pages html sont versionnees
 *.docx
 docs/*.pdf
+
+# Application Web (Python)
+__pycache__/
+*.pyc
+.env
