@@ -1,4 +1,3 @@
-
 # Journaux de test locaux
 santelia-preuves/
 
@@ -10,3 +9,6 @@ docs/*.pdf
 __pycache__/
 *.pyc
 .env
+
+# Application Web (Node.js / Prettier)
+node_modules/
