@@ -167,11 +167,21 @@ Pour que la vérification de disponibilité porte sur **le service rendu** et no
 | Élément | Comportement constaté |
 | --- | --- |
 | Clé d'authentification | Injectée automatiquement au provisionnement |
-| Identifiant machine | Dérivé de l'identifiant unique exposé par l'hyperviseur : **unique par construction** |
+| Identifiant machine | Dérivé de l'identifiant unique exposé par l'hyperviseur : **unique par construction au clonage**. Une restauration le recopie — voir la note ci-dessous |
 | Configuration réseau | Appliquée par le provisionnement automatique |
 | Disque | Raccordé et agrandi selon la taille choisie |
 
 Cette machine est **reproductible à l'identique** : les étapes décrites ici constituent déjà une configuration décrite en données, et non une suite d'opérations manuelles.
+
+**Cas particulier de la restauration.** Contrairement au clonage, la restauration d'une
+machine recopie sa configuration, identifiant matériel compris. L'identifiant machine dérivant
+de cet identifiant, une machine restaurée porte donc celui de l'originale : la régénération
+n'est plus une ceinture de sécurité, mais une obligation.
+
+Constaté en conditions réelles : la machine restaurée et son original portaient le même
+identifiant machine, hérité de la configuration recopiée. La correction passe par le changement
+de l'identifiant matériel **avant** la régénération de l'identifiant machine, faute de quoi la
+régénération reproduit la valeur d'origine.
 
 **Fait notable constaté pendant la mise au point :** une configuration appliquée manuellement dans la machine invitée, après coup, n'est **pas reproductible** et peut être perdue lors d'une reprise ou d'une synchronisation de disque. Ce constat est détaillé et exploité dans le document de recette associé.
 
@@ -185,6 +195,14 @@ Cette machine est **reproductible à l'identique** : les étapes décrites ici c
 | Déclaration en ressource haute disponibilité | Confier la surveillance de la machine au gestionnaire | Document de configuration du cluster |
 | **Simulation de panne et mesure** | Vérifier la reprise et le délai de rétablissement du service | **Document « Test de recette HA »** |
 | Standardisation | Reproduire cette construction par playbook plutôt qu'à la main | Phase de standardisation |
+
+**Passage en production.** La construction décrite dans ce document a été menée sous le nom
+`vm-test-ha`, afin de valider le mécanisme sans introduire d'autres variables. Une fois le
+mécanisme prouvé, le contenu a été remplacé par le service réel sans retoucher au mécanisme :
+la machine a été renommée, sa mémoire portée à 2 Gio et une mémoire d'échange ajoutée. Le
+groupe de disponibilité, la tâche de réplication et la tâche de sauvegarde s'appuient sur
+l'identifiant de machine et n'ont pas eu à être reconfigurés. La procédure suivie est décrite
+au journal des commandes.
 
 ---
 

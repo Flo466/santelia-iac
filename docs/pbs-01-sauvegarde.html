@@ -11,606 +11,508 @@
       <div class="wrap">
         <p class="eyebrow">Sant&eacute;lia &middot; dossier technique</p>
         <h1>Santélia — Sauvegarde et restauration</h1>
-        <p class="stamp">
-          Documentation technique &nbsp;&middot;&nbsp; 12/10/2026
-        </p>
+        <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 27/10/2026</p>
       </div>
     </header>
     <main class="wrap">
       <a class="back" href="index.html">&larr; Sommaire</a>
-      <article>
-        <blockquote>
-          <p>
-            Brique 02 — Proxmox Backup Server. Stratégie 3-2-1 complète :
-            sauvegarde dédupliquée, restauration testée, et copie secondaire sur
-            une machine physique distincte. Mise à jour : 12/10/2026
-          </p>
-        </blockquote>
-        <hr />
-        <h2 id="objet">1. Objet</h2>
-        <p>
-          Le cahier des charges identifie la sauvegarde comme le second besoin
-          du projet : centraliser les sauvegardes, prévoir une copie secondaire,
-          et permettre la restauration des données.
-        </p>
-        <p>
-          Le test de recette consiste à lancer une sauvegarde, puis à restaurer.
-          Les preuves attendues sont le journal de sauvegarde et la preuve de
-          restauration. Les relevés bruts correspondants sont reproduits en
-          <strong>annexe A</strong>, en fin de document.
-        </p>
-        <p>
-          Un point de vocabulaire, parce qu’il prête à confusion : cette brique
-          ne traite pas la continuité de service. Celle-ci relève de la haute
-          disponibilité, qui permet à une machine de redémarrer ailleurs. La
-          sauvegarde répond à une autre question, revenir à un état antérieur
-          connu.
-        </p>
-        <hr />
-        <h2 id="résultat">2. Résultat</h2>
-        <table>
-          <colgroup>
-            <col style="width: 50%" />
-            <col style="width: 50%" />
-          </colgroup>
-          <thead>
-            <tr>
-              <th>Opération</th>
-              <th>Mesure</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Sauvegarde</td>
-              <td>
-                <strong>12 secondes</strong> (82 % réutilisé), puis
-                <strong>9 secondes</strong> (98 % réutilisé)
-              </td>
-            </tr>
-            <tr>
-              <td>Déduplication</td>
-              <td>
-                <strong>82 %</strong> à la première passe,
-                <strong>98 %</strong> à la seconde
-              </td>
-            </tr>
-            <tr>
-              <td>Restauration</td>
-              <td><strong>9,27 secondes</strong> à 884 Mo/s</td>
-            </tr>
-            <tr>
-              <td>Copie secondaire</td>
-              <td>
-                <strong>442 Mio</strong> au premier transfert,
-                <strong>16,43 Mio</strong> au second
-              </td>
-            </tr>
-            <tr>
-              <td>Cohérence</td>
-              <td>Applicative, agent invité sollicité</td>
-            </tr>
-          </tbody>
-        </table>
-        <p>
-          La copie restaurée a été démarrée, puis le service témoin interrogé
-          depuis plusieurs points du réseau. Elle est fonctionnelle.
-        </p>
-        <p>Cinq points à retenir.</p>
-        <p>
-          <strong>La sauvegarde s’est faite sans interrompre le service</strong
-          >, en mode instantané. C’est ce que le cahier des charges demande pour
-          la sauvegarde des données.
-        </p>
-        <p>
-          <strong>Elle est cohérente applicative.</strong> Le journal mentionne
-          l’appel à l’agent invité, qui gèle puis libère le système de fichiers
-          avant et après la capture. Sans lui, la sauvegarde resterait
-          utilisable mais serait comparable à un arrêt brutal.
-        </p>
-        <p>
-          <strong>La restauration a réellement été exécutée</strong>, vers une
-          machine distincte de l’originale. Une sauvegarde qui n’a jamais été
-          restaurée ne prouve rien.
-        </p>
-        <p>
-          <strong
-            >La seconde sauvegarde n’a transféré que 2 % des données.</strong
-          >
-          Sur 8 Gio, 7,88 Gio étaient déjà présents dans l’entrepôt et ont été
-          réutilisés. C’est la déduplication qui travaille, et c’est ce qui rend
-          une sauvegarde quotidienne tenable dans le temps.
-        </p>
-        <p>
-          <strong
-            >La copie secondaire se resynchronise sans retransférer ce qu’elle
-            possède déjà.</strong
-          >
-          Le second passage a coûté 16,43 Mio contre 442 Mio au premier :
-          l’archive déjà présente a été reconnue comme inchangée et laissée
-          telle quelle.
-        </p>
-        <hr />
-        <h2 id="ce-qui-a-été-mis-en-place">3. Ce qui a été mis en place</h2>
-        <p>
-          Deux serveurs de sauvegarde, sur deux machines physiques distinctes.
-        </p>
-        <p>
-          <strong>Le serveur primaire</strong> est une machine virtuelle
-          hébergée sur l’hôte, avec un entrepôt dédupliqué de 40 Go. Deux choix
-          d’architecture : une machine virtuelle plutôt qu’un conteneur, parce
-          que l’application nécessite un accès direct au stockage, et un disque
-          de données ajouté après l’installation, pour que l’installateur n’ait
-          qu’un seul disque à préparer.
-        </p>
-        <p>
-          <strong>Le serveur secondaire</strong> est installé en paquet natif
-          sur une machine physique distincte de l’hôte, sans hyperviseur. Il
-          porte l’entrepôt de la copie, dans un sous-répertoire de son volume de
-          sauvegarde, séparé du dépôt de sauvegarde de fichiers déjà en
-          exploitation sur cette machine.
-        </p>
-        <h3 id="la-stratégie-3-2-1">La stratégie 3-2-1</h3>
-        <table>
-          <colgroup>
-            <col style="width: 33%" />
-            <col style="width: 33%" />
-            <col style="width: 33%" />
-          </colgroup>
-          <thead>
-            <tr>
-              <th>Copie</th>
-              <th>Support</th>
-              <th>État</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>1</strong></td>
-              <td>Volumes du cluster</td>
-              <td>Donnée vivante, répliquée entre nœuds</td>
-            </tr>
-            <tr>
-              <td><strong>2</strong></td>
-              <td>Serveur de sauvegarde primaire, sur l’hôte</td>
-              <td><strong>En place</strong></td>
-            </tr>
-            <tr>
-              <td><strong>3</strong></td>
-              <td>
-                Serveur de sauvegarde secondaire, machine physique distincte
-              </td>
-              <td><strong>En place</strong></td>
-            </tr>
-          </tbody>
-        </table>
-        <p>
-          Le point qui fait la différence : un serveur de sauvegarde installé
-          sur la machine qu’il protège ne protège de rien. Si l’hôte tombe, la
-          donnée et sa sauvegarde disparaissent ensemble. C’est ce qui justifie
-          la troisième copie sur une machine distincte.
-        </p>
-        <h3 id="sauvegarde-et-réplication-deux-besoins-distincts">
-          Sauvegarde et réplication, deux besoins distincts
-        </h3>
-        <p>
-          La réplication entre nœuds apporte de la disponibilité. Elle ne
-          protège pas de la perte de données, car elle réplique aussi les
-          erreurs : une suppression ou une corruption se propage d’un nœud à
-          l’autre.
-        </p>
-        <p>
-          La sauvegarde permet de revenir à un état antérieur connu. Les deux
-          mécanismes sont complémentaires et ne se substituent pas l’un à
-          l’autre.
-        </p>
-        <h3 id="encadré-la-copie-secondaire-de-bout-en-bout">
-          Encadré — la copie secondaire, de bout en bout
-        </h3>
-        <p>
-          <strong>Le problème posé.</strong> La sauvegarde primaire vit sur
-          l’hôte qu’elle protège. Une panne matérielle de cet hôte emporterait
-          la donnée et sa sauvegarde en même temps. La troisième copie doit donc
-          vivre ailleurs.
-        </p>
-        <p>
-          <strong>Le support retenu.</strong> Une machine physique distincte de
-          l’hôte, en paquet natif, qui accueille l’entrepôt de la copie. Sa
-          capacité disponible, très supérieure au besoin, laisse de la marge
-          pour les machines suivantes.
-        </p>
-        <p>
-          <strong>La confiance avant le transfert.</strong> L’empreinte du
-          certificat du serveur primaire a été relevée, puis déclarée sur le
-          serveur secondaire. Sans ce contrôle, une interception réseau pourrait
-          rediriger la copie vers un serveur tiers, qui l’accepterait sans rien
-          signaler.
-        </p>
-        <p>
-          <strong>Le sens de la copie.</strong> C’est le serveur secondaire qui
-          tire les données, il ne les reçoit pas. Le serveur primaire n’a donc
-          aucune connaissance de la copie et n’a besoin d’aucun droit sur elle.
-          Un compte en lecture seule lui suffit.
-        </p>
-        <p>
-          <strong>Deux comptes, deux rôles, aucun droit superflu.</strong> Le
-          serveur secondaire se présente avec un compte qui n’a que la lecture
-          sur l’entrepôt source. Un compte local, distinct, porte l’écriture sur
-          l’entrepôt copié. Ni l’un ni l’autre ne dispose d’un droit
-          d’administration.
-        </p>
-        <table>
-          <colgroup>
-            <col style="width: 25%" />
-            <col style="width: 25%" />
-            <col style="width: 25%" />
-            <col style="width: 25%" />
-          </colgroup>
-          <thead>
-            <tr>
-              <th>Étape</th>
-              <th>Où</th>
-              <th>Opération</th>
-              <th>Relevé</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Entrepôt</td>
-              <td>Serveur secondaire</td>
-              <td>Création de l’entrepôt de la copie</td>
-              <td>Capacité disponible largement suffisante</td>
-            </tr>
-            <tr>
-              <td>Lecture</td>
-              <td>Serveur primaire</td>
-              <td>Compte de service en lecture seule</td>
-              <td>Rôle de lecture sur le seul entrepôt source</td>
-            </tr>
-            <tr>
-              <td>Confiance</td>
-              <td>Primaire, puis secondaire</td>
-              <td>Empreinte du certificat relevée puis déclarée</td>
-              <td><code>78:05:ce:...:0f:26</code></td>
-            </tr>
-            <tr>
-              <td>Déclaration</td>
-              <td>Serveur secondaire</td>
-              <td>Dépôt distant rattaché au primaire</td>
-              <td>Adresse et compte de lecture</td>
-            </tr>
-            <tr>
-              <td>Planification</td>
-              <td>Serveur secondaire</td>
-              <td>Tâche de synchronisation, toutes les 30 minutes</td>
-              <td>Sens tiré, sans écrire chez la source</td>
-            </tr>
-            <tr>
-              <td>Première passe</td>
-              <td>—</td>
-              <td>Transfert initial de l’archive</td>
-              <td><strong>442,898 Mio</strong> en 363 blocs</td>
-            </tr>
-            <tr>
-              <td>Seconde passe</td>
-              <td>—</td>
-              <td>Reprise après une nouvelle sauvegarde</td>
-              <td><strong>16,43 Mio</strong> en 32 blocs</td>
-            </tr>
-          </tbody>
-        </table>
-        <p>
-          <strong>Ce que la copie ajoute à la fenêtre de perte.</strong> La
-          tâche de synchronisation se déclenche toutes les 30 minutes, mais elle
-          ne fait que propager l’archive la plus récente du serveur primaire.
-          Elle ne peut pas copier une sauvegarde qui n’existe pas encore.
-        </p>
-        <table>
-          <colgroup>
-            <col style="width: 33%" />
-            <col style="width: 33%" />
-            <col style="width: 33%" />
-          </colgroup>
-          <thead>
-            <tr>
-              <th>Mécanisme</th>
-              <th>Fréquence</th>
-              <th>Ce qu’il apporte</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Réplication des volumes</td>
-              <td>15 min</td>
-              <td>Disponibilité. Ne protège pas de la perte de données</td>
-            </tr>
-            <tr>
-              <td>Sauvegarde sur le primaire</td>
-              <td>quotidienne</td>
-              <td>
-                Point de restauration — <strong>fenêtre de perte : 24 h</strong>
-              </td>
-            </tr>
-            <tr>
-              <td>Synchronisation de la copie</td>
-              <td>30 min</td>
-              <td>
-                Propagation vers la copie — <strong>+30 min au pire</strong>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <p>
-          <strong
-            >Fenêtre de perte de bout en bout : 24 h 30 min au pire.</strong
-          >
-          C’est le maillon le plus lent qui impose le rythme. La copie peut être
-          parfaitement à jour et néanmoins ne contenir qu’une archive de la
-          veille, si la sauvegarde nocturne a échoué. La fréquence de la copie
-          ne doit donc pas être présentée comme la fenêtre de perte de la
-          stratégie.
-        </p>
-        <p>
-          <strong>Réserve assumée.</strong> La tâche de synchronisation
-          s’exécute aujourd’hui avec les droits du compte d’administration du
-          serveur secondaire. Un compte dédié a été créé avec le seul rôle
-          d’écriture sur l’entrepôt copié, en vue de restreindre la tâche à ce
-          périmètre.
-        </p>
-        <hr />
-        <h2 id="points-de-vigilance">4. Points de vigilance</h2>
-        <p>Huit points relevés en conditions réelles. Forme courte.</p>
-        <table>
-          <colgroup>
-            <col style="width: 33%" />
-            <col style="width: 33%" />
-            <col style="width: 33%" />
-          </colgroup>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Point</th>
-              <th>Mesure appliquée</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>1</td>
-              <td>Image téléchargée sans vérification du certificat</td>
-              <td>Contrôle systématique de l’empreinte</td>
-            </tr>
-            <tr>
-              <td>2</td>
-              <td>Identifiant de compte saisi avec un doublon de royaume</td>
-              <td>Suppression et recréation</td>
-            </tr>
-            <tr>
-              <td>3</td>
-              <td>Stockage déclaré sur le mauvais niveau</td>
-              <td>Déclaration corrigée au niveau du cluster</td>
-            </tr>
-            <tr>
-              <td>4</td>
-              <td>Identité réseau reprise après restauration</td>
-              <td>Extinction de l’originale, ou renumérotation</td>
-            </tr>
-            <tr>
-              <td>5</td>
-              <td>Arrêt arbitré par le gestionnaire de disponibilité</td>
-              <td>Passage par le gestionnaire</td>
-            </tr>
-            <tr>
-              <td>6</td>
-              <td>Adresse IPv6 globale exposée</td>
-              <td>Attribution à désactiver, ou filtrage explicite</td>
-            </tr>
-            <tr>
-              <td>7</td>
-              <td>
-                Copie secondaire hébergée sur le volume du dépôt de fichiers
-              </td>
-              <td>Stockage dédié à prévoir, arbitrage assumé</td>
-            </tr>
-            <tr>
-              <td>8</td>
-              <td>Fréquence de copie confondue avec la fenêtre de perte</td>
-              <td>Fenêtre calculée sur le maillon le plus lent</td>
-            </tr>
-          </tbody>
-        </table>
-        <p>Trois d’entre eux méritent une phrase.</p>
-        <p>
-          <strong>Le point 4.</strong> Une restauration restitue l’identité
-          réseau de la machine, adresse matérielle comprise. Deux machines
-          identiques sur le même segment provoquent un conflit, et le service
-          devient injoignable sans aucun message d’erreur. Règle qui en découle
-          : toute restauration exige une renumérotation avant mise en service
-          simultanée.
-        </p>
-        <p>
-          <strong>Le point 6.</strong> Le système invité obtient automatiquement
-          une adresse IPv6 publique, en plus de son adresse IPv4 privée. La
-          traduction d’adresses qui protège IPv4 ne s’applique pas à IPv6.
-          L’infrastructure semble protégée, alors qu’un second protocole
-          contourne le mécanisme. Ce point illustre une fausse sensation de
-          sécurité, et il constitue le principal enseignement de sécurité de
-          cette brique.
-        </p>
-        <p>
-          <strong>Le point 8.</strong> Une tâche de copie déclenchée toutes les
-          30 minutes donne l’impression d’une fenêtre de perte de 30 minutes.
-          C’est faux : la copie ne fait que propager une archive existante.
-          Annoncer une fenêtre trop optimiste affaiblit l’ensemble de la
-          stratégie, car l’écart ne se découvre qu’au moment où l’on cherche à
-          restaurer.
-        </p>
-        <hr />
-        <h2 id="recette-et-conformité">5. Recette et conformité</h2>
-        <table>
-          <colgroup>
-            <col style="width: 33%" />
-            <col style="width: 33%" />
-            <col style="width: 33%" />
-          </colgroup>
-          <thead>
-            <tr>
-              <th>Indicateur</th>
-              <th>Mesure</th>
-              <th>Statut</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Sauvegarde exécutée</td>
-              <td>12 s puis 9 s, archives créées</td>
-              <td>Conforme</td>
-            </tr>
-            <tr>
-              <td>Restauration testée</td>
-              <td>9,27 s à 884 Mo/s</td>
-              <td>Conforme</td>
-            </tr>
-            <tr>
-              <td>Copie restaurée fonctionnelle</td>
-              <td>Service interrogé depuis deux chemins</td>
-              <td>Conforme</td>
-            </tr>
-            <tr>
-              <td>Cohérence de la sauvegarde</td>
-              <td>Agent invité sollicité</td>
-              <td>Conforme</td>
-            </tr>
-            <tr>
-              <td>Taux de déduplication</td>
-              <td>82 %, puis 98 %</td>
-              <td>Conforme</td>
-            </tr>
-            <tr>
-              <td>Copie secondaire présente</td>
-              <td>
-                Plusieurs points de restauration sur une machine distincte
-              </td>
-              <td>Conforme</td>
-            </tr>
-            <tr>
-              <td>Rétention configurée</td>
-              <td>7 quotidiennes, 4 hebdomadaires, 3 mensuelles</td>
-              <td>Conforme</td>
-            </tr>
-            <tr>
-              <td>Fenêtre de perte définie</td>
-              <td>24 h 30 min au pire, de bout en bout</td>
-              <td>Conforme</td>
-            </tr>
-          </tbody>
-        </table>
-        <p>
-          La rétention est portée par la tâche de sauvegarde planifiée. L’espace
-          occupé n’est réellement libéré qu’à l’exécution de la collecte des
-          blocs orphelins, tâche distincte et planifiée séparément sur le
-          serveur de sauvegarde.
-        </p>
-        <hr />
-        <h2 id="suite-donnée">6. Suite donnée</h2>
-        <table>
-          <colgroup>
-            <col style="width: 50%" />
-            <col style="width: 50%" />
-          </colgroup>
-          <thead>
-            <tr>
-              <th>Étape</th>
-              <th>Objet</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Chiffrement de l’entrepôt</td>
-              <td>
-                Protection des données au repos, clé conservée hors du serveur
-              </td>
-            </tr>
-            <tr>
-              <td>Élargissement du périmètre</td>
-              <td>
-                Étendre la sauvegarde aux autres machines de l’infrastructure
-              </td>
-            </tr>
-            <tr>
-              <td>Stockage dédié à la copie secondaire</td>
-              <td>
-                Isoler la copie du dépôt de fichiers (point de vigilance n° 7)
-              </td>
-            </tr>
-            <tr>
-              <td>Restriction de la tâche de copie</td>
-              <td>Rattacher la tâche au compte dédié créé à cet effet</td>
-            </tr>
-          </tbody>
-        </table>
-        <hr />
-        <h2 id="journal-des-commandes">7. Journal des commandes</h2>
-        <p>
-          La séquence complète de mise en œuvre, environnement par
-          environnement, est regroupée dans le document
-          <strong>Journal des commandes : sauvegarde</strong>, qui accompagne
-          celui-ci. Il couvre les cinq environnements d’exécution : poste de
-          travail, hôte physique, cluster, serveur de sauvegarde primaire et
-          serveur de sauvegarde secondaire.
-        </p>
-        <p>
-          Les mesures d’exécution de la stratégie 3-2-1, sorties de ce journal
-          pour ne pas l’alourdir, sont regroupées en
-          <strong>annexe A</strong> du présent document.
-        </p>
-        <hr />
-        <h2 id="annexe-a-preuves-brutes-du-test-3-2-1">
-          Annexe A — Preuves brutes du test 3-2-1
-        </h2>
-        <p>
-          Relevés reproduits tels quels, sans retraitement. Ce sont les preuves
-          exigées par la recette : journal de sauvegarde et preuve de
-          restauration. Les durées citées dans les tableaux du document sont les
-          durées de tâche, telles que Proxmox les enregistre, et non les seuls
-          temps de transfert.
-        </p>
-        <table>
-          <colgroup>
-            <col style="width: 33%" />
-            <col style="width: 33%" />
-            <col style="width: 33%" />
-          </colgroup>
-          <thead>
-            <tr>
-              <th>Copie</th>
-              <th>Support</th>
-              <th>Preuve correspondante</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>1</strong></td>
-              <td>Volumes du cluster</td>
-              <td>
-                État du cluster, quorum et réplication — document de
-                configuration du cluster
-              </td>
-            </tr>
-            <tr>
-              <td><strong>2</strong></td>
-              <td>Serveur de sauvegarde primaire</td>
-              <td><strong>A.1</strong> à <strong>A.4</strong></td>
-            </tr>
-            <tr>
-              <td><strong>3</strong></td>
-              <td>Serveur de sauvegarde secondaire</td>
-              <td><strong>A.5</strong> à <strong>A.7</strong></td>
-            </tr>
-          </tbody>
-        </table>
-        <h3 id="a.1-première-sauvegarde-08102026">
-          A.1 Première sauvegarde — 08/10/2026
-        </h3>
-        <pre><code>INFO: VM Name: vm-test-ha
+      <article><blockquote>
+<p>Brique 02 — Proxmox Backup Server. Stratégie 3-2-1 complète :
+sauvegarde dédupliquée, restauration testée, et copie secondaire sur une
+machine physique distincte. Mise à jour : 12/10/2026</p>
+</blockquote>
+<hr />
+<h2 id="objet">1. Objet</h2>
+<p>Le cahier des charges identifie la sauvegarde comme le second besoin
+du projet : centraliser les sauvegardes, prévoir une copie secondaire,
+et permettre la restauration des données.</p>
+<p>Le test de recette consiste à lancer une sauvegarde, puis à
+restaurer. Les preuves attendues sont le journal de sauvegarde et la
+preuve de restauration. Les relevés bruts correspondants sont reproduits
+en <strong>annexe A</strong>, en fin de document.</p>
+<p>Un point de vocabulaire, parce qu’il prête à confusion : cette brique
+ne traite pas la continuité de service. Celle-ci relève de la haute
+disponibilité, qui permet à une machine de redémarrer ailleurs. La
+sauvegarde répond à une autre question, revenir à un état antérieur
+connu.</p>
+<hr />
+<h2 id="résultat">2. Résultat</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Opération</th>
+<th>Mesure</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sauvegarde</td>
+<td><strong>12 secondes</strong> (82 % réutilisé), puis <strong>9
+secondes</strong> (98 % réutilisé)</td>
+</tr>
+<tr>
+<td>Déduplication</td>
+<td><strong>82 %</strong> à la première passe, <strong>98 %</strong> à
+la seconde</td>
+</tr>
+<tr>
+<td>Restauration</td>
+<td><strong>9,27 secondes</strong> à 884 Mo/s</td>
+</tr>
+<tr>
+<td>Copie secondaire</td>
+<td><strong>442 Mio</strong> au premier transfert, <strong>16,43
+Mio</strong> au second</td>
+</tr>
+<tr>
+<td>Cohérence</td>
+<td>Applicative, agent invité sollicité</td>
+</tr>
+</tbody>
+</table>
+<p>La copie restaurée a été démarrée, puis le service témoin interrogé
+depuis plusieurs points du réseau. Elle est fonctionnelle.</p>
+<p>Cinq points à retenir.</p>
+<p><strong>La sauvegarde s’est faite sans interrompre le
+service</strong>, en mode instantané. C’est ce que le cahier des charges
+demande pour la sauvegarde des données.</p>
+<p><strong>Elle est cohérente applicative.</strong> Le journal mentionne
+l’appel à l’agent invité, qui gèle puis libère le système de fichiers
+avant et après la capture. Sans lui, la sauvegarde resterait utilisable
+mais serait comparable à un arrêt brutal.</p>
+<p><strong>La restauration a réellement été exécutée</strong>, vers une
+machine distincte de l’originale. Une sauvegarde qui n’a jamais été
+restaurée ne prouve rien.</p>
+<p><strong>La seconde sauvegarde n’a transféré que 2 % des
+données.</strong> Sur 8 Gio, 7,88 Gio étaient déjà présents dans
+l’entrepôt et ont été réutilisés. C’est la déduplication qui travaille,
+et c’est ce qui rend une sauvegarde quotidienne tenable dans le
+temps.</p>
+<p><strong>La copie secondaire se resynchronise sans retransférer ce
+qu’elle possède déjà.</strong> Le second passage a coûté 16,43 Mio
+contre 442 Mio au premier : l’archive déjà présente a été reconnue comme
+inchangée et laissée telle quelle.</p>
+<hr />
+<h2 id="ce-qui-a-été-mis-en-place">3. Ce qui a été mis en place</h2>
+<p>Deux serveurs de sauvegarde, sur deux machines physiques
+distinctes.</p>
+<p><strong>Le serveur primaire</strong> est une machine virtuelle
+hébergée sur l’hôte, avec un entrepôt dédupliqué de 40 Go. Deux choix
+d’architecture : une machine virtuelle plutôt qu’un conteneur, parce que
+l’application nécessite un accès direct au stockage, et un disque de
+données ajouté après l’installation, pour que l’installateur n’ait qu’un
+seul disque à préparer.</p>
+<p><strong>Le serveur secondaire</strong> est installé en paquet natif
+sur une machine physique distincte de l’hôte, sans hyperviseur. Il porte
+l’entrepôt de la copie, dans un sous-répertoire de son volume de
+sauvegarde, séparé du dépôt de sauvegarde de fichiers déjà en
+exploitation sur cette machine.</p>
+<h3 id="la-stratégie-3-2-1">La stratégie 3-2-1</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Copie</th>
+<th>Support</th>
+<th>État</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1</strong></td>
+<td>Volumes du cluster</td>
+<td>Donnée vivante, répliquée entre nœuds</td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td>Serveur de sauvegarde primaire, sur l’hôte</td>
+<td><strong>En place</strong></td>
+</tr>
+<tr>
+<td><strong>3</strong></td>
+<td>Serveur de sauvegarde secondaire, machine physique distincte</td>
+<td><strong>En place</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Le point qui fait la différence : un serveur de sauvegarde installé
+sur la machine qu’il protège ne protège de rien. Si l’hôte tombe, la
+donnée et sa sauvegarde disparaissent ensemble. C’est ce qui justifie la
+troisième copie sur une machine distincte.</p>
+<h3 id="sauvegarde-et-réplication-deux-besoins-distincts">Sauvegarde et
+réplication, deux besoins distincts</h3>
+<p>La réplication entre nœuds apporte de la disponibilité. Elle ne
+protège pas de la perte de données, car elle réplique aussi les erreurs
+: une suppression ou une corruption se propage d’un nœud à l’autre.</p>
+<p>La sauvegarde permet de revenir à un état antérieur connu. Les deux
+mécanismes sont complémentaires et ne se substituent pas l’un à
+l’autre.</p>
+<h3 id="encadré-la-copie-secondaire-de-bout-en-bout">Encadré — la copie
+secondaire, de bout en bout</h3>
+<p><strong>Le problème posé.</strong> La sauvegarde primaire vit sur
+l’hôte qu’elle protège. Une panne matérielle de cet hôte emporterait la
+donnée et sa sauvegarde en même temps. La troisième copie doit donc
+vivre ailleurs.</p>
+<p><strong>Le support retenu.</strong> Une machine physique distincte de
+l’hôte, en paquet natif, qui accueille l’entrepôt de la copie. Sa
+capacité disponible, très supérieure au besoin, laisse de la marge pour
+les machines suivantes.</p>
+<p><strong>La confiance avant le transfert.</strong> L’empreinte du
+certificat du serveur primaire a été relevée, puis déclarée sur le
+serveur secondaire. Sans ce contrôle, une interception réseau pourrait
+rediriger la copie vers un serveur tiers, qui l’accepterait sans rien
+signaler.</p>
+<p><strong>Le sens de la copie.</strong> C’est le serveur secondaire qui
+tire les données, il ne les reçoit pas. Le serveur primaire n’a donc
+aucune connaissance de la copie et n’a besoin d’aucun droit sur elle. Un
+compte en lecture seule lui suffit.</p>
+<p><strong>Deux comptes, deux rôles, aucun droit superflu.</strong> Le
+serveur secondaire se présente avec un compte qui n’a que la lecture sur
+l’entrepôt source. Un compte local, distinct, porte l’écriture sur
+l’entrepôt copié. Ni l’un ni l’autre ne dispose d’un droit
+d’administration.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Étape</th>
+<th>Où</th>
+<th>Opération</th>
+<th>Relevé</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Entrepôt</td>
+<td>Serveur secondaire</td>
+<td>Création de l’entrepôt de la copie</td>
+<td>Capacité disponible largement suffisante</td>
+</tr>
+<tr>
+<td>Lecture</td>
+<td>Serveur primaire</td>
+<td>Compte de service en lecture seule</td>
+<td>Rôle de lecture sur le seul entrepôt source</td>
+</tr>
+<tr>
+<td>Confiance</td>
+<td>Primaire, puis secondaire</td>
+<td>Empreinte du certificat relevée puis déclarée</td>
+<td><code>78:05:ce:...:0f:26</code></td>
+</tr>
+<tr>
+<td>Déclaration</td>
+<td>Serveur secondaire</td>
+<td>Dépôt distant rattaché au primaire</td>
+<td>Adresse et compte de lecture</td>
+</tr>
+<tr>
+<td>Planification</td>
+<td>Serveur secondaire</td>
+<td>Tâche de synchronisation, toutes les 30 minutes</td>
+<td>Sens tiré, sans écrire chez la source</td>
+</tr>
+<tr>
+<td>Première passe</td>
+<td>—</td>
+<td>Transfert initial de l’archive</td>
+<td><strong>442,898 Mio</strong> en 363 blocs</td>
+</tr>
+<tr>
+<td>Seconde passe</td>
+<td>—</td>
+<td>Reprise après une nouvelle sauvegarde</td>
+<td><strong>16,43 Mio</strong> en 32 blocs</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Ce que la copie ajoute à la fenêtre de perte.</strong> La
+tâche de synchronisation se déclenche toutes les 30 minutes, mais elle
+ne fait que propager l’archive la plus récente du serveur primaire. Elle
+ne peut pas copier une sauvegarde qui n’existe pas encore.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Mécanisme</th>
+<th>Fréquence</th>
+<th>Ce qu’il apporte</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Réplication des volumes</td>
+<td>15 min</td>
+<td>Disponibilité. Ne protège pas de la perte de données</td>
+</tr>
+<tr>
+<td>Sauvegarde sur le primaire</td>
+<td>quotidienne</td>
+<td>Point de restauration — <strong>fenêtre de perte : 24
+h</strong></td>
+</tr>
+<tr>
+<td>Synchronisation de la copie</td>
+<td>30 min</td>
+<td>Propagation vers la copie — <strong>+30 min au pire</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Fenêtre de perte de bout en bout : 24 h 30 min au
+pire.</strong> C’est le maillon le plus lent qui impose le rythme. La
+copie peut être parfaitement à jour et néanmoins ne contenir qu’une
+archive de la veille, si la sauvegarde nocturne a échoué. La fréquence
+de la copie ne doit donc pas être présentée comme la fenêtre de perte de
+la stratégie.</p>
+<p><strong>Réserve assumée.</strong> La tâche de synchronisation
+s’exécute aujourd’hui avec les droits du compte d’administration du
+serveur secondaire. Un compte dédié a été créé avec le seul rôle
+d’écriture sur l’entrepôt copié, en vue de restreindre la tâche à ce
+périmètre.</p>
+<hr />
+<h2 id="points-de-vigilance">4. Points de vigilance</h2>
+<p>Huit points relevés en conditions réelles. Forme courte.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Point</th>
+<th>Mesure appliquée</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Image téléchargée sans vérification du certificat</td>
+<td>Contrôle systématique de l’empreinte</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Identifiant de compte saisi avec un doublon de royaume</td>
+<td>Suppression et recréation</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Stockage déclaré sur le mauvais niveau</td>
+<td>Déclaration corrigée au niveau du cluster</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Identité réseau reprise après restauration</td>
+<td>Extinction de l’originale, ou renumérotation</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Arrêt arbitré par le gestionnaire de disponibilité</td>
+<td>Passage par le gestionnaire</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Adresse IPv6 globale exposée</td>
+<td>Attribution à désactiver, ou filtrage explicite</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Copie secondaire hébergée sur le volume du dépôt de fichiers</td>
+<td>Stockage dédié à prévoir, arbitrage assumé</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Fréquence de copie confondue avec la fenêtre de perte</td>
+<td>Fenêtre calculée sur le maillon le plus lent</td>
+</tr>
+</tbody>
+</table>
+<p>Trois d’entre eux méritent une phrase.</p>
+<p><strong>Le point 4.</strong> Une restauration restitue l’identité
+réseau de la machine, adresse matérielle comprise. Deux machines
+identiques sur le même segment provoquent un conflit, et le service
+devient injoignable sans aucun message d’erreur. Règle qui en découle :
+toute restauration exige une renumérotation avant mise en service
+simultanée.</p>
+<p><strong>Le point 6.</strong> Le système invité obtient
+automatiquement une adresse IPv6 publique, en plus de son adresse IPv4
+privée. La traduction d’adresses qui protège IPv4 ne s’applique pas à
+IPv6. L’infrastructure semble protégée, alors qu’un second protocole
+contourne le mécanisme. Ce point illustre une fausse sensation de
+sécurité, et il constitue le principal enseignement de sécurité de cette
+brique.</p>
+<p><strong>Le point 8.</strong> Une tâche de copie déclenchée toutes les
+30 minutes donne l’impression d’une fenêtre de perte de 30 minutes.
+C’est faux : la copie ne fait que propager une archive existante.
+Annoncer une fenêtre trop optimiste affaiblit l’ensemble de la
+stratégie, car l’écart ne se découvre qu’au moment où l’on cherche à
+restaurer.</p>
+<hr />
+<h2 id="recette-et-conformité">5. Recette et conformité</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Indicateur</th>
+<th>Mesure</th>
+<th>Statut</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sauvegarde exécutée</td>
+<td>12 s puis 9 s, archives créées</td>
+<td>Conforme</td>
+</tr>
+<tr>
+<td>Restauration testée</td>
+<td>9,27 s à 884 Mo/s</td>
+<td>Conforme</td>
+</tr>
+<tr>
+<td>Copie restaurée fonctionnelle</td>
+<td>Service interrogé depuis deux chemins</td>
+<td>Conforme</td>
+</tr>
+<tr>
+<td>Cohérence de la sauvegarde</td>
+<td>Agent invité sollicité</td>
+<td>Conforme</td>
+</tr>
+<tr>
+<td>Taux de déduplication</td>
+<td>82 %, puis 98 %</td>
+<td>Conforme</td>
+</tr>
+<tr>
+<td>Copie secondaire présente</td>
+<td>Plusieurs points de restauration sur une machine distincte</td>
+<td>Conforme</td>
+</tr>
+<tr>
+<td>Rétention configurée</td>
+<td>7 quotidiennes, 4 hebdomadaires, 3 mensuelles</td>
+<td>Conforme</td>
+</tr>
+<tr>
+<td>Fenêtre de perte définie</td>
+<td>24 h 30 min au pire, de bout en bout</td>
+<td>Conforme</td>
+</tr>
+</tbody>
+</table>
+<p>La rétention est portée par la tâche de sauvegarde planifiée.
+L’espace occupé n’est réellement libéré qu’à l’exécution de la collecte
+des blocs orphelins, tâche distincte et planifiée séparément sur le
+serveur de sauvegarde.</p>
+<hr />
+<h2 id="suite-donnée">6. Suite donnée</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Étape</th>
+<th>Objet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chiffrement de l’entrepôt</td>
+<td>Protection des données au repos, clé conservée hors du serveur</td>
+</tr>
+<tr>
+<td>Élargissement du périmètre</td>
+<td>Étendre la sauvegarde aux autres machines de l’infrastructure</td>
+</tr>
+<tr>
+<td>Stockage dédié à la copie secondaire</td>
+<td>Isoler la copie du dépôt de fichiers (point de vigilance n° 7)</td>
+</tr>
+<tr>
+<td>Restriction de la tâche de copie</td>
+<td>Rattacher la tâche au compte dédié créé à cet effet</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="journal-des-commandes">7. Journal des commandes</h2>
+<p>La séquence complète de mise en œuvre, environnement par
+environnement, est regroupée dans le document <strong>Journal des
+commandes : sauvegarde</strong>, qui accompagne celui-ci. Il couvre les
+cinq environnements d’exécution : poste de travail, hôte physique,
+cluster, serveur de sauvegarde primaire et serveur de sauvegarde
+secondaire.</p>
+<p>Les mesures d’exécution de la stratégie 3-2-1, sorties de ce journal
+pour ne pas l’alourdir, sont regroupées en <strong>annexe A</strong> du
+présent document.</p>
+<hr />
+<h2 id="annexe-a-preuves-brutes-du-test-3-2-1">Annexe A — Preuves brutes
+du test 3-2-1</h2>
+<p>Relevés reproduits tels quels, sans retraitement. Ce sont les preuves
+exigées par la recette : journal de sauvegarde et preuve de
+restauration. Les durées citées dans les tableaux du document sont les
+durées de tâche, telles que Proxmox les enregistre, et non les seuls
+temps de transfert.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Copie</th>
+<th>Support</th>
+<th>Preuve correspondante</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1</strong></td>
+<td>Volumes du cluster</td>
+<td>État du cluster, quorum et réplication — document de configuration
+du cluster</td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td>Serveur de sauvegarde primaire</td>
+<td><strong>A.1</strong> à <strong>A.4</strong></td>
+</tr>
+<tr>
+<td><strong>3</strong></td>
+<td>Serveur de sauvegarde secondaire</td>
+<td><strong>A.5</strong> à <strong>A.7</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="a.1-première-sauvegarde-08102026">A.1 Première sauvegarde —
+08/10/2026</h3>
+<pre><code>INFO: VM Name: vm-test-ha
 INFO: include disk &#39;scsi0&#39; &#39;local-zfs:vm-100-disk-0&#39; 8G
 INFO: backup mode: snapshot
 INFO: creating Proxmox Backup Server archive &#39;vm/100/2026-10-08T10:36:00Z&#39;
@@ -623,22 +525,19 @@ INFO: backup was done incrementally, reused 6.59 GiB (82%)
 INFO: transferred 8.00 GiB in 11 seconds (744.7 MiB/s)
 INFO: Finished Backup of VM 100 (00:00:12)
 INFO: Backup job finished successfully</code></pre>
-        <p>
-          <strong>Lecture.</strong> Le gel puis la libération du système de
-          fichiers par l’agent invité attestent la cohérence applicative de la
-          copie. Le <code>dirty-bitmap status: created new</code> indique qu’il
-          s’agit de la toute première sauvegarde de cette machine : aucun
-          historique de blocs modifiés n’existait avant elle. Les 82 %
-          réutilisés ne proviennent donc pas d’une archive antérieure, mais de
-          la <strong>déduplication des blocs nuls</strong> — les 6,59 Gio
-          réutilisés correspondent aux 6,47 Gio de données creuses du disque.
-          C’est ce qui explique qu’une première sauvegarde de 8 Gio se termine
-          en 12 secondes.
-        </p>
-        <h3 id="a.2-sauvegarde-suivante-12102026">
-          A.2 Sauvegarde suivante — 12/10/2026
-        </h3>
-        <pre><code>INFO: backup mode: snapshot
+<p><strong>Lecture.</strong> Le gel puis la libération du système de
+fichiers par l’agent invité attestent la cohérence applicative de la
+copie. Le <code>dirty-bitmap status: created new</code> indique qu’il
+s’agit de la toute première sauvegarde de cette machine : aucun
+historique de blocs modifiés n’existait avant elle. Les 82 % réutilisés
+ne proviennent donc pas d’une archive antérieure, mais de la
+<strong>déduplication des blocs nuls</strong> — les 6,59 Gio réutilisés
+correspondent aux 6,47 Gio de données creuses du disque. C’est ce qui
+explique qu’une première sauvegarde de 8 Gio se termine en 12
+secondes.</p>
+<h3 id="a.2-sauvegarde-suivante-12102026">A.2 Sauvegarde suivante —
+12/10/2026</h3>
+<pre><code>INFO: backup mode: snapshot
 INFO: issuing guest-agent &#39;fs-freeze&#39; command
 INFO: issuing guest-agent &#39;fs-thaw&#39; command
 INFO: 100% (8.0 GiB of 8.0 GiB) in 8s, read: 1.5 GiB/s
@@ -646,62 +545,50 @@ INFO: backup is sparse: 6.43 GiB (80%) total zero data
 INFO: backup was done incrementally, reused 7.88 GiB (98%)
 INFO: Finished Backup of VM 100 (00:00:09)
 INFO: Backup job finished successfully</code></pre>
-        <p>
-          <strong>Lecture.</strong> Cette fois la déduplication joue sur les
-          deux tableaux : les blocs nuls, comme à la première passe, et les
-          blocs déjà écrits dans l’entrepôt lors de cette passe. 7,88 Gio sur 8
-          sont réutilisés, soit 98 %.
-        </p>
-        <h3 id="a.3-restauration-08102026-vers-la-machine-101">
-          A.3 Restauration — 08/10/2026, vers la machine 101
-        </h3>
-        <p>
-          Le journal compte 320 lignes de progression. Extraits déterminants :
-        </p>
-        <pre><code>restore proxmox backup image: /usr/bin/pbs-restore --repository
+<p><strong>Lecture.</strong> Cette fois la déduplication joue sur les
+deux tableaux : les blocs nuls, comme à la première passe, et les blocs
+déjà écrits dans l’entrepôt lors de cette passe. 7,88 Gio sur 8 sont
+réutilisés, soit 98 %.</p>
+<h3 id="a.3-restauration-08102026-vers-la-machine-101">A.3 Restauration
+— 08/10/2026, vers la machine 101</h3>
+<p>Le journal compte 320 lignes de progression. Extraits déterminants
+:</p>
+<pre><code>restore proxmox backup image: /usr/bin/pbs-restore --repository
   pve-backup@pbs@192.168.1.161:datastore-santelia
 starting to restore snapshot &#39;vm/100/2026-10-08T10:36:00Z&#39;
 progress 28% (read 2407530496 bytes, zeroes = 33% (805306368 bytes), duration 9 sec)
 […]
 restore image complete (bytes=8589934592, duration=9.27s, speed=884.00MB/s)
 TASK OK</code></pre>
-        <p>
-          <strong>Lecture — c’est la preuve de restauration.</strong> L’archive
-          restaurée est bien celle du 08/10, extraite de l’entrepôt du serveur
-          de sauvegarde primaire, vers une machine d’identifiant distinct, la
-          101. Les 8 589 934 592 octets annoncés correspondent exactement aux 8
-          Gio du disque : la restauration est complète et non partielle. Le
-          débit de 884 MiB/s sur 9,27 secondes est celui d’un entrepôt local,
-          sans traversée de lien réseau.
-        </p>
-        <h3 id="a.4-points-de-restauration-présents-dans-lentrepôt-primaire">
-          A.4 Points de restauration présents dans l’entrepôt primaire
-        </h3>
-        <pre><code>Volid                                              Format   Type     Size         VMID
+<p><strong>Lecture — c’est la preuve de restauration.</strong> L’archive
+restaurée est bien celle du 08/10, extraite de l’entrepôt du serveur de
+sauvegarde primaire, vers une machine d’identifiant distinct, la 101.
+Les 8 589 934 592 octets annoncés correspondent exactement aux 8 Gio du
+disque : la restauration est complète et non partielle. Le débit de 884
+MiB/s sur 9,27 secondes est celui d’un entrepôt local, sans traversée de
+lien réseau.</p>
+<h3 id="a.4-points-de-restauration-présents-dans-lentrepôt-primaire">A.4
+Points de restauration présents dans l’entrepôt primaire</h3>
+<pre><code>Volid                                              Format   Type     Size         VMID
 pbs-santelia:backup/vm/100/2026-10-08T10:36:00Z    pbs-vm   backup   8589936103   100
 pbs-santelia:backup/vm/100/2026-10-12T13:02:02Z    pbs-vm   backup   8589936099   100</code></pre>
-        <p>
-          <strong>Lecture :</strong> deux archives espacées dans le temps,
-          correspondant aux deux journaux ci-dessus. C’est cette régularité qui
-          rend la fenêtre de perte annoncée tenable.
-        </p>
-        <h3 id="a.5-première-passe-de-synchronisation-transfert-initial">
-          A.5 Première passe de synchronisation — transfert initial
-        </h3>
-        <pre><code>Found 1 groups to sync (out of 1 total)
+<p><strong>Lecture :</strong> deux archives espacées dans le temps,
+correspondant aux deux journaux ci-dessus. C’est cette régularité qui
+rend la fenêtre de perte annoncée tenable.</p>
+<h3 id="a.5-première-passe-de-synchronisation-transfert-initial">A.5
+Première passe de synchronisation — transfert initial</h3>
+<pre><code>Found 1 groups to sync (out of 1 total)
 [vm/100]: 2026-10-08T10:36:00Z: start sync
 [vm/100]: 2026-10-08T10:36:00Z/drive-scsi0.img.fidx: downloaded 442.898 MiB (108.618 MiB/s)
 [vm/100]: 2026-10-08T10:36:00Z: sync done
 [vm/100]: percentage done: 100.00% (1/1 snapshots)
 Summary: sync job pulled 442.898 MiB in 363 chunks (average rate: 108.618 MiB/s)
 TASK OK</code></pre>
-        <h3
-          id="a.6-seconde-passe-de-synchronisation-reprise-après-une-nouvelle-sauvegarde"
-        >
-          A.6 Seconde passe de synchronisation — reprise après une nouvelle
-          sauvegarde
-        </h3>
-        <pre><code>[vm/100]: re-sync snapshot 2026-10-08T10:36:00Z
+<h3
+id="a.6-seconde-passe-de-synchronisation-reprise-après-une-nouvelle-sauvegarde">A.6
+Seconde passe de synchronisation — reprise après une nouvelle
+sauvegarde</h3>
+<pre><code>[vm/100]: re-sync snapshot 2026-10-08T10:36:00Z
 [vm/100]: 2026-10-08T10:36:00Z: no data changes
 [vm/100]: percentage done: 50.00% (1/2 snapshots)
 [vm/100]: 2026-10-12T13:02:02Z/drive-scsi0.img.fidx: downloaded 16.43 MiB (82.282 MiB/s)
@@ -709,73 +596,62 @@ TASK OK</code></pre>
 [vm/100]: percentage done: 100.00% (2/2 snapshots)
 Summary: sync job pulled 16.43 MiB in 32 chunks (average rate: 82.282 MiB/s)
 TASK OK</code></pre>
-        <table>
-          <colgroup>
-            <col style="width: 20%" />
-            <col style="width: 20%" />
-            <col style="width: 20%" />
-            <col style="width: 20%" />
-            <col style="width: 20%" />
-          </colgroup>
-          <thead>
-            <tr>
-              <th>Passe</th>
-              <th>Snapshot déjà présent</th>
-              <th>Données transférées</th>
-              <th>Blocs</th>
-              <th>Débit</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Première</td>
-              <td>—</td>
-              <td><strong>442,898 Mio</strong></td>
-              <td>363</td>
-              <td>108,618 Mio/s</td>
-            </tr>
-            <tr>
-              <td>Seconde</td>
-              <td>reconnu inchangé, laissé tel quel</td>
-              <td><strong>16,43 Mio</strong></td>
-              <td>32</td>
-              <td>82,282 Mio/s</td>
-            </tr>
-          </tbody>
-        </table>
-        <p>
-          <strong>Lecture — deux mécanismes se cumulent.</strong> L’archive déjà
-          présente n’est pas retransférée : le serveur secondaire la reconnaît
-          comme inchangée et la laisse en place. Et pour la nouvelle archive,
-          seuls les blocs absents de son propre entrepôt traversent le réseau —
-          16,43 Mio pour 8 Gio de machine, exactement comme la déduplication à
-          la source. Les deux serveurs travaillent donc en relais : le primaire
-          déduplique à l’écriture, le secondaire déduplique à la lecture.
-        </p>
-        <h3 id="a.7-occupation-de-lentrepôt-de-la-copie">
-          A.7 Occupation de l’entrepôt de la copie
-        </h3>
-        <pre><code>718M    /mnt/backup/pbs-datastore
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Passe</th>
+<th>Snapshot déjà présent</th>
+<th>Données transférées</th>
+<th>Blocs</th>
+<th>Débit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Première</td>
+<td>—</td>
+<td><strong>442,898 Mio</strong></td>
+<td>363</td>
+<td>108,618 Mio/s</td>
+</tr>
+<tr>
+<td>Seconde</td>
+<td>reconnu inchangé, laissé tel quel</td>
+<td><strong>16,43 Mio</strong></td>
+<td>32</td>
+<td>82,282 Mio/s</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Lecture — deux mécanismes se cumulent.</strong> L’archive
+déjà présente n’est pas retransférée : le serveur secondaire la
+reconnaît comme inchangée et la laisse en place. Et pour la nouvelle
+archive, seuls les blocs absents de son propre entrepôt traversent le
+réseau — 16,43 Mio pour 8 Gio de machine, exactement comme la
+déduplication à la source. Les deux serveurs travaillent donc en relais
+: le primaire déduplique à l’écriture, le secondaire déduplique à la
+lecture.</p>
+<h3 id="a.7-occupation-de-lentrepôt-de-la-copie">A.7 Occupation de
+l’entrepôt de la copie</h3>
+<pre><code>718M    /mnt/backup/pbs-datastore
 Sys. de fichiers Taille Utilisé Dispo Uti% Monté sur
 /dev/sdb1          457G     20G  414G   5% /mnt/backup</code></pre>
-        <p>
-          <strong>Lecture :</strong> la copie occupe une fraction de la capacité
-          disponible. La marge est large pour les machines suivantes.
-        </p>
-        <hr />
-        <p>
-          <em
-            >Documentation publiée depuis le dépôt du projet — version du
-            12/10/2026.</em
-          >
-        </p>
-      </article>
+<p><strong>Lecture :</strong> la copie occupe une fraction de la
+capacité disponible. La marge est large pour les machines suivantes.</p>
+<hr />
+<p><em>Documentation publiée depuis le dépôt du projet — version du
+12/10/2026.</em></p></article>
     </main>
     <footer>
       <div class="wrap">
-        <p>
-          Sant&eacute;lia &middot; documentation technique &middot; 12/10/2026
-        </p>
+        <p>Sant&eacute;lia &middot; documentation technique &middot; 27/10/2026</p>
       </div>
     </footer>
   </body>

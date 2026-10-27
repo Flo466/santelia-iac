@@ -581,7 +581,148 @@ pvesr run --id 100-0
 
 ---
 
-## A.9 Récapitulatif des fichiers de configuration concernés
+## A.9 Passage en production et renommage de la machine critique
+
+La recette de disponibilité a été menée sur une machine volontairement minimale, afin de valider
+le mécanisme sans introduire d'autres variables. Une fois le mécanisme prouvé, le contenu a été
+remplacé par le service réel **sans retoucher au mécanisme** : le groupe de disponibilité, la
+tâche de réplication et la tâche de sauvegarde s'appuient sur l'identifiant de machine, pas sur
+son nom.
+
+### A.9.1 Deux couches d'identité
+
+Le nom porté par l'hyperviseur n'est que l'**étiquette** de la machine dans l'interface. Le nom
+utilisé par le système invité est distinct, et c'est lui qui apparaît dans les journaux et les
+invitations de connexion. Les deux se traitent séparément, et dans cet ordre.
+
+### A.9.2 Côté hyperviseur
+
+Machine arrêtée, ou ressource sortie du périmètre du gestionnaire.
+
+```
+qm set 100 --memory 2048 --balloon 0 --name <nouveau-nom>
+
+qm config 100 | grep -E "^memory|^balloon|^name"
+```
+
+La gestion mémoire dynamique reste désactivée : elle est erratique dans un hyperviseur
+lui-même virtualisé.
+
+### A.9.3 Contrôle préalable, côté système invité
+
+Un seul contrôle conditionne tout le reste :
+
+```
+grep -E "^preserve_hostname" /etc/cloud/cloud.cfg
+```
+
+Le provisionnement automatique réapplique le nom d'origine à chaque démarrage. La valeur doit
+être passée à `true` **avant** le renommage, faute de quoi l'intervention est silencieusement
+annulée au redémarrage suivant.
+
+```
+cp /etc/cloud/cloud.cfg /etc/cloud/cloud.cfg.bak
+sed -i 's/^preserve_hostname: false/preserve_hostname: true/' /etc/cloud/cloud.cfg
+grep -E "^preserve_hostname" /etc/cloud/cloud.cfg
+```
+
+### A.9.4 Application du nom
+
+```
+hostnamectl set-hostname <nouveau-nom>
+sed -i 's/<ancien-nom>/<nouveau-nom>/g' /etc/hosts
+hostname
+grep 127.0.1.1 /etc/hosts
+```
+
+Le fichier de résolution est régénéré à chaque démarrage depuis un modèle. La ligne de bouclage
+affiche le nom **deux fois** lorsque aucun nom complet n'est configuré : c'est le comportement
+normal de ce modèle, et non une erreur de substitution.
+
+### A.9.5 Clés d'hôte et identifiant machine
+
+```
+rm -f /etc/ssh/ssh_host_*
+ssh-keygen -A
+ls -la /etc/ssh/ssh_host_*
+```
+
+La génération ne régénère **jamais** une clé existante : elle ne crée que les clés absentes et
+reste silencieuse lorsqu'il n'y a rien à faire. La suppression est donc obligatoire, et le
+contrôle d'horodatage qui suit est la seule preuve que les clés sont neuves.
+
+```
+truncate -s 0 /etc/machine-id
+systemd-machine-id-setup
+cat /etc/machine-id
+```
+
+L'identifiant obtenu dérive de l'identifiant matériel exposé par l'hyperviseur. Si cet
+identifiant matériel provient d'une restauration, il est identique à celui de l'originale : la
+régénération reproduit alors la même valeur. Voir le contrôle en A.9.7.
+
+### A.9.6 Redémarrage et contrôles de durabilité
+
+```
+reboot
+
+hostname
+grep 127.0.1.1 /etc/hosts
+free -m
+cat /proc/sys/kernel/random/boot_id
+```
+
+Le relevé de l'identifiant de démarrage sert de référence pour toute mesure ultérieure : il ne
+change qu'au redémarrage du système, pas au redémarrage d'un service ou d'un conteneur. La
+mémoire d'échange est relue après redémarrage : une valeur non nulle confirme que la déclaration
+est permanente et non simplement activée à chaud.
+
+### A.9.7 Contrôle de la cible de restauration
+
+Une seconde machine restaurée depuis une sauvegarde de celle-ci porte la même configuration,
+donc le même identifiant matériel et le même identifiant machine. Le contrôle est une simple
+comparaison :
+
+```
+qm config <vmid-restaure> | grep smbios1
+qm config <vmid-source> | grep smbios1
+```
+
+Les deux valeurs doivent être **différentes**. Si elles sont identiques, la correction se fait
+par changement de l'identifiant matériel, puis régénération de l'identifiant machine, dans cet
+ordre.
+
+La valeur neuve se lit sur l'hôte, qui ne dispose pas toujours de l'outil de génération prévu
+pour cela ; le noyau expose la même chose sans paquet supplémentaire.
+
+```
+cat /proc/sys/kernel/random/uuid
+qm set <vmid-restaure> --smbios1 uuid=<valeur-obtenue>
+qm config <vmid-restaure> | grep smbios1
+```
+
+### A.9.8 Sortie de surveillance d'une ressource
+
+Passer une ressource de disponibilité en `disabled` **arrête la machine** avant de la retirer du
+périmètre du gestionnaire. Sur une ressource en service, la coupure doit être anticipée, et
+l'opération suivante ne doit être engagée qu'une fois l'état stabilisé.
+
+```
+ha-manager set vm:100 --state disabled
+ha-manager status
+qm status 100
+```
+
+Le retour en service se fait par `--state started`, une fois les contrôles de durabilité passés.
+
+```
+ha-manager set vm:100 --state started
+ha-manager status
+```
+
+---
+
+## A.10 Récapitulatif des fichiers de configuration concernés
 
 | Fichier | Emplacement | Rôle |
 | --- | --- | --- |
@@ -595,7 +736,7 @@ pvesr run --id 100-0
 
 ---
 
-## A.10 Portée de cette annexe
+## A.11 Portée de cette annexe
 
 Ces commandes ont été exécutées manuellement, une par une, lors de la mise au point du montage.
 

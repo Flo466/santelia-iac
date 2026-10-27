@@ -129,7 +129,7 @@ Le clonage d'une machine virtuelle duplique son identité. Trois éléments doiv
 | Élément | Risque si dupliqué |
 | --- | --- |
 | **Clés d'hôte SSH** | Rejet des connexions, alertes de sécurité, échec du clustering |
-| **Identifiant machine** | Comportements erratiques des services, traces ambiguës |
+| **Identifiant machine** | Comportements erratiques des services, traces ambiguës. **Une restauration le recopie** : changer l'identifiant matériel avant de le régénérer |
 | **Adresse réseau** | Conflit d'adresses, coupures intermittentes |
 
 ### Procédure
@@ -148,9 +148,22 @@ Le clonage d'une machine virtuelle duplique son identité. Trois éléments doiv
 
 Conséquence : si l'étape de suppression n'est pas exécutée, la commande ne produit rien et le clone conserve l'identité de la machine d'origine. C'est l'erreur la plus coûteuse de cette phase.
 
+**Le provisionnement automatique annule un renommage, silencieusement.** Le mécanisme qui a
+servi à construire la machine réapplique le nom d'origine à chaque démarrage, ainsi que le
+fichier de résolution local, tant que la conservation du nom n'est pas explicitement demandée.
+Un renommage effectué sans ce réglage est annulé au redémarrage suivant, sans message d'erreur.
+Le contrôle de durabilité — redémarrer puis relire le nom — est la seule preuve que le
+changement a tenu.
+
 ### Bonne nouvelle sur l'identifiant machine
 
 Sur une machine virtuelle, l'identifiant machine n'est pas tiré au hasard : il est **dérivé de l'identifiant unique exposé par l'hyperviseur**. Comme l'opération de clonage régénère cet identifiant, chaque clone dispose déjà du sien dès son premier démarrage. La régénération est donc une **ceinture de sécurité**, pas une urgence.
+
+Cette tolérance vaut pour le clonage, et pour lui seul. **Une restauration recopie la
+configuration de la machine source, identifiant matériel compris** : l'identifiant machine de
+la machine restaurée reprend alors la valeur de l'originale. Dans ce cas, la régénération n'est
+plus une ceinture de sécurité mais une obligation, et elle doit être précédée du changement de
+l'identifiant matériel.
 
 ### Symptômes d'une identité dupliquée
 
