@@ -3,48 +3,49 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>
-      Brique 1 &mdash; Cluster Proxmox VE et haute disponibilit&eacute;
-    </title>
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#f1efe4" />
+    <title>Brique 1 — Cluster Proxmox VE et haute disponibilité</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <a class="skip" href="#contenu">Aller au contenu</a>
+
     <header class="masthead">
       <div class="wrap">
         <p class="eyebrow">
-          Sant&eacute;lia &middot; brique 1 sur 4 &middot; haute
-          disponibilit&eacute;
+          Santélia &middot; brique 1 sur 4 &middot; haute disponibilité
         </p>
-        <h1>Cluster Proxmox VE et continuit&eacute; des VM critiques</h1>
+        <h1>Cluster Proxmox VE et continuité des VM critiques</h1>
         <p class="lede">
-          Trois n&oelig;uds en cluster, r&eacute;plication des volumes et groupe
-          de haute disponibilit&eacute;. La continuit&eacute; est
-          d&eacute;montr&eacute;e par la panne&nbsp;: un n&oelig;ud est
-          coup&eacute;, la reprise est chronom&eacute;tr&eacute;e, et le quorum
-          reste tenu pendant l'incident.
+          Trois nœuds en cluster, réplication des volumes et groupe de haute
+          disponibilité. La continuité est démontrée par la panne&nbsp;: un nœud
+          est coupé, la reprise est chronométrée, et le quorum reste tenu
+          pendant l'incident.
         </p>
         <p class="stamp">
           Documentation technique &nbsp;&middot;&nbsp; 8 octobre 2026
         </p>
       </div>
     </header>
-    <main class="wrap">
+
+    <main class="wrap" id="contenu">
       <a class="back" href="index.html">&larr; Sommaire</a>
 
       <div class="banner">
         <div>
           <div class="lab">Statut de la brique</div>
-          <div class="val">Livr&eacute;e et v&eacute;rifi&eacute;e</div>
+          <div class="val">Livrée et vérifiée</div>
         </div>
         <div class="sep">
-          <div class="lab">Indisponibilit&eacute; mesur&eacute;e</div>
+          <div class="lab">Indisponibilité mesurée</div>
           <div class="val">2 min 24 s</div>
         </div>
       </div>
 
       <nav class="sommaire" aria-label="Sommaire de la page">
         <span class="lab">Sur cette page</span>
-        <a href="#schema">Le sch&eacute;ma de la brique</a>
+        <a href="#schema">Le schéma de la brique</a>
         <a href="#documents">Documents de la brique</a>
         <a href="#captures">La brique en images</a>
       </nav>
@@ -52,77 +53,79 @@
       <figure id="schema">
         <img
           src="figures/fig-02-bloc1-haute-disponibilite.svg"
-          alt="Logique de la haute disponibilit&eacute;"
+          alt="Logique de la haute disponibilité"
         />
         <figcaption>
-          Quorum &agrave; deux votes sur trois, r&eacute;plication des volumes,
-          et d&eacute;roul&eacute; mesur&eacute; de la bascule.
+          Quorum à deux votes sur trois, réplication des volumes, et déroulé
+          mesuré de la bascule.
         </figcaption>
       </figure>
 
       <blockquote>
         <p><strong>Test de recette</strong></p>
         <p>
-          Simuler l'indisponibilit&eacute; d'un n&oelig;ud h&eacute;bergeant une
-          machine virtuelle critique. Le service doit rester disponible ou
-          &ecirc;tre r&eacute;tabli dans le d&eacute;lai cible, et la
-          d&eacute;monstration doit s'appuyer sur un compte rendu
-          horodat&eacute;.
+          Simuler l'indisponibilité d'un nœud hébergeant une machine virtuelle
+          critique. Le service doit rester disponible ou être rétabli dans le
+          délai cible, et la démonstration doit s'appuyer sur un compte rendu
+          horodaté.
         </p>
       </blockquote>
 
-      <h2 class="sec-title" id="documents">Documents de la brique</h2>
+      <div class="sec-head">
+        <h2 class="sec-title" id="documents">Documents de la brique</h2>
+        <p class="sec-hint">4 documents</p>
+      </div>
 
       <div class="grid">
         <a class="card" href="01-cluster-proxmox.html">
-          <span class="no">01 &nbsp;/&nbsp; ARCHITECTURE</span>
-          <h3>Configuration des trois n&oelig;uds</h3>
+          <span class="card__icon" aria-hidden="true">🧩</span>
+          <span class="card__tag">01 / Architecture</span>
+          <h3>Configuration des trois nœuds</h3>
           <p>
-            Quorum &agrave; deux votes sur trois, pool de stockage nomm&eacute;
-            de mani&egrave;re identique sur chaque n&oelig;ud pour rendre la
-            r&eacute;plication native possible. Les &eacute;carts assum&eacute;s
-            sont d&eacute;clar&eacute;s pour que la recette reste
-            d&eacute;fendable.
+            Quorum à deux votes sur trois, pool de stockage nommé de manière
+            identique sur chaque nœud pour rendre la réplication native
+            possible. Les écarts assumés sont déclarés pour que la recette reste
+            défendable.
           </p>
           <div class="pills">
             <span class="pill">Corosync</span>
             <span class="pill">quorum</span>
             <span class="pill">ZFS</span>
-            <span class="pill">r&eacute;plication</span>
+            <span class="pill">réplication</span>
             <span class="pill">PCA</span>
           </div>
-          <div class="foot">
-            <span class="go">Consulter &nbsp;&rarr;</span>
+          <div class="card__foot">
+            Consulter <span aria-hidden="true">&rarr;</span>
           </div>
         </a>
 
         <a class="card" href="02-vm-test-ha.html">
-          <span class="no">02 &nbsp;/&nbsp; MISE EN &OElig;UVRE</span>
+          <span class="card__icon" aria-hidden="true">🖥️</span>
+          <span class="card__tag">02 / Mise en œuvre</span>
           <h3>Machine de test&nbsp;: construction et provisionnement</h3>
           <p>
-            Image syst&egrave;me, provisionnement automatique et service
-            t&eacute;moin. Le socle reproductible sur lequel repose toute la
-            d&eacute;monstration de bascule, et les pi&egrave;ges
-            d'identit&eacute; li&eacute;s au clonage.
+            Image système, provisionnement automatique et service témoin. Le
+            socle reproductible sur lequel repose toute la démonstration de
+            bascule, et les pièges d'identité liés au clonage.
           </p>
           <div class="pills">
             <span class="pill">cloud-init</span>
             <span class="pill">clone</span>
-            <span class="pill">service t&eacute;moin</span>
+            <span class="pill">service témoin</span>
           </div>
-          <div class="foot">
-            <span class="go">Consulter &nbsp;&rarr;</span>
+          <div class="card__foot">
+            Consulter <span aria-hidden="true">&rarr;</span>
           </div>
         </a>
 
         <a class="card" href="03-test-recette-HA.html">
-          <span class="no">03 &nbsp;/&nbsp; RECETTE</span>
-          <h3>Simulation de panne de n&oelig;ud</h3>
+          <span class="card__icon" aria-hidden="true">🧪</span>
+          <span class="card__tag">03 / Recette</span>
+          <h3>Simulation de panne de nœud</h3>
           <p>
-            La panne est provoqu&eacute;e, la reprise est
-            chronom&eacute;tr&eacute;e, et le quorum reste tenu pendant
-            l'incident. Horodatages et preuves brutes sont joints en annexe du
-            document.
+            La panne est provoquée, la reprise est chronométrée, et le quorum
+            reste tenu pendant l'incident. Horodatages et preuves brutes sont
+            joints en annexe du document.
           </p>
           <div class="pills">
             <span class="pill">bascule HA</span>
@@ -131,56 +134,54 @@
             <span class="pill">quorum</span>
             <span class="pill">horodatage</span>
           </div>
-          <div class="foot">
-            <span class="go">Consulter &nbsp;&rarr;</span>
-            <span class="status status--ok">Mesur&eacute;</span>
+          <div class="card__foot">
+            Consulter <span aria-hidden="true">&rarr;</span>
+            <span class="status status--ok">Mesuré</span>
           </div>
         </a>
 
         <a class="card" href="04-journal-commandes.html">
-          <span class="no">04 &nbsp;/&nbsp; EXPLOITATION</span>
-          <h3>Journal des commandes ex&eacute;cut&eacute;es</h3>
+          <span class="card__icon" aria-hidden="true">🧾</span>
+          <span class="card__tag">04 / Exploitation</span>
+          <h3>Journal des commandes exécutées</h3>
           <p>
-            La s&eacute;quence compl&egrave;te de mise en &oelig;uvre,
-            environnement par environnement, telle qu'elle a &eacute;t&eacute;
-            jou&eacute;e. De quoi rejouer l'ensemble sans rien deviner.
+            La séquence complète de mise en œuvre, environnement par
+            environnement, telle qu'elle a été jouée. De quoi rejouer l'ensemble
+            sans rien deviner.
           </p>
           <div class="pills">
-            <span class="pill">proc&eacute;dure</span>
+            <span class="pill">procédure</span>
             <span class="pill">rejeu</span>
-            <span class="pill">d&eacute;pannage</span>
+            <span class="pill">dépannage</span>
           </div>
-          <div class="foot">
-            <span class="go">Consulter &nbsp;&rarr;</span>
+          <div class="card__foot">
+            Consulter <span aria-hidden="true">&rarr;</span>
           </div>
         </a>
       </div>
 
       <article>
-        <h2>Ce que d&eacute;montre la brique</h2>
+        <h2>Ce que démontre la brique</h2>
         <ul>
           <li>
-            Un cluster de trois n&oelig;uds&nbsp;: la perte d'un n&oelig;ud
-            laisse le service op&eacute;rationnel, sans QDevice ni stockage
-            partag&eacute;.
+            Un cluster de trois nœuds&nbsp;: la perte d'un nœud laisse le
+            service opérationnel, sans QDevice ni stockage partagé.
           </li>
           <li>
-            La r&eacute;plication des volumes entre n&oelig;uds, sur un pool
-            nomm&eacute; de mani&egrave;re identique pour que la reprise soit
-            possible ailleurs.
+            La réplication des volumes entre nœuds, sur un pool nommé de manière
+            identique pour que la reprise soit possible ailleurs.
           </li>
           <li>
-            Un groupe de haute disponibilit&eacute; avec priorit&eacute;s de
-            n&oelig;uds, pour que la reprise ait lieu au bon endroit.
+            Un groupe de haute disponibilité avec priorités de nœuds, pour que
+            la reprise ait lieu au bon endroit.
           </li>
           <li>
-            Une bascule provoqu&eacute;e et chronom&eacute;tr&eacute;e, avec
-            relev&eacute; de l'&eacute;tat du quorum pendant l'incident.
+            Une bascule provoquée et chronométrée, avec relevé de l'état du
+            quorum pendant l'incident.
           </li>
           <li>
-            Des &eacute;carts assum&eacute;s et &eacute;crits&nbsp;: sans eux,
-            la recette ne r&eacute;siste pas &agrave; une question un peu
-            pr&eacute;cise.
+            Des écarts assumés et écrits&nbsp;: sans eux, la recette ne résiste
+            pas à une question un peu précise.
           </li>
         </ul>
 
@@ -189,69 +190,64 @@
         <figure>
           <img
             src="figures/fig-04-datacenter-resume.png"
-            alt="Vue d'ensemble du centre de donn&eacute;es&nbsp;: les trois n&oelig;uds du cluster et l'&eacute;tat de sant&eacute; du quorum"
+            alt="Vue d'ensemble du centre de données : les trois nœuds du cluster et l'état de santé du quorum"
           />
           <figcaption>
-            Les trois n&oelig;uds du cluster vus depuis le centre de
-            donn&eacute;es, avec l'&eacute;tat de sant&eacute; du quorum.
+            Les trois nœuds du cluster vus depuis le centre de données, avec
+            l'état de santé du quorum.
           </figcaption>
         </figure>
 
         <figure>
           <img
             src="figures/fig-05-datacenter-ha.png"
-            alt="Groupe de haute disponibilit&eacute;&nbsp;: la machine virtuelle critique, son n&oelig;ud d'accueil et l'&eacute;tat de la ressource"
+            alt="Groupe de haute disponibilité : la machine virtuelle critique, son nœud d'accueil et l'état de la ressource"
           />
           <figcaption>
-            Le groupe de haute disponibilit&eacute;&nbsp;: la machine critique
-            rattach&eacute;e &agrave; son groupe, le n&oelig;ud qui
-            l'h&eacute;berge, et le quorum maintenu.
+            Le groupe de haute disponibilité&nbsp;: la machine critique
+            rattachée à son groupe, le nœud qui l'héberge, et le quorum
+            maintenu.
           </figcaption>
         </figure>
 
         <figure>
           <img
             src="figures/fig-06-datacenter-replication.png"
-            alt="T&acirc;che de r&eacute;plication&nbsp;: le volume de la machine critique r&eacute;pliqu&eacute; vers un second n&oelig;ud toutes les quinze minutes"
+            alt="Tâche de réplication : le volume de la machine critique répliqué vers un second nœud toutes les quinze minutes"
           />
           <figcaption>
-            La r&eacute;plication des volumes vers un second n&oelig;ud,
-            &agrave; quinze minutes d'intervalle. Elle apporte de la
-            disponibilit&eacute;, pas une protection contre la perte de
-            donn&eacute;es.
+            La réplication des volumes vers un second nœud, à quinze minutes
+            d'intervalle. Elle apporte de la disponibilité, pas une protection
+            contre la perte de données.
           </figcaption>
         </figure>
 
         <figure>
           <img
             src="figures/fig-07-vue-pools-noeuds.png"
-            alt="Les n&oelig;uds du cluster vus comme machines virtuelles depuis l'h&ocirc;te qui les porte"
+            alt="Les nœuds du cluster vus comme machines virtuelles depuis l'hôte qui les porte"
           />
           <figcaption>
-            Les trois n&oelig;uds vus depuis l'h&ocirc;te qui les porte. C'est
-            l'&eacute;cart assum&eacute; de la maquette&nbsp;: les n&oelig;uds
-            sont virtuels et partagent une seule machine physique.
+            Les trois nœuds vus depuis l'hôte qui les porte. C'est l'écart
+            assumé de la maquette&nbsp;: les nœuds sont virtuels et partagent
+            une seule machine physique.
           </figcaption>
         </figure>
 
         <h2>Limite de la maquette</h2>
         <p>
-          Les trois n&oelig;uds sont h&eacute;berg&eacute;s sur une seule
-          machine physique. La maquette d&eacute;montre donc le
-          <strong>m&eacute;canisme</strong> de quorum, de r&eacute;plication et
-          de bascule, mais pas la r&eacute;sistance &agrave; la panne de
-          l'h&ocirc;te lui-m&ecirc;me. Cet &eacute;cart est
-          d&eacute;clar&eacute; explicitement dans le document d'architecture,
-          parce qu'une recette doit rester d&eacute;fendable.
+          Les trois nœuds sont hébergés sur une seule machine physique. La
+          maquette démontre donc le <strong>mécanisme</strong> de quorum, de
+          réplication et de bascule, mais pas la résistance à la panne de l'hôte
+          lui-même. Cet écart est déclaré explicitement dans le document
+          d'architecture, parce qu'une recette doit rester défendable.
         </p>
       </article>
     </main>
+
     <footer>
       <div class="wrap">
-        <p>
-          Sant&eacute;lia &middot; documentation technique &middot; 8 octobre
-          2026
-        </p>
+        <p>Santélia &middot; documentation technique &middot; 8 octobre 2026</p>
       </div>
     </footer>
   </body>

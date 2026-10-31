@@ -3,39 +3,42 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Brique 2 &mdash; Sauvegarde et restauration</title>
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#f1efe4" />
+    <title>Brique 2 — Sauvegarde et restauration</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <a class="skip" href="#contenu">Aller au contenu</a>
+
     <header class="masthead">
       <div class="wrap">
         <p class="eyebrow">
-          Sant&eacute;lia &middot; brique 2 sur 4 &middot; sauvegarde
+          Santélia &middot; brique 2 sur 4 &middot; sauvegarde
         </p>
-        <h1>Sauvegarde et restauration des donn&eacute;es</h1>
+        <h1>Sauvegarde et restauration des données</h1>
         <p class="lede">
-          Serveur de sauvegarde d&eacute;di&eacute;, entrep&ocirc;t
-          d&eacute;dupliqu&eacute; et restauration r&eacute;ellement
-          ex&eacute;cut&eacute;e. La strat&eacute;gie 3-2-1 est
-          compl&egrave;te&nbsp;: trois copies, deux supports, une hors du
-          support primaire. Seul le chiffrement de l'entrep&ocirc;t reste
-          &agrave; mettre en place.
+          Serveur de sauvegarde dédié, entrepôt dédupliqué et restauration
+          réellement exécutée. La stratégie 3-2-1 est complète&nbsp;: trois
+          copies, deux supports, une hors du support primaire. Seul le
+          chiffrement de l'entrepôt reste à mettre en place.
         </p>
         <p class="stamp">
           Documentation technique &nbsp;&middot;&nbsp; 12 octobre 2026
         </p>
       </div>
     </header>
-    <main class="wrap">
+
+    <main class="wrap" id="contenu">
       <a class="back" href="index.html">&larr; Sommaire</a>
 
       <div class="banner">
         <div>
           <div class="lab">Statut de la brique</div>
-          <div class="val">Sauvegarde et restauration test&eacute;es</div>
+          <div class="val">Sauvegarde et restauration testées</div>
         </div>
         <div class="sep">
-          <div class="lab">Restauration mesur&eacute;e</div>
+          <div class="lab">Restauration mesurée</div>
           <div class="val">9,27 s</div>
         </div>
         <div class="sep">
@@ -46,7 +49,7 @@
 
       <nav class="sommaire" aria-label="Sommaire de la page">
         <span class="lab">Sur cette page</span>
-        <a href="#schema">Le sch&eacute;ma de la brique</a>
+        <a href="#schema">Le schéma de la brique</a>
         <a href="#documents">Documents de la brique</a>
         <a href="#captures">Les captures du montage</a>
       </nav>
@@ -54,179 +57,176 @@
       <figure id="schema">
         <img
           src="figures/fig-03-bloc2-sauvegarde.svg"
-          alt="Strat&eacute;gie 3-2-1 et mesures de la sauvegarde"
+          alt="Stratégie 3-2-1 et mesures de la sauvegarde"
         />
         <figcaption>
-          Strat&eacute;gie 3-2-1&nbsp;: les trois copies, leur support, et les
-          mesures relev&eacute;es sur la sauvegarde et la restauration.
+          Stratégie 3-2-1&nbsp;: les trois copies, leur support, et les mesures
+          relevées sur la sauvegarde et la restauration.
         </figcaption>
       </figure>
 
       <blockquote>
         <p><strong>Test de recette</strong></p>
         <p>
-          Lancer une sauvegarde, puis restaurer et v&eacute;rifier que la
-          machine red&eacute;marre. Le r&eacute;sultat attendu est une
-          sauvegarde exploitable et une restauration r&eacute;ussie, avec pour
-          preuves le journal de sauvegarde et la preuve de restauration.
+          Lancer une sauvegarde, puis restaurer et vérifier que la machine
+          redémarre. Le résultat attendu est une sauvegarde exploitable et une
+          restauration réussie, avec pour preuves le journal de sauvegarde et la
+          preuve de restauration.
         </p>
       </blockquote>
 
-      <h2 class="sec-title" id="documents">Documents de la brique</h2>
+      <div class="sec-head">
+        <h2 class="sec-title" id="documents">Documents de la brique</h2>
+        <p class="sec-hint">2 documents</p>
+      </div>
 
       <div class="grid">
         <a class="card" href="pbs-01-sauvegarde.html">
-          <span class="no">01 &nbsp;/&nbsp; MISE EN &OElig;UVRE</span>
+          <span class="card__icon" aria-hidden="true">💾</span>
+          <span class="card__tag">01 / Mise en œuvre</span>
           <h3>Sauvegarde et restauration</h3>
           <p>
             Deux serveurs de sauvegarde sur deux machines physiques distinctes.
-            La protection du stockage allou&eacute;, les comptes de service
-            &agrave; privil&egrave;ges minimaux, la confiance dans le
-            certificat, la sauvegarde en mode instantan&eacute;, la restauration
-            vers une machine distincte, puis la copie secondaire qui se
-            resynchronise toutes les demi-heures. Les huit points de vigilance
-            identifi&eacute;s en conditions r&eacute;elles sont
-            document&eacute;s, dont deux rel&egrave;vent de la
-            s&eacute;curit&eacute;.
+            La protection du stockage alloué, les comptes de service à
+            privilèges minimaux, la confiance dans le certificat, la sauvegarde
+            en mode instantané, la restauration vers une machine distincte, puis
+            la copie secondaire qui se resynchronise toutes les demi-heures. Les
+            huit points de vigilance identifiés en conditions réelles sont
+            documentés, dont deux relèvent de la sécurité.
           </p>
           <div class="pills">
             <span class="pill">Proxmox Backup Server</span>
             <span class="pill">3-2-1</span>
             <span class="pill">copie secondaire</span>
-            <span class="pill">d&eacute;duplication</span>
+            <span class="pill">déduplication</span>
             <span class="pill">restauration</span>
             <span class="pill">PRA</span>
             <span class="pill">RPO</span>
             <span class="pill">certificat</span>
-            <span class="pill">moindre privil&egrave;ge</span>
+            <span class="pill">moindre privilège</span>
           </div>
-          <div class="foot">
-            <span class="go">Consulter &nbsp;&rarr;</span>
-            <span class="status status--ok">Mesur&eacute;</span>
+          <div class="card__foot">
+            Consulter <span aria-hidden="true">&rarr;</span>
+            <span class="status status--ok">Mesuré</span>
           </div>
         </a>
 
         <a class="card" href="pbs-02-journal-commandes.html">
-          <span class="no">02 &nbsp;/&nbsp; EXPLOITATION</span>
+          <span class="card__icon" aria-hidden="true">🧾</span>
+          <span class="card__tag">02 / Exploitation</span>
           <h3>Journal des commandes&nbsp;: sauvegarde</h3>
           <p>
-            La s&eacute;quence compl&egrave;te de mise en &oelig;uvre,
-            environnement par environnement, telle qu'elle a &eacute;t&eacute;
-            jou&eacute;e. L'ordre des op&eacute;rations y est
-            d&eacute;terminant&nbsp;: d&eacute;clarer le stockage au bon niveau,
-            contr&ocirc;ler l'empreinte du certificat, et v&eacute;rifier que la
-            sauvegarde reste coh&eacute;rente applicative gr&acirc;ce &agrave;
-            l'agent invit&eacute;. Le raccordement des deux serveurs, la
-            d&eacute;claration de l'empreinte et la t&acirc;che de
-            synchronisation y figurent, relev&eacute;s &agrave; l'appui.
+            La séquence complète de mise en œuvre, environnement par
+            environnement, telle qu'elle a été jouée. L'ordre des opérations y
+            est déterminant&nbsp;: déclarer le stockage au bon niveau, contrôler
+            l'empreinte du certificat, et vérifier que la sauvegarde reste
+            cohérente applicative grâce à l'agent invité. Le raccordement des
+            deux serveurs, la déclaration de l'empreinte et la tâche de
+            synchronisation y figurent, relevés à l'appui.
           </p>
           <div class="pills">
-            <span class="pill">proc&eacute;dure</span>
+            <span class="pill">procédure</span>
             <span class="pill">rejeu</span>
             <span class="pill">vzdump</span>
             <span class="pill">qmrestore</span>
             <span class="pill">synchronisation</span>
           </div>
-          <div class="foot">
-            <span class="go">Consulter &nbsp;&rarr;</span>
+          <div class="card__foot">
+            Consulter <span aria-hidden="true">&rarr;</span>
           </div>
         </a>
       </div>
 
-      <h2 class="sec-title">Reste &agrave; mettre en place</h2>
+      <div class="sec-head">
+        <h2 class="sec-title">Reste à mettre en place</h2>
+        <p class="sec-hint">3 chantiers</p>
+      </div>
 
       <div class="grid">
         <div class="card">
-          <span class="no">CHIFFREMENT</span>
+          <span class="card__icon" aria-hidden="true">🔐</span>
+          <span class="card__tag">Chiffrement</span>
           <h3>Protection des sauvegardes au repos</h3>
           <p>
-            Le chiffrement de l'entrep&ocirc;t prot&egrave;ge les donn&eacute;es
-            stock&eacute;es. Contrepartie &agrave; assumer&nbsp;: la cl&eacute;
-            doit &ecirc;tre conserv&eacute;e hors du serveur, faute de quoi les
-            sauvegardes deviennent d&eacute;finitivement illisibles.
+            Le chiffrement de l'entrepôt protège les données stockées.
+            Contrepartie à assumer&nbsp;: la clé doit être conservée hors du
+            serveur, faute de quoi les sauvegardes deviennent définitivement
+            illisibles.
           </p>
-          <div class="foot">
-            <span class="status status--todo">&Agrave; faire</span>
+          <div class="card__foot">
+            <span class="status status--todo">À faire</span>
           </div>
         </div>
 
         <div class="card">
-          <span class="no">STOCKAGE D&Eacute;DI&Eacute;</span>
+          <span class="card__icon" aria-hidden="true">🗄️</span>
+          <span class="card__tag">Stockage dédié</span>
           <h3>Isoler la copie secondaire</h3>
           <p>
-            La copie secondaire cohabite aujourd'hui avec un d&eacute;p&ocirc;t
-            de sauvegarde de fichiers sur le m&ecirc;me volume&nbsp;: la perte
-            de ce volume les emporterait tous les deux. Un stockage distinct met
-            la copie hors de port&eacute;e de cet incident.
+            La copie secondaire cohabite aujourd'hui avec un dépôt de sauvegarde
+            de fichiers sur le même volume&nbsp;: la perte de ce volume les
+            emporterait tous les deux. Un stockage distinct met la copie hors de
+            portée de cet incident.
           </p>
-          <div class="foot">
-            <span class="status status--todo">&Agrave; faire</span>
+          <div class="card__foot">
+            <span class="status status--todo">À faire</span>
           </div>
         </div>
 
         <div class="card">
-          <span class="no">P&Eacute;RIM&Egrave;TRE</span>
-          <h3>&Eacute;largir la sauvegarde</h3>
+          <span class="card__icon" aria-hidden="true">🌐</span>
+          <span class="card__tag">Périmètre</span>
+          <h3>Élargir la sauvegarde</h3>
           <p>
             La sauvegarde couvre la machine critique produite par la brique
-            pr&eacute;c&eacute;dente. L'&eacute;tendre aux autres machines de
-            l'infrastructure reste &agrave; faire, avec la m&ecirc;me
-            cha&icirc;ne de copie.
+            précédente. L'étendre aux autres machines de l'infrastructure reste
+            à faire, avec la même chaîne de copie.
           </p>
-          <div class="foot">
-            <span class="status status--todo">&Agrave; faire</span>
+          <div class="card__foot">
+            <span class="status status--todo">À faire</span>
           </div>
         </div>
       </div>
 
       <article>
-        <h2>Ce que d&eacute;montre la brique</h2>
+        <h2>Ce que démontre la brique</h2>
         <ul>
           <li>
-            Une sauvegarde <strong>coh&eacute;rente applicative</strong>,
-            obtenue par l'appel &agrave; l'agent invit&eacute; qui g&egrave;le
-            puis lib&egrave;re le syst&egrave;me de fichiers avant et
-            apr&egrave;s la capture. Sans lui, la sauvegarde resterait
-            utilisable mais serait comparable &agrave; un arr&ecirc;t brutal.
+            Une sauvegarde <strong>cohérente applicative</strong>, obtenue par
+            l'appel à l'agent invité qui gèle puis libère le système de fichiers
+            avant et après la capture. Sans lui, la sauvegarde resterait
+            utilisable mais serait comparable à un arrêt brutal.
           </li>
           <li>
-            Une
-            <strong
-              >restauration r&eacute;ellement ex&eacute;cut&eacute;e</strong
-            >, vers une machine distincte de l'originale, et une machine qui
-            red&eacute;marre et rend son service.
+            Une <strong>restauration réellement exécutée</strong>, vers une
+            machine distincte de l'originale, et une machine qui redémarre et
+            rend son service.
           </li>
           <li>
-            Une <strong>d&eacute;duplication efficace</strong>, avec plus de
-            quatre cinqui&egrave;mes des donn&eacute;es
-            r&eacute;utilis&eacute;es d&egrave;s la premi&egrave;re passe, et
-            98&nbsp;% &agrave; la seconde.
+            Une <strong>déduplication efficace</strong>, avec plus de quatre
+            cinquièmes des données réutilisées dès la première passe, et
+            98&nbsp;% à la seconde.
           </li>
           <li>
-            Un
-            <strong
-              >compte de service &agrave; privil&egrave;ges minimaux</strong
-            >
-            et une connexion authentifi&eacute;e par l'empreinte du certificat
-            du serveur.
+            Un <strong>compte de service à privilèges minimaux</strong> et une
+            connexion authentifiée par l'empreinte du certificat du serveur.
           </li>
           <li>
             Une
             <strong>copie secondaire sur une machine physique distincte</strong
-            >, qui tire ses donn&eacute;es du serveur primaire sans
-            d&eacute;tenir le moindre droit d'&eacute;criture chez lui, et ne
-            retransf&egrave;re que ce qu'elle ne poss&egrave;de pas
-            d&eacute;j&agrave;.
+            >, qui tire ses données du serveur primaire sans détenir le moindre
+            droit d'écriture chez lui, et ne retransfère que ce qu'elle ne
+            possède pas déjà.
           </li>
           <li>
-            Une <strong>fen&ecirc;tre de perte ma&icirc;tris&eacute;e</strong>,
-            calcul&eacute;e sur le maillon le plus lent de la cha&icirc;ne et
-            non sur la fr&eacute;quence de la copie.
+            Une <strong>fenêtre de perte maîtrisée</strong>, calculée sur le
+            maillon le plus lent de la chaîne et non sur la fréquence de la
+            copie.
           </li>
           <li>
-            <strong>Huit points de vigilance</strong> identifi&eacute;s en
-            conditions r&eacute;elles, dont une adresse IPv6 globale
-            expos&eacute;e hors du m&eacute;canisme de traduction d'adresses.
+            <strong>Huit points de vigilance</strong> identifiés en conditions
+            réelles, dont une adresse IPv6 globale exposée hors du mécanisme de
+            traduction d'adresses.
           </li>
         </ul>
 
@@ -235,45 +235,44 @@
         <figure>
           <img
             src="figures/fig-08-pbs01-dashboard.png"
-            alt="Tableau de bord du serveur de sauvegarde primaire&nbsp;: usage mat&eacute;riel et activit&eacute; r&eacute;cente"
+            alt="Tableau de bord du serveur de sauvegarde primaire : usage matériel et activité récente"
           />
           <figcaption>
-            Le serveur de sauvegarde primaire&nbsp;: usage mat&eacute;riel,
-            activit&eacute; r&eacute;cente et version en service.
+            Le serveur de sauvegarde primaire&nbsp;: usage matériel, activité
+            récente et version en service.
           </figcaption>
         </figure>
 
         <figure>
           <img
             src="figures/fig-09-pbs01-content.png"
-            alt="Contenu de l'entrep&ocirc;t primaire&nbsp;: les points de restauration de la machine critique, avec leur horodatage"
+            alt="Contenu de l'entrepôt primaire : les points de restauration de la machine critique, avec leur horodatage"
           />
           <figcaption>
-            Le contenu de l'entrep&ocirc;t primaire&nbsp;: les points de
-            restauration de la machine critique et leur horodatage.
+            Le contenu de l'entrepôt primaire&nbsp;: les points de restauration
+            de la machine critique et leur horodatage.
           </figcaption>
         </figure>
 
         <figure>
           <img
             src="figures/fig-10-pbs01-access-control.png"
-            alt="Comptes et r&ocirc;les d&eacute;clar&eacute;s sur le serveur primaire"
+            alt="Comptes et rôles déclarés sur le serveur primaire"
           />
           <figcaption>
-            Les comptes d&eacute;clar&eacute;s sur le serveur primaire et le
-            r&ocirc;le attach&eacute; &agrave; chacun. Aucun ne dispose d'un
-            droit d'administration.
+            Les comptes déclarés sur le serveur primaire et le rôle attaché à
+            chacun. Aucun ne dispose d'un droit d'administration.
           </figcaption>
         </figure>
 
         <figure>
           <img
             src="figures/fig-11-pbs01-summary.png"
-            alt="R&eacute;sum&eacute; de l'entrep&ocirc;t primaire&nbsp;: occupation et statistiques d'utilisation"
+            alt="Résumé de l'entrepôt primaire : occupation et statistiques d'utilisation"
           />
           <figcaption>
-            Le r&eacute;sum&eacute; de l'entrep&ocirc;t primaire&nbsp;:
-            occupation r&eacute;elle et statistiques d'utilisation.
+            Le résumé de l'entrepôt primaire&nbsp;: occupation réelle et
+            statistiques d'utilisation.
           </figcaption>
         </figure>
 
@@ -282,61 +281,58 @@
         <figure>
           <img
             src="figures/fig-12-pbs02-tableau-de-bord.png"
-            alt="Tableau de bord du serveur de sauvegarde secondaire, h&eacute;berg&eacute; sur une machine physique distincte"
+            alt="Tableau de bord du serveur de sauvegarde secondaire, hébergé sur une machine physique distincte"
           />
           <figcaption>
             Le serveur secondaire, sur une machine physique distincte. C'est la
-            vue qui atteste que la troisi&egrave;me copie ne vit pas sur le
-            m&ecirc;me h&ocirc;te que les deux premi&egrave;res.
+            vue qui atteste que la troisième copie ne vit pas sur le même hôte
+            que les deux premières.
           </figcaption>
         </figure>
 
         <figure>
           <img
             src="figures/fig-13-pbs02-entrepot-copie.png"
-            alt="Contenu de l'entrep&ocirc;t de la copie&nbsp;: l'archive re&ccedil;ue du serveur primaire"
+            alt="Contenu de l'entrepôt de la copie : l'archive reçue du serveur primaire"
           />
           <figcaption>
-            Le contenu de l'entrep&ocirc;t de la copie&nbsp;: l'archive
-            re&ccedil;ue du serveur primaire, distincte de son entrep&ocirc;t
-            d'origine.
+            Le contenu de l'entrepôt de la copie&nbsp;: l'archive reçue du
+            serveur primaire, distincte de son entrepôt d'origine.
           </figcaption>
         </figure>
 
         <figure>
           <img
             src="figures/fig-14-pbs02-taches-synchro.png"
-            alt="T&acirc;che de synchronisation&nbsp;: la copie est tir&eacute;e par le serveur secondaire, sans droit d'&eacute;criture chez la source"
+            alt="Tâche de synchronisation : la copie est tirée par le serveur secondaire, sans droit d'écriture chez la source"
           />
           <figcaption>
-            La t&acirc;che de synchronisation. Elle est tir&eacute;e par le
-            serveur secondaire, qui ne d&eacute;tient aucun droit
-            d'&eacute;criture sur le serveur primaire.
+            La tâche de synchronisation. Elle est tirée par le serveur
+            secondaire, qui ne détient aucun droit d'écriture sur le serveur
+            primaire.
           </figcaption>
         </figure>
 
-        <h2>Une distinction qu'il faut garder en t&ecirc;te</h2>
+        <h2>Une distinction qu'il faut garder en tête</h2>
         <p>
-          La r&eacute;plication entre n&oelig;uds, d&eacute;j&agrave; en place,
-          apporte de la <strong>disponibilit&eacute;</strong>. Elle ne
-          prot&egrave;ge pas de la perte de donn&eacute;es, car elle
-          r&eacute;plique aussi les erreurs&nbsp;: une suppression ou une
-          corruption se propage d'un n&oelig;ud &agrave; l'autre.
+          La réplication entre nœuds, déjà en place, apporte de la
+          <strong>disponibilité</strong>. Elle ne protège pas de la perte de
+          données, car elle réplique aussi les erreurs&nbsp;: une suppression ou
+          une corruption se propage d'un nœud à l'autre.
         </p>
         <p>
-          La sauvegarde r&eacute;pond &agrave; un besoin diff&eacute;rent, celui
-          de
-          <strong>revenir &agrave; un &eacute;tat ant&eacute;rieur connu</strong
-          >. Les deux m&eacute;canismes sont compl&eacute;mentaires et ne se
-          substituent pas l'un &agrave; l'autre.
+          La sauvegarde répond à un besoin différent, celui de
+          <strong>revenir à un état antérieur connu</strong>. Les deux
+          mécanismes sont complémentaires et ne se substituent pas l'un à
+          l'autre.
         </p>
       </article>
     </main>
+
     <footer>
       <div class="wrap">
         <p>
-          Sant&eacute;lia &middot; documentation technique &middot; 12 octobre
-          2026
+          Santélia &middot; documentation technique &middot; 12 octobre 2026
         </p>
       </div>
     </footer>

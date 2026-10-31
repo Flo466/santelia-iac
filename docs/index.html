@@ -3,38 +3,55 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Santélia &mdash; Documentation technique</title>
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#f1efe4" />
+    <meta
+      name="description"
+      content="Documentation technique du projet Santélia : cluster Proxmox VE en haute disponibilité, sauvegarde et restauration, supervision et automatisation."
+    />
+    <title>Santélia — Documentation technique</title>
     <link rel="stylesheet" href="style.css" />
   </head>
-  <body>
+  <body class="home">
+    <a class="skip" href="#contenu">Aller au contenu</a>
+
     <header class="masthead">
       <div class="wrap">
-        <p class="eyebrow">Sant&eacute;lia &middot; dossier technique</p>
-        <h1>Infrastructure virtualis&eacute;e et haute disponibilit&eacute;</h1>
-        <p class="lede">
-          Quatre briques, quatre cibles de recette. Chaque brique est
-          d&eacute;crite, mise en &oelig;uvre, puis v&eacute;rifi&eacute;e par
-          un test mesur&eacute;. Ce qui n'est pas encore fait est annonc&eacute;
-          comme tel.
+        <p class="eyebrow">
+          <span aria-hidden="true">🏥</span>
+          Santélia &middot; dossier technique
         </p>
+        <h1>Infrastructure virtualisée et haute disponibilité</h1>
+        <p class="lede">
+          Quatre briques, quatre cibles de recette. Chaque brique est décrite,
+          mise en œuvre, puis vérifiée par un test mesuré. Ce qui n'est pas
+          encore fait est annoncé comme tel.
+        </p>
+        <div class="contact">
+          <a href="cdc-santelia.html">
+            <span aria-hidden="true">📄</span> Cahier des charges
+          </a>
+          <a href="04-journal-commandes.html">
+            <span aria-hidden="true">🧾</span> Journal des commandes
+          </a>
+        </div>
         <p class="stamp">
           Documentation technique &nbsp;&middot;&nbsp; 12 octobre 2026
         </p>
       </div>
     </header>
-    <main class="wrap">
+
+    <main class="wrap" id="contenu">
       <blockquote>
         <p><strong>Contexte</strong></p>
         <p>
-          Le service critique doit rester accessible m&ecirc;me si un serveur
-          d&eacute;faille, les donn&eacute;es doivent pouvoir &ecirc;tre
-          restaur&eacute;es, les &eacute;quipements doivent &ecirc;tre
-          supervis&eacute;s et les configurations doivent &ecirc;tre
+          Le service critique doit rester accessible même si un serveur
+          défaille, les données doivent pouvoir être restaurées, les équipements
+          doivent être supervisés et les configurations doivent être
           reproductibles. La recette ne juge pas l'installation, mais la
-          capacit&eacute; &agrave; <strong>d&eacute;montrer</strong> chaque
-          propri&eacute;t&eacute; par un test&nbsp;: provoquer la panne et
-          chronom&eacute;trer la reprise, restaurer une sauvegarde,
-          d&eacute;clencher une alerte, rejouer un d&eacute;ploiement.
+          capacité à <strong>démontrer</strong> chaque propriété par un
+          test&nbsp;: provoquer la panne et chronométrer la reprise, restaurer
+          une sauvegarde, déclencher une alerte, rejouer un déploiement.
         </p>
       </blockquote>
 
@@ -45,15 +62,15 @@
         </div>
         <div class="kpi">
           <div class="n">2</div>
-          <div class="l">en cours ou livr&eacute;es</div>
+          <div class="l">en cours ou livrées</div>
         </div>
         <div class="kpi">
           <div class="n">2 min 24 s</div>
-          <div class="l">RTA constat&eacute; &middot; RTO cible</div>
+          <div class="l">RTA constaté &middot; RTO cible</div>
         </div>
         <div class="kpi">
           <div class="n">3</div>
-          <div class="l">n&oelig;uds en cluster</div>
+          <div class="l">nœuds en cluster</div>
         </div>
       </div>
 
@@ -64,58 +81,63 @@
         />
         <figcaption>
           Vue macro&nbsp;: le cluster et le serveur de sauvegarde sur un premier
-          ch&#226;ssis, la supervision et la copie secondaire sur un second.
+          châssis, la supervision et la copie secondaire sur un second.
         </figcaption>
       </figure>
 
-      <h2 class="sec-title">Document de r&eacute;f&eacute;rence</h2>
+      <div class="sec-head">
+        <h2 class="sec-title">Document de référence</h2>
+        <p class="sec-hint">1 document</p>
+      </div>
 
       <div class="grid">
         <a class="card card--full" href="cdc-santelia.html">
-          <span class="no"
-            >CAHIER DES CHARGES &nbsp;/&nbsp; DOSSIER CLIENT</span
-          >
+          <span class="card__icon" aria-hidden="true">📘</span>
+          <span class="card__tag">Cahier des charges / dossier client</span>
           <h3>Cahier des charges technique &amp; fonctionnel</h3>
           <p>
             Le document qui cadre tout le projet&nbsp;: le contexte du client,
-            le p&eacute;rim&egrave;tre retenu, les exigences fonctionnelles
-            prioris&eacute;es selon la m&eacute;thode MoSCoW, les exigences
-            non-fonctionnelles et leurs crit&egrave;res de mesure, les
-            contraintes budg&eacute;taires, les crit&egrave;res d'acceptation
-            par brique, le planning pr&eacute;visionnel et la synth&egrave;se
+            le périmètre retenu, les exigences fonctionnelles priorisées selon
+            la méthode MoSCoW, les exigences non-fonctionnelles et leurs
+            critères de mesure, les contraintes budgétaires, les critères
+            d'acceptation par brique, le planning prévisionnel et la synthèse
             des solutions retenues.
           </p>
           <div class="pills">
             <span class="pill">contexte</span>
-            <span class="pill">p&eacute;rim&egrave;tre</span>
+            <span class="pill">périmètre</span>
             <span class="pill">MoSCoW</span>
             <span class="pill">recette</span>
             <span class="pill">planning</span>
             <span class="pill">budget</span>
           </div>
-          <div class="foot">
-            <span class="go">Consulter &nbsp;&rarr;</span>
+          <div class="card__foot">
+            Consulter <span aria-hidden="true">&rarr;</span>
           </div>
         </a>
       </div>
 
-      <h2 class="sec-title">Les quatre briques</h2>
+      <div class="sec-head">
+        <h2 class="sec-title">Les quatre briques</h2>
+        <p class="sec-hint">2 livrées &middot; 2 à faire</p>
+      </div>
 
       <div class="grid">
         <a class="card" href="ha-proxmox-ve.html">
-          <span class="no">01 &nbsp;/&nbsp; HAUTE DISPONIBILIT&Eacute;</span>
-          <h3>Cluster Proxmox VE et continuit&eacute; des VM critiques</h3>
+          <span class="card__icon" aria-hidden="true">🛡️</span>
+          <span class="card__tag">01 / Haute disponibilité</span>
+          <h3>Cluster Proxmox VE et continuité des VM critiques</h3>
           <p>
-            Trois n&oelig;uds en cluster, quorum tenu &agrave; deux votes sur
-            trois, r&eacute;plication des volumes entre n&oelig;uds et groupe de
-            haute disponibilit&eacute;. La perte d'un n&oelig;ud laisse le
-            cluster op&eacute;rationnel, sans dispositif externe de vote.
+            Trois nœuds en cluster, quorum tenu à deux votes sur trois,
+            réplication des volumes entre nœuds et groupe de haute
+            disponibilité. La perte d'un nœud laisse le cluster opérationnel,
+            sans dispositif externe de vote.
           </p>
           <div class="req">
             <b>Test de recette</b>
             <span
-              >Simuler l'indisponibilit&eacute; d'un n&oelig;ud
-              h&eacute;bergeant une VM critique.</span
+              >Simuler l'indisponibilité d'un nœud hébergeant une VM
+              critique.</span
             >
           </div>
           <div class="req">
@@ -123,34 +145,33 @@
             <span>Compte rendu et horodatage de la bascule.</span>
           </div>
           <div class="req">
-            <b>Continuit&eacute; &middot; RTO</b>
+            <b>Continuité &middot; RTO</b>
             <span
-              >D&eacute;lai cible de 5 &agrave; 10 minutes.
-              R&eacute;tablissement constat&eacute; en 2 min 24 s&nbsp;: cible
-              tenue. <strong>PCA</strong> &mdash; le service repart ailleurs,
-              sans &ecirc;tre reconstruit.</span
+              >Délai cible de 5 à 10 minutes. Rétablissement constaté en 2 min
+              24 s&nbsp;: cible tenue. <strong>PCA</strong> &mdash; le service
+              repart ailleurs, sans être reconstruit.</span
             >
           </div>
-          <div class="foot">
-            <span class="go">Consulter &nbsp;&rarr;</span>
-            <span class="status status--ok">Livr&eacute;</span>
+          <div class="card__foot">
+            Consulter <span aria-hidden="true">&rarr;</span>
+            <span class="status status--ok">Livré</span>
           </div>
         </a>
 
         <a class="card" href="sauvegarde-pbs.html">
-          <span class="no">02 &nbsp;/&nbsp; SAUVEGARDE</span>
-          <h3>Proxmox Backup Server et strat&eacute;gie de copie</h3>
+          <span class="card__icon" aria-hidden="true">💾</span>
+          <span class="card__tag">02 / Sauvegarde</span>
+          <h3>Proxmox Backup Server et stratégie de copie</h3>
           <p>
-            Sauvegarde structur&eacute;e avec copie secondaire, pour que la
-            perte d'un site de stockage ne fasse pas perdre les donn&eacute;es.
-            Le test porte sur la restauration r&eacute;elle, pas sur l'existence
-            des sauvegardes.
+            Sauvegarde structurée avec copie secondaire, pour que la perte d'un
+            site de stockage ne fasse pas perdre les données. Le test porte sur
+            la restauration réelle, pas sur l'existence des sauvegardes.
           </p>
           <div class="req">
             <b>Test de recette</b>
             <span
-              >Lancer une sauvegarde, puis restaurer et v&eacute;rifier que la
-              machine red&eacute;marre.</span
+              >Lancer une sauvegarde, puis restaurer et vérifier que la machine
+              redémarre.</span
             >
           </div>
           <div class="req">
@@ -160,32 +181,32 @@
           <div class="req">
             <b>Reprise &middot; RPO</b>
             <span
-              >Perte de donn&eacute;es maximale de 24 h 30 au pire, copie
-              secondaire comprise. <strong>PRA</strong> &mdash; le service est
-              reconstruit &agrave; partir d'un &eacute;tat ant&eacute;rieur
-              connu.</span
+              >Perte de données maximale de 24 h 30 au pire, copie secondaire
+              comprise. <strong>PRA</strong> &mdash; le service est reconstruit
+              à partir d'un état antérieur connu.</span
             >
           </div>
-          <div class="foot">
-            <span class="go">Consulter &nbsp;&rarr;</span>
-            <span class="status status--ok">Livr&eacute;</span>
+          <div class="card__foot">
+            Consulter <span aria-hidden="true">&rarr;</span>
+            <span class="status status--ok">Livré</span>
           </div>
         </a>
 
         <div class="card">
-          <span class="no">03 &nbsp;/&nbsp; SUPERVISION</span>
-          <h3>Supervision centralis&eacute;e et remont&eacute;e d'alerte</h3>
+          <span class="card__icon" aria-hidden="true">🛰️</span>
+          <span class="card__tag">03 / Supervision</span>
+          <h3>Supervision centralisée et remontée d'alerte</h3>
           <p>
-            Les &eacute;quipements du parc sont visibles depuis un point unique,
-            et une anomalie d&eacute;clenche une alerte. La supervision est
-            h&eacute;berg&eacute;e hors de l'infrastructure supervis&eacute;e,
-            sans quoi elle dispara&icirc;t avec ce qu'elle surveille.
+            Les équipements du parc sont visibles depuis un point unique, et une
+            anomalie déclenche une alerte. La supervision est hébergée hors de
+            l'infrastructure supervisée, sans quoi elle disparaît avec ce
+            qu'elle surveille.
           </p>
           <div class="req">
             <b>Test de recette</b>
             <span
-              >V&eacute;rifier la remont&eacute;e des &eacute;quipements et
-              d&eacute;clencher une alerte.</span
+              >Vérifier la remontée des équipements et déclencher une
+              alerte.</span
             >
           </div>
           <div class="req">
@@ -194,89 +215,83 @@
               >Export de la console de supervision et journal d'alerte.</span
             >
           </div>
-          <div class="foot">
-            <span class="status status--todo">&Agrave; faire</span>
+          <div class="card__foot">
+            <span class="status status--todo">À faire</span>
           </div>
         </div>
 
         <div class="card">
-          <span class="no">04 &nbsp;/&nbsp; AUTOMATISATION</span>
-          <h3>D&eacute;ploiement reproductible par Ansible</h3>
+          <span class="card__icon" aria-hidden="true">⚙️</span>
+          <span class="card__tag">04 / Automatisation</span>
+          <h3>Déploiement reproductible par Ansible</h3>
           <p>
-            L'&eacute;tat attendu des serveurs et des applications est
-            d&eacute;crit dans des r&ocirc;les. Une machine est
-            d&eacute;ploy&eacute;e par le code, puis le projet est rejou&eacute;
-            pour v&eacute;rifier qu'aucune configuration ne repose sur une
+            L'état attendu des serveurs et des applications est décrit dans des
+            rôles. Une machine est déployée par le code, puis le projet est
+            rejoué pour vérifier qu'aucune configuration ne repose sur une
             intervention manuelle.
           </p>
           <div class="req">
             <b>Test de recette</b>
             <span
-              >D&eacute;ployer une machine de test, puis rejouer le projet
+              >Déployer une machine de test, puis rejouer le projet
               complet.</span
             >
           </div>
           <div class="req">
             <b>Preuve attendue</b>
-            <span
-              >Projet, sortie d'ex&eacute;cution et &eacute;tat final
-              identique.</span
-            >
+            <span>Projet, sortie d'exécution et état final identique.</span>
           </div>
-          <div class="foot">
-            <span class="status status--todo">&Agrave; faire</span>
+          <div class="card__foot">
+            <span class="status status--todo">À faire</span>
           </div>
         </div>
       </div>
 
       <article>
-        <h2>Pourquoi c'est d&eacute;coup&eacute; ainsi</h2>
+        <h2>Pourquoi c'est découpé ainsi</h2>
         <p>
-          Les quatre briques r&eacute;pondent &agrave; quatre besoins distincts,
-          et chacune porte son propre test. Les m&eacute;langer rendrait la
-          recette inv&eacute;rifiable&nbsp;: on ne peut pas d&eacute;montrer
-          qu'une sauvegarde est exploitable en regardant un cluster de haute
-          disponibilit&eacute;.
+          Les quatre briques répondent à quatre besoins distincts, et chacune
+          porte son propre test. Les mélanger rendrait la recette
+          invérifiable&nbsp;: on ne peut pas démontrer qu'une sauvegarde est
+          exploitable en regardant un cluster de haute disponibilité.
         </p>
         <p>
-          Elles sont aussi compl&eacute;mentaires. La haute disponibilit&eacute;
-          traite la panne d'un n&oelig;ud, la sauvegarde traite la perte de
-          donn&eacute;es, la supervision traite la panne silencieuse, et
-          l'automatisation traite la d&eacute;rive de configuration.
+          Elles sont aussi complémentaires. La haute disponibilité traite la
+          panne d'un nœud, la sauvegarde traite la perte de données, la
+          supervision traite la panne silencieuse, et l'automatisation traite la
+          dérive de configuration.
         </p>
         <p>
-          Les deux premi&egrave;res se lisent sur deux registres distincts. La
-          haute disponibilit&eacute; rel&egrave;ve du
-          <strong>plan de continuit&eacute; d'activit&eacute; (PCA)</strong
-          >&nbsp;: le service ne s'interrompt pas, il repart ailleurs. La
-          sauvegarde rel&egrave;ve du
-          <strong>plan de reprise d'activit&eacute; (PRA)</strong>&nbsp;: le
-          service est reconstruit &agrave; partir d'un &eacute;tat
-          ant&eacute;rieur connu. D'o&ugrave; deux indicateurs distincts, un
-          <strong>RTO</strong> et un <strong>RPO</strong>, qui ne mesurent pas
-          la m&ecirc;me chose et ne se d&eacute;duisent pas l'un de l'autre.
+          Les deux premières se lisent sur deux registres distincts. La haute
+          disponibilité relève du
+          <strong>plan de continuité d'activité (PCA)</strong>&nbsp;: le service
+          ne s'interrompt pas, il repart ailleurs. La sauvegarde relève du
+          <strong>plan de reprise d'activité (PRA)</strong>&nbsp;: le service
+          est reconstruit à partir d'un état antérieur connu. D'où deux
+          indicateurs distincts, un <strong>RTO</strong> et un
+          <strong>RPO</strong>, qui ne mesurent pas la même chose et ne se
+          déduisent pas l'un de l'autre.
         </p>
 
-        <h2>Un mot sur la m&eacute;thode</h2>
+        <h2>Un mot sur la méthode</h2>
         <p>
-          Une architecture qui n'a jamais &eacute;t&eacute; mise en panne ne
-          d&eacute;montre rien. La d&eacute;marche consiste donc &agrave;
-          provoquer l'incident, &agrave; mesurer ce qui se passe, puis &agrave;
-          &eacute;crire les points de vigilance identifi&eacute;s avec la mesure
+          Une architecture qui n'a jamais été mise en panne ne démontre rien. La
+          démarche consiste donc à provoquer l'incident, à mesurer ce qui se
+          passe, puis à écrire les points de vigilance identifiés avec la mesure
           qui les traite.
         </p>
         <p>
           C'est ce qui distingue une maquette d'une architecture&nbsp;: la
           maquette fonctionne, l'architecture sait aussi ce qui doit la faire
-          tomber, et ce qu'il faut v&eacute;rifier ensuite.
+          tomber, et ce qu'il faut vérifier ensuite.
         </p>
       </article>
     </main>
+
     <footer>
       <div class="wrap">
         <p>
-          Sant&eacute;lia &middot; documentation technique &middot; 12 octobre
-          2026
+          Santélia &middot; documentation technique &middot; 12 octobre 2026
         </p>
       </div>
     </footer>
