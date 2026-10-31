@@ -1148,29 +1148,30 @@ figure[id] {
 /* ============ mobile ============ */
 @media (max-width: 720px) {
   body {
-    font-size: 16px;
+    font-size: 15px;
   }
   .wrap,
   .wrap-wide {
-    padding: 0 16px;
+    padding: 0 14px;
   }
   .masthead {
-    padding: 14px 0 0;
-    margin-bottom: 28px;
+    padding: 10px 0 0;
+    margin-bottom: 22px;
   }
   .masthead > .wrap,
   .masthead > .wrap-wide {
-    padding: 28px 22px 26px;
-    border-radius: 20px;
+    padding: 22px 18px 20px;
+    border-radius: 18px;
   }
   .masthead h1 {
-    font-size: 1.72rem;
+    font-size: 1.45rem;
   }
   .masthead .lede {
-    font-size: 0.98rem;
+    font-size: 0.9rem;
+    line-height: 1.55;
   }
   .masthead .eyebrow {
-    font-size: 0.63rem;
+    font-size: 0.58rem;
     letter-spacing: 0.1em;
     line-height: 1.5;
     align-items: flex-start;
@@ -1181,35 +1182,160 @@ figure[id] {
   .masthead .eyebrow span {
     flex: none;
   }
+  .masthead .stamp {
+    font-size: 0.62rem;
+    margin-top: 15px;
+    padding-top: 10px;
+  }
+  .contact {
+    gap: 6px;
+    margin-top: 16px;
+  }
   .contact a {
-    font-size: 0.7rem;
-    padding: 6px 12px;
+    font-size: 0.63rem;
+    padding: 5px 10px;
+  }
+  .sec-head {
+    gap: 8px 12px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+  }
+  .sec-title {
+    font-size: 0.66rem;
+    letter-spacing: 0.13em;
+  }
+  .sec-hint {
+    font-size: 0.58rem;
   }
   .grid {
     grid-template-columns: 1fr;
-    gap: 12px;
-    margin-bottom: 30px;
+    gap: 10px;
+    margin-bottom: 24px;
   }
   .card {
-    padding: 18px 18px 16px;
-    border-radius: 20px;
+    padding: 14px 15px 13px;
+    border-radius: 16px;
   }
-  .skills {
-    margin-bottom: 34px;
+  .card__icon {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    border-radius: 10px;
   }
-  .skills__grid {
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 10px;
+  .card__tag,
+  .card .no {
+    margin-bottom: 6px;
+    font-size: 0.54rem;
+    letter-spacing: 0.13em;
   }
-  .skill {
-    padding: 14px 14px 13px;
+  .card h3 {
+    margin-bottom: 5px;
+    font-size: 0.95rem;
   }
-  .note {
-    padding: 20px 18px 18px;
-    border-radius: 20px;
+  .card p {
+    margin-bottom: 11px;
+    font-size: 0.83rem;
+    line-height: 1.5;
+  }
+  .card .pills {
+    gap: 5px;
+    margin-bottom: 11px;
+  }
+  .pill {
+    font-size: 0.54rem;
+    padding: 2px 8px;
+  }
+  .card__foot,
+  .card .foot .go {
+    font-size: 0.64rem;
+  }
+  .card__foot {
+    gap: 8px;
+  }
+  .card .req {
+    margin-bottom: 10px;
+    padding-top: 10px;
+  }
+  .card .req b {
+    font-size: 0.54rem;
+  }
+  .card .req span {
+    font-size: 0.8rem;
+  }
+  .status {
+    font-size: 0.54rem;
+    padding: 3px 9px;
+  }
+  .kpis {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 22px;
+  }
+  .kpi {
+    padding: 12px 13px;
+    border-radius: 14px;
+  }
+  .kpi .n {
+    font-size: 1.12rem;
+  }
+  .kpi .l {
+    font-size: 0.56rem;
+  }
+  .banner {
+    padding: 12px 14px;
+    margin-bottom: 18px;
+  }
+  .banner .val {
+    font-size: 0.94rem;
+  }
+  .sommaire {
+    padding: 10px 14px;
+    margin-bottom: 20px;
+  }
+  .sommaire a {
+    font-size: 0.78rem;
+  }
+  blockquote {
+    padding: 14px 16px 12px;
+  }
+  blockquote p {
+    font-size: 0.9rem;
+  }
+  table {
+    font-size: 0.82rem;
+  }
+  th,
+  td {
+    padding: 8px 10px;
   }
   article h2 {
-    font-size: 1.2rem;
+    font-size: 1.08rem;
+  }
+  article h3 {
+    font-size: 0.98rem;
+  }
+  .skills {
+    margin-bottom: 26px;
+  }
+  .skills__grid {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 8px;
+  }
+  .skill {
+    padding: 12px 12px 11px;
+  }
+  .note {
+    padding: 16px 15px 15px;
+    border-radius: 18px;
+  }
+  .back {
+    margin-bottom: 18px;
+    padding: 7px 13px;
+    font-size: 0.72rem;
+  }
+  figure {
+    margin-bottom: 1.3em;
   }
   .masthead > .wrap,
   .masthead > .wrap-wide,
