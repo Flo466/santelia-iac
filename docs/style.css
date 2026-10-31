@@ -46,9 +46,9 @@
   --mono:
     ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
     monospace;
-  --col: 840px;
-  --col-wide: 1040px;
-  --col-fig: 1360px; /* figures larges des comptes rendus */
+  --col: 1200px;
+  --col-wide: 1400px;
+  --col-fig: 1600px; /* figures larges des comptes rendus */
 
   color-scheme: light;
 }
@@ -645,7 +645,7 @@ a.card:focus-visible .card__foot span {
 
 /* ============ corps d'article (pages projets) ============ */
 article {
-  max-width: 780px;
+  max-width: 100%;
 }
 article h2 {
   margin: 2.4em 0 0.8em;
