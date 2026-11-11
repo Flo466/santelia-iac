@@ -14,7 +14,7 @@
       <div class="wrap">
         <p class="eyebrow">Sant&eacute;lia &middot; dossier technique</p>
         <h1>Santélia — Annexe : journal des commandes exécutées</h1>
-        <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 31/10/2026</p>
+        <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 01/11/2026</p>
       </div>
     </header>
     <main class="wrap" id="contenu">
@@ -586,11 +586,15 @@ id="a.9-passage-en-production-et-renommage-de-la-machine-critique">A.9
 Passage en production et renommage de la machine critique</h2>
 <p>La recette de disponibilité a été menée sur une machine
 volontairement minimale, afin de valider le mécanisme sans introduire
-d’autres variables. Une fois le mécanisme prouvé, le contenu a été
-remplacé par le service réel <strong>sans retoucher au
-mécanisme</strong> : le groupe de disponibilité, la tâche de réplication
-et la tâche de sauvegarde s’appuient sur l’identifiant de machine, pas
-sur son nom.</p>
+d’autres variables. Le principe retenu est celui du <strong>remplacement
+progressif du contenu</strong> : le groupe de disponibilité, la tâche de
+réplication et la tâche de sauvegarde s’appuient sur l’identifiant de
+machine, pas sur son nom, ce qui permet de changer ce que la machine
+héberge sans les reconfigurer.</p>
+<p>La section couvre la <strong>préparation de la machine</strong> —
+renommage, mémoire, mémoire d’échange, identités. Le déploiement du
+contenu applicatif fait l’objet d’une étape distincte, dont les
+commandes seront ajoutées ici une fois l’application retenue.</p>
 <h3 id="a.9.1-deux-couches-didentité">A.9.1 Deux couches d’identité</h3>
 <p>Le nom porté par l’hyperviseur n’est que l’<strong>étiquette</strong>
 de la machine dans l’interface. Le nom utilisé par le système invité est
@@ -762,7 +766,7 @@ recette associé.</p>
     </main>
     <footer>
       <div class="wrap">
-        <p>Sant&eacute;lia &middot; documentation technique &middot; 31/10/2026</p>
+        <p>Sant&eacute;lia &middot; documentation technique &middot; 01/11/2026</p>
       </div>
     </footer>
   </body>

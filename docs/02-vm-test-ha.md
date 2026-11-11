@@ -195,14 +195,37 @@ régénération reproduit la valeur d'origine.
 | Déclaration en ressource haute disponibilité | Confier la surveillance de la machine au gestionnaire | Document de configuration du cluster |
 | **Simulation de panne et mesure** | Vérifier la reprise et le délai de rétablissement du service | **Document « Test de recette HA »** |
 | Standardisation | Reproduire cette construction par playbook plutôt qu'à la main | Phase de standardisation |
+| **Déploiement du service applicatif** | Installer l'environnement de conteneurs et l'application de gestion de patients sur la machine préparée | Étape à venir — voir ci-dessous |
 
-**Passage en production.** La construction décrite dans ce document a été menée sous le nom
-`vm-test-ha`, afin de valider le mécanisme sans introduire d'autres variables. Une fois le
-mécanisme prouvé, le contenu a été remplacé par le service réel sans retoucher au mécanisme :
-la machine a été renommée, sa mémoire portée à 2 Gio et une mémoire d'échange ajoutée. Le
-groupe de disponibilité, la tâche de réplication et la tâche de sauvegarde s'appuient sur
-l'identifiant de machine et n'ont pas eu à être reconfigurés. La procédure suivie est décrite
-au journal des commandes.
+### Passage de l'objet de test au service réel
+
+La construction décrite dans ce document a été menée sous le nom `vm-test-ha`, afin de valider le
+mécanisme sans introduire d'autres variables. Le principe retenu est celui du **remplacement
+progressif du contenu** : le dispositif de disponibilité, la réplication et la sauvegarde
+s'appuient sur l'identifiant de machine et non sur son nom, ce qui permet de changer ce que la
+machine héberge sans les reconfigurer.
+
+**Ce qui est fait.** La machine a été renommée, sa mémoire portée à 2 Gio et une mémoire d'échange
+ajoutée. Les deux couches d'identité ont été traitées séparément — étiquette côté hyperviseur,
+nom côté système invité — avec régénération des clés d'hôte et de l'identifiant machine. Ces
+opérations n'ont demandé **aucune reconfiguration** du groupe de disponibilité, de la tâche de
+réplication ni de la tâche de sauvegarde. La procédure suivie est décrite au journal des
+commandes.
+
+**Ce qui reste à faire.** Le contenu applicatif n'est pas encore déployé. La machine doit recevoir
+un environnement d'exécution de conteneurs, une application de gestion de patients et sa base de
+données. Tant que ce déploiement n'est pas fait, la machine reste un socle préparé, et non un
+service en production.
+
+**Conséquence sur les mesures.** Le délai de rétablissement de 2 min 24 s a été mesuré sur une
+machine minimale, dont le système redémarre en quelques secondes. Il reste valable comme mesure
+du **mécanisme** de reprise. Il ne préjuge pas de celui du service applicatif, dont le démarrage
+et la reprise de la base de données s'ajoutent au temps de bascule. Une nouvelle campagne de
+mesure est donc à prévoir après déploiement, avec le même protocole et les mêmes horodatages.
+
+**Pourquoi la mesure reste défendable dans l'intervalle.** La cible de rétablissement est de 5 à
+10 minutes pour un rétablissement constaté de 2 min 24 s. La marge disponible absorbe le temps de
+démarrage applicatif ; c'est précisément ce que la nouvelle mesure devra confirmer.
 
 ---
 
@@ -210,8 +233,8 @@ au journal des commandes.
 
 | Phase | Contenu | Jalon | Statut |
 | --- | --- | --- | --- |
-| 2. Haute disponibilité | Préparation de la HA et intégration des VM critiques | **HA opérationnelle sur l'environnement cible** | ✅ Objet de test en place |
-| 3. Sauvegarde | Proxmox Backup Server et stratégie 3-2-1 | Sauvegardes + premier test de restauration | À venir |
+| 2. Haute disponibilité | Préparation de la HA et intégration des VM critiques | **HA opérationnelle sur l'environnement cible** | ✅ Mécanisme prouvé — contenu applicatif à déployer |
+| 3. Sauvegarde | Proxmox Backup Server et stratégie 3-2-1 | Sauvegardes + premier test de restauration | ✅ Livrée — brique 2 |
 | 4. Supervision | Zabbix, équipements et les 30 postes | Supervision centralisée et alertes | À venir |
 | 5. IaC | Playbooks Ansible et standardisation | Playbooks validés et documentés | À venir |
 

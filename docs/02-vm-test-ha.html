@@ -16,7 +16,7 @@ provisionnement</title>
         <p class="eyebrow">Sant&eacute;lia &middot; dossier technique</p>
         <h1>Santélia — VM critique `vm-test-ha` : construction et
 provisionnement</h1>
-        <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 31/10/2026</p>
+        <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 01/11/2026</p>
       </div>
     </header>
     <main class="wrap" id="contenu">
@@ -512,17 +512,49 @@ détaillé et exploité dans le document de recette associé.</p>
 <td>Reproduire cette construction par playbook plutôt qu’à la main</td>
 <td>Phase de standardisation</td>
 </tr>
+<tr>
+<td><strong>Déploiement du service applicatif</strong></td>
+<td>Installer l’environnement de conteneurs et l’application de gestion
+de patients sur la machine préparée</td>
+<td>Étape à venir — voir ci-dessous</td>
+</tr>
 </tbody>
 </table>
-<p><strong>Passage en production.</strong> La construction décrite dans
-ce document a été menée sous le nom <code>vm-test-ha</code>, afin de
-valider le mécanisme sans introduire d’autres variables. Une fois le
-mécanisme prouvé, le contenu a été remplacé par le service réel sans
-retoucher au mécanisme : la machine a été renommée, sa mémoire portée à
-2 Gio et une mémoire d’échange ajoutée. Le groupe de disponibilité, la
-tâche de réplication et la tâche de sauvegarde s’appuient sur
-l’identifiant de machine et n’ont pas eu à être reconfigurés. La
-procédure suivie est décrite au journal des commandes.</p>
+<h3 id="passage-de-lobjet-de-test-au-service-réel">Passage de l’objet de
+test au service réel</h3>
+<p>La construction décrite dans ce document a été menée sous le nom
+<code>vm-test-ha</code>, afin de valider le mécanisme sans introduire
+d’autres variables. Le principe retenu est celui du <strong>remplacement
+progressif du contenu</strong> : le dispositif de disponibilité, la
+réplication et la sauvegarde s’appuient sur l’identifiant de machine et
+non sur son nom, ce qui permet de changer ce que la machine héberge sans
+les reconfigurer.</p>
+<p><strong>Ce qui est fait.</strong> La machine a été renommée, sa
+mémoire portée à 2 Gio et une mémoire d’échange ajoutée. Les deux
+couches d’identité ont été traitées séparément — étiquette côté
+hyperviseur, nom côté système invité — avec régénération des clés d’hôte
+et de l’identifiant machine. Ces opérations n’ont demandé <strong>aucune
+reconfiguration</strong> du groupe de disponibilité, de la tâche de
+réplication ni de la tâche de sauvegarde. La procédure suivie est
+décrite au journal des commandes.</p>
+<p><strong>Ce qui reste à faire.</strong> Le contenu applicatif n’est
+pas encore déployé. La machine doit recevoir un environnement
+d’exécution de conteneurs, une application de gestion de patients et sa
+base de données. Tant que ce déploiement n’est pas fait, la machine
+reste un socle préparé, et non un service en production.</p>
+<p><strong>Conséquence sur les mesures.</strong> Le délai de
+rétablissement de 2 min 24 s a été mesuré sur une machine minimale, dont
+le système redémarre en quelques secondes. Il reste valable comme mesure
+du <strong>mécanisme</strong> de reprise. Il ne préjuge pas de celui du
+service applicatif, dont le démarrage et la reprise de la base de
+données s’ajoutent au temps de bascule. Une nouvelle campagne de mesure
+est donc à prévoir après déploiement, avec le même protocole et les
+mêmes horodatages.</p>
+<p><strong>Pourquoi la mesure reste défendable dans
+l’intervalle.</strong> La cible de rétablissement est de 5 à 10 minutes
+pour un rétablissement constaté de 2 min 24 s. La marge disponible
+absorbe le temps de démarrage applicatif ; c’est précisément ce que la
+nouvelle mesure devra confirmer.</p>
 <hr />
 <h2 id="situation-dans-le-planning">10. Situation dans le planning</h2>
 <table>
@@ -545,13 +577,13 @@ procédure suivie est décrite au journal des commandes.</p>
 <td>2. Haute disponibilité</td>
 <td>Préparation de la HA et intégration des VM critiques</td>
 <td><strong>HA opérationnelle sur l’environnement cible</strong></td>
-<td>✅ Objet de test en place</td>
+<td>✅ Mécanisme prouvé — contenu applicatif à déployer</td>
 </tr>
 <tr>
 <td>3. Sauvegarde</td>
 <td>Proxmox Backup Server et stratégie 3-2-1</td>
 <td>Sauvegardes + premier test de restauration</td>
-<td>À venir</td>
+<td>✅ Livrée — brique 2</td>
 </tr>
 <tr>
 <td>4. Supervision</td>
@@ -573,7 +605,7 @@ procédure suivie est décrite au journal des commandes.</p>
     </main>
     <footer>
       <div class="wrap">
-        <p>Sant&eacute;lia &middot; documentation technique &middot; 31/10/2026</p>
+        <p>Sant&eacute;lia &middot; documentation technique &middot; 01/11/2026</p>
       </div>
     </footer>
   </body>

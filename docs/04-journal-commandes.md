@@ -584,10 +584,14 @@ pvesr run --id 100-0
 ## A.9 Passage en production et renommage de la machine critique
 
 La recette de disponibilité a été menée sur une machine volontairement minimale, afin de valider
-le mécanisme sans introduire d'autres variables. Une fois le mécanisme prouvé, le contenu a été
-remplacé par le service réel **sans retoucher au mécanisme** : le groupe de disponibilité, la
-tâche de réplication et la tâche de sauvegarde s'appuient sur l'identifiant de machine, pas sur
-son nom.
+le mécanisme sans introduire d'autres variables. Le principe retenu est celui du **remplacement
+progressif du contenu** : le groupe de disponibilité, la tâche de réplication et la tâche de
+sauvegarde s'appuient sur l'identifiant de machine, pas sur son nom, ce qui permet de changer ce
+que la machine héberge sans les reconfigurer.
+
+La section couvre la **préparation de la machine** — renommage, mémoire, mémoire d'échange,
+identités. Le déploiement du contenu applicatif fait l'objet d'une étape distincte, dont les
+commandes seront ajoutées ici une fois l'application retenue.
 
 ### A.9.1 Deux couches d'identité
 
