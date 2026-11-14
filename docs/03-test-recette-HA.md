@@ -61,7 +61,6 @@ Le témoin est une **page dynamique** qui lit l'état réel de la machine à cha
 
 ### 2.3 Du démarrage annoncé au service réellement rendu
 
-Ce paragraphe explique la différence entre trois instants souvent confondus.
 
 | Instant | Heure | Ce qui est vrai à ce moment-là |
 | --- | --- | --- |
@@ -147,29 +146,12 @@ Ces points ont été mis en évidence lors de la mise au point du montage. Ils c
 | Le redémarrage est prouvé | Horodatage de démarrage distinct, fourni par le témoin |
 | La perte de données peut être maîtrisée | Synchronisation forcée avant coupure, service intact après reprise |
 
-### 4.2 Cohérence avec la stratégie du projet
+### 4.2 Ce que le test relie
 
-Le cahier des charges retient Proxmox VE HA comme brique de continuité de service, en réponse à « l'accès continu au DPI » et à la réduction du temps d'interruption. L'incident de référence du projet — une panne de plus de six heures bloquant la prise de rendez-vous sur un site — est ici ramené à **2 min 24 s**.
-
-### 4.3 Lien avec l'automatisation
-
-Les points de vigilance des sections 3.1 et 3.2 ont une cause commune : une configuration **appliquée manuellement** sur un nœud, sans possibilité de rejeu. Elle est perdue dès qu'une reprise ou une synchronisation de disque intervient.
-
-Ce constat est la justification expérimentale de l'exigence suivante : « automatiser et standardiser les configurations des serveurs et des applications », avec protection des secrets. Une configuration décrite et rejouable ne peut pas être perdue de cette manière.
-
-Ce résultat relie directement deux briques du projet et constitue un argument à présenter en recette.
-
----
-
-## 5. Suites à donner
-
-| Suite | Objet |
+| Lien | Contenu |
 | --- | --- |
-| Restitution de la ressource sur son nœud prioritaire | Vérifier le retour à trois nœuds et la stabilité |
-| Nouveau test après standardisation | Démontrer que la configuration survit à une reprise grâce au rejeu |
-| Mesure du RPO réel | Chronométrer précisément la fenêtre de perte avec synchronisation forcée |
-| Second chemin de communication de cluster | Écart à documenter, pour supprimer le point unique |
-| Test de recette suivant | Sauvegarde et restauration (brique PBS) — « journal de sauvegarde + preuve de restauration » |
+| Avec le besoin client | L'incident de référence — six heures de blocage de la prise de rendez-vous — est ramené à **2 min 24 s** |
+| Avec l'automatisation | Les points 3.1 et 3.2 ont la même cause : une configuration manuelle, non rejouable, perdue à la reprise. Justification expérimentale de l'exigence Ansible |
 
 ---
 

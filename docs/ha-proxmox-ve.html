@@ -81,12 +81,7 @@
           <span class="card__icon" aria-hidden="true">🧩</span>
           <span class="card__tag">01 / Architecture</span>
           <h3>Configuration des trois nœuds</h3>
-          <p>
-            Quorum à deux votes sur trois, pool de stockage nommé de manière
-            identique sur chaque nœud pour rendre la réplication native
-            possible. Les écarts assumés sont déclarés pour que la recette reste
-            défendable.
-          </p>
+          <p>Quorum à deux votes sur trois, réplication native sur pools de noms identiques.</p>
           <div class="pills">
             <span class="pill">Corosync</span>
             <span class="pill">quorum</span>
@@ -103,11 +98,7 @@
           <span class="card__icon" aria-hidden="true">🖥️</span>
           <span class="card__tag">02 / Mise en œuvre</span>
           <h3>Machine de test&nbsp;: construction et provisionnement</h3>
-          <p>
-            Image système, provisionnement automatique et service témoin. Le
-            socle reproductible sur lequel repose toute la démonstration de
-            bascule, et les pièges d'identité liés au clonage.
-          </p>
+          <p>Image cloud, provisionnement automatique, service témoin. Les pièges d'identité du clonage.</p>
           <div class="pills">
             <span class="pill">cloud-init</span>
             <span class="pill">clone</span>
@@ -122,11 +113,7 @@
           <span class="card__icon" aria-hidden="true">🧪</span>
           <span class="card__tag">03 / Recette</span>
           <h3>Simulation de panne de nœud</h3>
-          <p>
-            La panne est provoquée, la reprise est chronométrée, et le quorum
-            reste tenu pendant l'incident. Horodatages et preuves brutes sont
-            joints en annexe du document.
-          </p>
+          <p>Panne provoquée, reprise chronométrée, quorum tenu. Preuves brutes en annexe.</p>
           <div class="pills">
             <span class="pill">bascule HA</span>
             <span class="pill">RTO</span>
@@ -144,11 +131,7 @@
           <span class="card__icon" aria-hidden="true">🧾</span>
           <span class="card__tag">04 / Exploitation</span>
           <h3>Journal des commandes exécutées</h3>
-          <p>
-            La séquence complète de mise en œuvre, environnement par
-            environnement, telle qu'elle a été jouée. De quoi rejouer l'ensemble
-            sans rien deviner.
-          </p>
+          <p>La séquence complète, environnement par environnement, prête à rejouer.</p>
           <div class="pills">
             <span class="pill">procédure</span>
             <span class="pill">rejeu</span>
@@ -163,26 +146,11 @@
       <article>
         <h2>Ce que démontre la brique</h2>
         <ul>
-          <li>
-            Un cluster de trois nœuds&nbsp;: la perte d'un nœud laisse le
-            service opérationnel, sans QDevice ni stockage partagé.
-          </li>
-          <li>
-            La réplication des volumes entre nœuds, sur un pool nommé de manière
-            identique pour que la reprise soit possible ailleurs.
-          </li>
-          <li>
-            Un groupe de haute disponibilité avec priorités de nœuds, pour que
-            la reprise ait lieu au bon endroit.
-          </li>
-          <li>
-            Une bascule provoquée et chronométrée, avec relevé de l'état du
-            quorum pendant l'incident.
-          </li>
-          <li>
-            Des écarts assumés et écrits&nbsp;: sans eux, la recette ne résiste
-            pas à une question un peu précise.
-          </li>
+          <li>Trois nœuds&nbsp;: la perte de l'un laisse le service opérationnel</li>
+          <li>Réplication des volumes, pool nommé à l'identique sur chaque nœud</li>
+          <li>Groupe de disponibilité avec priorités de nœuds</li>
+          <li>Bascule provoquée et chronométrée, quorum relevé pendant l'incident</li>
+          <li>Écarts assumés et écrits&nbsp;: sans eux, la recette ne tient pas</li>
         </ul>
 
         <h2 id="captures">La brique en images</h2>

@@ -112,10 +112,13 @@ Les indicateurs ci-dessous reprennent des idées de précision technique apport�
 
 | Domaine | Indicateur proposé | Cible de recette à valider |
 |---|---|---|
-| Sauvegarde | RPO (perte de données) | Cible proposée : < 15 min. |
+| Sauvegarde | Perte de disponibilité — panne matérielle d'un nœud | Cible proposée : < 15 min, portée par la réplication |
+| Sauvegarde | Perte de récupération — sinistre logique | Cible proposée : < 24 h 30, portée par la sauvegarde et sa copie |
 | Sauvegarde | Temps de restauration | Cible proposée : restauration d'une VM critique < 30 min. |
 | Ansible | Temps de déploiement / reconfiguration | Cible proposée : nouvelle configuration appliquée < 15 min. |
 | Zabbix | Réactivité des alertes | Cible proposée : alerte envoyée à la DSI < 2 min. |
+
+> **Pourquoi deux indicateurs de perte.** Une cible unique de 15 minutes décrirait la perte en cas de panne matérielle, couverte par la réplication, mais ne serait pas tenable en cas de suppression ou de chiffrement : la réplication transporte l'erreur vers le second nœud. La récupération d'un état antérieur repose sur la sauvegarde, dont le rythme quotidien impose 24 h 30. **15 minutes pour la disponibilité, 24 h 30 pour la récupération.**
 
 ---
 

@@ -14,7 +14,7 @@
       <div class="wrap">
         <p class="eyebrow">Sant&eacute;lia &middot; dossier technique</p>
         <h1>Santélia — Annexe : journal des commandes exécutées</h1>
-        <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 01/11/2026</p>
+        <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 14/11/2026</p>
       </div>
     </header>
     <main class="wrap" id="contenu">
@@ -744,29 +744,72 @@ Récapitulatif des fichiers de configuration concernés</h2>
 </table>
 <hr />
 <h2 id="a.11-portée-de-cette-annexe">A.11 Portée de cette annexe</h2>
-<p>Ces commandes ont été exécutées manuellement, une par une, lors de la
-mise au point du montage.</p>
-<p><strong>Elles constituent la cible de la phase
-d’automatisation</strong> : le cahier des charges prévoit d’«
-automatiser et standardiser les configurations des serveurs et des
-applications », avec protection des secrets [1]. Chaque séquence décrite
-ici correspond à un futur rôle d’automatisation, rejouable et
-documenté.</p>
-<blockquote>
-<p>Sept points de vigilance relevés lors de la mise au point, répartis
-entre la configuration du cluster (volume d’amorçage non répliqué,
-fichier de résolution local des clones, agents invités) et
-l’exploitation de la haute disponibilité (fenêtre de réplication,
-séquencement des interventions). Ils sont détaillés dans le document de
-recette associé.</p>
-</blockquote>
+<p>Commandes exécutées manuellement, une par une, lors de la mise au
+point. Elles constituent la <strong>cible de la phase
+d’automatisation</strong> : chaque séquence correspond à un futur rôle,
+rejouable et documenté.</p>
+<p>Sept points de vigilance ont été relevés au cours du montage.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Point</th>
+<th>Traité dans</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Volume d’amorçage local non répliqué</td>
+<td>Document de recette, 3.1</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Perte de données liée à l’intervalle de réplication</td>
+<td>Document de recette, 3.2</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Séquencement des interventions de disponibilité</td>
+<td>Document de recette, 3.3</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Clés d’hôte SSH dupliquées par le clonage</td>
+<td>Document d’architecture, § 7</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Identifiant machine dupliqué</td>
+<td>Document d’architecture, § 7</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Adresse réseau dupliquée</td>
+<td>Document d’architecture, § 7</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Fichier de résolution local hérité</td>
+<td>Document d’architecture, § 9</td>
+</tr>
+</tbody>
+</table>
+<p>Le septième est le plus discret : il ne se manifeste qu’au moment de
+la jonction au cluster, et c’est le seul des sept à avoir bloqué une
+opération nette plutôt que de provoquer un comportement erratique.</p>
 <hr />
 <p><em>Source : cahier des charges Santélia, Bloc 2 AIS — Groupe
 2.</em></p></article>
     </main>
     <footer>
       <div class="wrap">
-        <p>Sant&eacute;lia &middot; documentation technique &middot; 01/11/2026</p>
+        <p>Sant&eacute;lia &middot; documentation technique &middot; 14/11/2026</p>
       </div>
     </footer>
   </body>

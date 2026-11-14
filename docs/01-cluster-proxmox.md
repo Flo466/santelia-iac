@@ -1,38 +1,36 @@
-# Santélia — Configuration des 3 nœuds Proxmox
+# Santélia — Configuration des trois nœuds Proxmox
 
-> Document diffusable
-> Dépôt : `santelia-iac` — Dernière mise à jour : 05/10/2026
+> Brique 01 — architecture, prérequis, procédures et contrôles.
+> Dernière mise à jour : 05/10/2026
 
 ---
 
-## 1. Objet du document
+## 1. Objet
 
-Ce document décrit la configuration retenue pour la brique **Proxmox VE HA** du projet Santélia, dont le rôle est d'héberger les VM critiques dans une architecture de haute disponibilité afin de limiter les interruptions de service.
+Configuration de la brique **Proxmox VE HA**, chargée d'héberger les VM critiques en haute disponibilité afin de limiter les interruptions de service.
 
-**Statut :** cluster **créé et opérationnel** (quorate, trois nœuds, anneaux de communication vérifiés). La réplication et le groupe de haute disponibilité sont opérationnels.
+**Statut :** cluster créé et opérationnel, quorate, trois nœuds, anneaux de communication vérifiés. Réplication et groupe de haute disponibilité opérationnels.
 
-Cette brique répond à l'exigence n° 1 du cahier des charges, classée **Must** : « Accès continu au DPI via haute disponibilité des VM ».
+Répond à l'exigence n° 1 du cahier des charges, priorité **Must** : « Accès continu au DPI via haute disponibilité des VM » [5].
 
 ---
 
 ## 2. Écarts assumés
 
-À déclarer explicitement dans la recette, puisqu'elle doit démontrer la conformité de façon objective.
+Déclarés explicitement, puisque la recette doit démontrer la conformité de façon objective.
 
 | Écart | Justification | Impact |
 | --- | --- | --- |
-| Les 3 nœuds sont hébergés sur **une seule machine physique** | Contrainte matérielle du laboratoire | La maquette démontre le **mécanisme** de quorum, de réplication et de bascule, pas la résistance à une panne physique de l'hôte |
+| Trois nœuds sur **une seule machine physique** | Contrainte matérielle du laboratoire | La maquette démontre le **mécanisme** de quorum, de réplication et de bascule, pas la résistance à la panne de l'hôte |
 | **Pare-feu Proxmox désactivé** | Simplification de l'environnement de test | À activer en production |
 | `host_key_checking = False` côté Ansible | Environnement de test | Écart de sécurité documenté, à corriger en production |
-| **Aucun swap** dans les nœuds | Comportement Proxmox par défaut sur ZFS | Acceptable pour des nœuds de laboratoire, à surveiller |
-| ZFS en **RAID0 (disque unique)** par nœud | Un seul disque virtuel par nœud | Aucune redondance au niveau du pool ; le pool sert à la réplication, pas à la tolérance de panne |
-| **Un seul chemin de communication de cluster** | Configuration par défaut | Pas de redondance du lien de quorum si le réseau d'administration vacille |
+| **Aucun swap** dans les nœuds | Comportement par défaut sur ZFS | Acceptable en laboratoire, à surveiller |
+| ZFS en **RAID0, disque unique** | Un seul disque virtuel par nœud | Aucune redondance du pool, qui sert à la réplication, pas à la tolérance de panne |
+| **Un seul chemin de communication de cluster** | Configuration par défaut | Pas de redondance du lien de quorum |
 
 ---
 
 ## 3. Architecture
-
-Un hyperviseur physique héberge **trois nœuds Proxmox VE imbriqués**, virtuellement séparés.
 
 | Nœud | Rôle | vCPU | RAM | Disque |
 | --- | --- | --- | --- | --- |
@@ -40,62 +38,51 @@ Un hyperviseur physique héberge **trois nœuds Proxmox VE imbriqués**, virtuel
 | `pve-b` | Nœud secondaire | 2 | 4 Gio | 24 Gio |
 | `pve-c` | Votant de quorum | 2 | 4 Gio | 24 Gio |
 
-### Pourquoi trois nœuds et pas deux
+### Trois nœuds plutôt que deux
 
-Le quorum Corosync exige une **majorité stricte**. À trois nœuds, la majorité est de deux : perdre un nœud laisse le cluster opérationnel. À deux nœuds, il faudrait ajouter un **QDevice** externe pour obtenir cette même majorité.
+| | Trois nœuds | Deux nœuds |
+| --- | --- | --- |
+| Majorité stricte | **2 sur 3**, atteignable sans rien ajouter | 2 sur 2, aucune perte tolérée |
+| Dispositif externe de vote | **Aucun** | QDevice obligatoire |
+| Stockage partagé | **Aucun** | Export NFS nécessaire |
+| Perte d'un nœud | Cluster opérationnel | Quorum perdu |
 
-Le choix de trois nœuds supprime donc le besoin d'un QDevice, d'un export NFS comme stockage partagé, et de toute la complexité qui va avec.
+**Trois nœuds suppriment le QDevice, l'export NFS et la complexité qui va avec.**
 
-### Pourquoi les trois nœuds sur la même machine
+### Les trois nœuds sur la même machine
 
-Les trois nœuds partagent un processeur identique, ce qui autorise l'exposition du **type CPU natif** et supprime toute contrainte de compatibilité pour la migration à chaud. Un nœud placé sur une seconde machine physique, de génération différente, aurait imposé un modèle de CPU conservateur au détriment des performances.
+Un processeur identique autorise l'exposition du **type CPU natif** et supprime toute contrainte de compatibilité pour la migration à chaud. Un nœud sur une seconde machine de génération différente aurait imposé un modèle de CPU conservateur, au détriment des performances.
 
 ---
 
 ## 4. Prérequis techniques
 
-### Activation de la virtualisation imbriquée
-
-L'hôte doit exposer les instructions de virtualisation matérielle à ses invités, sinon un nœud démarre mais **refuse de lancer ses propres machines virtuelles**.
-
-Vérification : le paramètre `nested` du module KVM doit valoir `Y`.
-
-### Paramétrage des VM
-
 | Paramètre | Valeur | Justification |
 | --- | --- | --- |
-| Type de CPU | **Natif** | Sans lui, le nœud démarre mais ne peut pas virtualiser |
-| Gestion mémoire dynamique | **Désactivée** | Comportement erratique dans un hyperviseur déjà virtualisé |
-| Discard | **Activé** | Permet au stockage thin de récupérer les blocs libérés |
-| Démarrage automatique | **Activé** | Les nœuds reviennent après un redémarrage de l'hôte |
-| Deux cartes réseau | — | Une pour l'administration, une pour le réseau de service |
-
-### Plafonnement du cache ZFS
-
-ZFS consomme par défaut jusqu'à la moitié de la RAM disponible en cache. Sur trois nœuds de 4 Gio, cela provoque une saturation mémoire. Le cache est donc plafonné à **512 Mio par nœud**.
+| Virtualisation imbriquée | exposée à l'invité | Sinon un nœud démarre mais **refuse de lancer ses propres machines** |
+| Type de CPU de la machine | **Natif** | Sans lui, le nœud démarre mais ne peut pas virtualiser |
+| Gestion mémoire dynamique | **Désactivée** | Comportement erratique dans un hyperviseur virtualisé |
+| Récupération des blocs libérés | **Activée** | Le stockage thin récupère les blocs libérés |
+| Démarrage automatique | **Activé** | Les nœuds reviennent après redémarrage de l'hôte |
+| Cartes réseau | Deux | Une administration, une service |
+| Plafond du cache ZFS | **512 Mio** par nœud | Par défaut ZFS prend la moitié de la RAM, soit la saturation à trois nœuds de 4 Gio |
 
 ---
 
 ## 5. Stockage
 
-### Hôte physique
-
-| Volume | Taille | Rôle |
+| Volume, hôte physique | Taille | Rôle |
 | --- | --- | --- |
-| Système | 69 Gio | Système d'exploitation, modèles de conteneurs, images ISO |
+| Système | 69 Gio | Système, modèles de conteneurs, images ISO |
 | Thin pool | 141 Gio | **Disques des machines virtuelles** |
 | Sauvegardes | 60 Gio libres | Sauvegardes `vzdump` |
-| Disque annexe | 245 Gio | ⛔ Réservé à un autre projet, hors périmètre |
+| Disque annexe | 245 Gio | Réservé à un autre projet, hors périmètre |
 
-Les disques des nœuds sont créés dans le **thin pool**, ce qui permet de sur-allouer : un disque de 24 Gio annoncé n'occupe que l'espace réellement écrit.
+Les disques des nœuds vivent dans le **thin pool** : un disque de 24 Gio annoncé n'occupe que l'espace réellement écrit.
 
-### Nœuds
+**Chaque nœud est installé en ZFS sur disque unique.** Ce choix ne vise pas la redondance mais le **nom du pool** : Proxmox nomme son pool système de façon identique partout, ce qui rend la **réplication native entre nœuds** possible. C'est ce mécanisme qui permet à une VM de redémarrer sur un nœud survivant.
 
-Chaque nœud est installé en **ZFS sur disque unique**.
-
-Ce choix n'est pas guidé par la redondance, mais par le **nom du pool**. Proxmox nomme systématiquement son pool système de la même façon, ce qui rend la **réplication native entre nœuds** possible. C'est ce mécanisme qui permettra à une VM de redémarrer sur un nœud survivant.
-
-Capacité utile constatée : environ **20,8 Gio** sur les 24 Gio alloués, ZFS réservant près de 13 % pour ses métadonnées.
+Capacité utile constatée : environ **20,8 Gio** sur 24, ZFS réservant près de 13 % pour ses métadonnées.
 
 ---
 
@@ -103,114 +90,99 @@ Capacité utile constatée : environ **20,8 Gio** sur les 24 Gio alloués, ZFS r
 
 | Interface | Rôle |
 | --- | --- |
-| **Administration** | Accès web et SSH aux nœuds, trafic de cluster Corosync |
+| **Administration** | Accès web et SSH, trafic de cluster Corosync |
 | **Service** | Segment L2 commun aux instances du service applicatif |
 
-La séparation en deux plans répond à deux besoins distincts. Le réseau d'administration supporte l'exploitation et le clustering, le réseau de service supporte la continuité applicative.
+**Corosync échange ses votes en multicast sur le même segment de niveau 2.** Il ne doit **jamais** traverser un NAT, sous peine de votes fantômes et de pertes de quorum inexpliquées.
 
-### Point d'attention : L2 obligatoire pour Corosync
+**Accès distant.** Les nœuds ne sont pas des machines indépendantes sur le réseau : l'administration passe par **rebond SSH** via l'hôte physique, en local comme à distance.
 
-Corosync échange ses votes en multicast sur le même segment de niveau 2. Il ne doit **jamais** traverser un NAT, sous peine de votes fantômes et de pertes de quorum inexpliquées.
-
-### Accès distant
-
-Les nœuds imbriqués ne sont pas des machines indépendantes sur le réseau. L'administration à distance s'effectue par **rebond SSH** via l'hôte physique, ce qui fonctionne aussi bien sur le réseau local qu'à distance.
-
-### Adressage
-
-Six adresses statiques sont nécessaires : trois pour les nœuds, trois réservées à l'avance pour les futurs services. Elles doivent être **exclues de la plage DHCP** du réseau pour éviter tout conflit.
+**Adressage.** Six adresses statiques : trois pour les nœuds, trois réservées aux futurs services. Toutes **exclues de la plage DHCP**.
 
 ---
 
-## 7. Procédure de duplication d'un nœud
+## 7. Duplication d'un nœud
 
-Le clonage d'une machine virtuelle duplique son identité. Trois éléments doivent impérativement être régénérés dans chaque clone, **avant tout test de connexion**.
+Le clonage duplique l'identité. Trois éléments à régénérer dans chaque clone, **avant tout test de connexion**.
 
 | Élément | Risque si dupliqué |
 | --- | --- |
-| **Clés d'hôte SSH** | Rejet des connexions, alertes de sécurité, échec du clustering |
-| **Identifiant machine** | Comportements erratiques des services, traces ambiguës. **Une restauration le recopie** : changer l'identifiant matériel avant de le régénérer |
-| **Adresse réseau** | Conflit d'adresses, coupures intermittentes |
+| **Clés d'hôte SSH** | Rejet des connexions, alertes, échec du clustering |
+| **Identifiant machine** | Comportements erratiques, traces ambiguës. **Une restauration le recopie** |
+| **Adresse réseau** | Conflit, coupures intermittentes |
 
-### Procédure
+### Procédure, dans cet ordre
 
-1. Renommer la machine.
-2. **Supprimer** les clés d'hôte existantes.
-3. Les régénérer.
-4. Régénérer l'identifiant machine.
-5. Modifier l'adresse réseau et le fichier de résolution local.
-6. Redémarrer le service SSH.
-7. Redémarrer la machine.
+| # | Opération |
+| --- | --- |
+| 1 | Renommer la machine |
+| 2 | **Supprimer** les clés d'hôte existantes |
+| 3 | Les régénérer |
+| 4 | Régénérer l'identifiant machine |
+| 5 | Modifier l'adresse réseau et le fichier de résolution local |
+| 6 | Redémarrer le service SSH |
+| 7 | Redémarrer la machine |
 
-### Piège documenté
+### Pièges documentés
 
-**L'outil de génération de clés SSH ne régénère jamais une clé existante.** Il crée uniquement les clés manquantes, et il reste totalement silencieux lorsqu'il n'a rien à faire.
+**L'outil de génération de clés ne régénère jamais une clé existante.** Il crée les clés manquantes et reste totalement silencieux quand il n'a rien à faire. Sans l'étape de suppression, le clone conserve l'identité de la source. C'est l'erreur la plus coûteuse de cette phase.
 
-Conséquence : si l'étape de suppression n'est pas exécutée, la commande ne produit rien et le clone conserve l'identité de la machine d'origine. C'est l'erreur la plus coûteuse de cette phase.
+**Le provisionnement automatique annule un renommage, silencieusement.** Il réapplique le nom d'origine et le fichier de résolution à chaque démarrage, tant que la conservation du nom n'est pas explicitement demandée. Le contrôle de durabilité — redémarrer puis relire le nom — est la seule preuve que le changement a tenu.
 
-**Le provisionnement automatique annule un renommage, silencieusement.** Le mécanisme qui a
-servi à construire la machine réapplique le nom d'origine à chaque démarrage, ainsi que le
-fichier de résolution local, tant que la conservation du nom n'est pas explicitement demandée.
-Un renommage effectué sans ce réglage est annulé au redémarrage suivant, sans message d'erreur.
-Le contrôle de durabilité — redémarrer puis relire le nom — est la seule preuve que le
-changement a tenu.
+### Clonage et restauration, deux cas différents
 
-### Bonne nouvelle sur l'identifiant machine
+| | Clonage | Restauration |
+| --- | --- | --- |
+| Identifiant matériel | **régénéré** par l'opération | **recopié** depuis l'originale |
+| Identifiant machine | unique dès le premier démarrage | identique à celui de l'originale |
+| Régénération | ceinture de sécurité | **obligation** |
 
-Sur une machine virtuelle, l'identifiant machine n'est pas tiré au hasard : il est **dérivé de l'identifiant unique exposé par l'hyperviseur**. Comme l'opération de clonage régénère cet identifiant, chaque clone dispose déjà du sien dès son premier démarrage. La régénération est donc une **ceinture de sécurité**, pas une urgence.
-
-Cette tolérance vaut pour le clonage, et pour lui seul. **Une restauration recopie la
-configuration de la machine source, identifiant matériel compris** : l'identifiant machine de
-la machine restaurée reprend alors la valeur de l'originale. Dans ce cas, la régénération n'est
-plus une ceinture de sécurité mais une obligation, et elle doit être précédée du changement de
-l'identifiant matériel.
+Sur une machine virtuelle, l'identifiant machine est **dérivé de l'identifiant matériel exposé par l'hyperviseur**. Une restauration recopiant cet identifiant, la régénération reproduit la même valeur si elle n'est pas précédée du changement.
 
 ### Symptômes d'une identité dupliquée
 
-- Le client SSH signale que la clé du serveur est connue sous un **autre nom ou une autre adresse**.
-- Une connexion SSH s'établit puis est coupée brutalement avant toute authentification.
-- Le service SSH apparaît actif alors qu'il ne peut servir aucune connexion.
+| Symptôme | Ce qu'il révèle |
+| --- | --- |
+| Le client SSH signale la clé connue sous un **autre nom ou une autre adresse** | Partage d'identité |
+| La connexion s'établit puis se coupe avant toute authentification | Le service SSH accepte le TCP puis meurt faute de clé |
+| Le service SSH apparaît actif | Il ne sert aucune connexion |
 
-### Vérification
-
-Les empreintes de clés d'hôte de tous les nœuds doivent être **différentes**. Le commentaire associé à chaque clé indique le nom de la machine qui l'a générée, ce qui permet d'identifier immédiatement un partage d'identité.
+Le commentaire associé à chaque clé d'hôte indique le nom de la machine qui l'a générée : c'est le contrôle immédiat.
 
 ---
 
 ## 8. Vérifications réalisées
 
-| Contrôle | Méthode | Résultat obtenu |
+| Contrôle | Méthode | Résultat |
 | --- | --- | --- |
-| Virtualisation imbriquée | Recherche du flag `vmx` dans le processeur | Présent, non nul sur les trois nœuds |
-| Pool ZFS | État et nom du pool système | `rpool` en ligne, **nom identique** sur les trois nœuds |
-| Espace disponible | Espace libre de chaque pool | ~21,5 Gio libres par nœud |
-| Cache ZFS | Valeur du plafond en mémoire | 512 Mio appliqués |
-| Unicité des noms | Nom d'hôte de chaque nœud | Trois valeurs distinctes |
-| Unicité des identités | Identifiants machine et empreintes SSH | Trois valeurs distinctes |
-| Unicité réseau | Comparaison des adresses MAC déclarées et observées | Trois adresses distinctes, sans conflit |
-| Accès automatisé | Connexion SSH **sans mot de passe** | Réussie sur les trois nœuds |
+| Virtualisation imbriquée | flag `vmx` du processeur | présent, non nul sur les trois nœuds |
+| Pool ZFS | état et nom du pool système | `rpool` en ligne, **nom identique** partout |
+| Espace disponible | espace libre de chaque pool | ~21,5 Gio libres par nœud |
+| Cache ZFS | plafond en mémoire | 512 Mio appliqués |
+| Unicité des noms | nom d'hôte | trois valeurs distinctes |
+| Unicité des identités | identifiants machine et empreintes SSH | trois valeurs distinctes |
+| Unicité réseau | adresses matérielles déclarées et observées | trois adresses distinctes |
+| Accès automatisé | connexion SSH **sans mot de passe** | réussie sur les trois nœuds |
 
-> Une adresse MAC identique observée sur deux nœuds peut provenir d'un **cache réseau obsolète**. Vider la table et réinterroger avant de conclure à un conflit réel.
+> Une adresse matérielle identique sur deux nœuds peut venir d'un **cache réseau obsolète**. Vider la table et réinterroger avant de conclure au conflit.
 >
-> Un pont réseau hérite de l'adresse MAC de son premier port : c'est un comportement normal, pas un conflit.
+> Un pont réseau hérite de l'adresse matérielle de son premier port : comportement normal.
 
 ---
 
-## 9. Création du cluster
+## 9. Cluster
 
-Le cluster a été créé et assemblé le **05/10/2026**. Il est **quorate** avec trois nœuds participants.
+Créé et assemblé le **05/10/2026**, quorate.
 
 | Caractéristique | Valeur |
 | --- | --- |
-| Nom du cluster | `santelia` |
+| Nom | `santelia` |
 | Transport | `knet` |
-| Authentification sécurisée | Activée |
+| Authentification sécurisée | activée |
 | Nœuds | **3** |
 | Votes attendus | **3** |
-| **Majorité requise (quorum)** | **2** |
+| **Majorité requise** | **2** |
 | État | `Quorate` |
-
-### Déroulé de l'assemblage
 
 | Étape | Date | Version de configuration |
 | --- | --- | --- |
@@ -218,97 +190,86 @@ Le cluster a été créé et assemblé le **05/10/2026**. Il est **quorate** ave
 | Jonction du 2e nœud | 05/10 à **09:27** | 2 |
 | Jonction du 3e nœud | 05/10 à **09:30** | 3 |
 
-### Bénéfice du quorum à deux sur trois
+### Piège de la jonction
 
-La perte d'un nœud laisse le cluster **opérationnel**. C'est précisément ce qu'apporte la solution à **trois nœuds** : une majorité atteignable sans dispositif externe. Une solution à deux nœuds aurait nécessité un **QDevice** supplémentaire pour obtenir la même résilience.
+La jonction échoue si le **fichier de résolution local** contient encore les informations de la source. Deux causes constatées après clonage :
 
-### Piège rencontré, à documenter
-
-La jonction d'un nœud échoue si le **fichier de résolution local** contient encore les informations de la machine d'origine. Deux problèmes constatés après clonage :
-
-1. **L'adresse héritée** pointait vers le nœud source. Le cluster ne pouvait alors pas déterminer l'adresse locale de la machine, et refusait la jonction avec un message explicite.
-2. **Le nom pleinement qualifié** contenait un caractère erroné, rendant la résolution incohérente avec le nom court de la machine.
-
-Correction : la ligne de résolution locale doit associer **la bonne adresse** au **nom complet correct**, suivi du **nom court**. Le contrôle consiste à comparer nom court, nom complet et résolution par nom court : les trois doivent concorder.
-
-> Cette correction est le **quatrième effet du clonage**, après les clés d'hôte SSH, l'identifiant machine et l'adressage réseau. Elle justifie à elle seule l'automatisation de la procédure en phase de standardisation.
-
----
-
-## 10. Contrôles post-création effectués
-
-| Contrôle | Résultat obtenu |
+| Cause | Effet |
 | --- | --- |
-| État du cluster | Trois nœuds, trois votes, quorum à deux, indicateur « quorate » |
-| Liste des membres | Les trois nœuds présents, **un vote chacun** |
-| **Anneaux de communication Corosync** | **Tous les liens « connected », aucun paquet perdu** |
-| Cohérence des pools de réplication | Nom de pool identique sur les trois nœuds |
-| Unicité des identifiants machine | Trois valeurs distinctes |
+| Adresse héritée pointant vers le nœud source | Le cluster ne détermine pas l'adresse locale et refuse la jonction |
+| Nom pleinement qualifié erroné | Résolution incohérente avec le nom court |
 
-> Le contrôle des **anneaux de communication Corosync** est le plus souvent négligé. Il révèle les clusters qui fonctionnent en apparence mais perdent leur quorum sans explication au bout de quelques semaines. Il est recommandé de le systématiser après toute opération sur le cluster.
+Correction : la ligne de résolution doit associer **la bonne adresse** au **nom complet correct**, suivi du **nom court**. Contrôle : nom court, nom complet et résolution doivent concorder.
+
+> C'est le **quatrième effet du clonage**, après les clés d'hôte, l'identifiant machine et l'adressage. Il justifie à lui seul l'automatisation de la procédure.
 
 ---
 
-## 11. État d'avancement
+## 10. Contrôles post-création
+
+| Contrôle | Résultat |
+| --- | --- |
+| État du cluster | trois nœuds, trois votes, quorum à deux, « quorate » |
+| Liste des membres | trois nœuds, **un vote chacun** |
+| **Anneaux Corosync** | **tous les liens connectés, aucun paquet perdu** |
+| Cohérence des pools de réplication | nom identique sur les trois nœuds |
+| Unicité des identifiants machine | trois valeurs distinctes |
+
+> Le contrôle des **anneaux Corosync** est le plus souvent négligé. Il révèle les clusters qui fonctionnent en apparence et perdent leur quorum sans explication au bout de quelques semaines. À systématiser après toute opération.
+
+---
+
+## 11. État
 
 | Élément | État |
 | --- | --- |
-| Hôte physique | Opérationnel, virtualisation imbriquée active |
-| Trois nœuds Proxmox | Installés, identités uniques, administrables à distance |
-| **Cluster** | ✅ **Créé le 05/10/2026**, quorate à 3 nœuds, majorité à 2 |
-| Anneaux de communication | ✅ Tous les liens actifs |
-| Réplication entre nœuds | ✅ Opérationnelle, état `OK` |
-| Groupe de haute disponibilité | ✅ Configuré, ressource critique rattachée |
-
-### Étapes suivantes
-
-1. ✅ **Création du cluster** et jonction des trois nœuds — **fait le 05/10/2026**.
-2. ✅ **Contrôle du quorum et des anneaux** : trois votes, majorité à deux, état « quorate », liens actifs.
-3. ✅ **Réplication** des volumes entre nœuds.
-4. ✅ **Groupe HA** et machine virtuelle de test.
-5. ✅ **Démonstration de bascule** horodatée — voir le document « Test de recette HA ».
+| Hôte physique | opérationnel, virtualisation imbriquée active |
+| Trois nœuds Proxmox | installés, identités uniques, administrables à distance |
+| **Cluster** | ✅ créé le 05/10/2026, quorate, majorité à 2 |
+| Anneaux de communication | ✅ tous les liens actifs |
+| Réplication entre nœuds | ✅ opérationnelle, état `OK` |
+| Groupe de haute disponibilité | ✅ configuré, ressource critique rattachée |
 
 ---
 
-## 12. Cibles de recette associées
-
-### Test de recette défini par le cahier des charges
+## 12. Recette
 
 | Brique | Test | Résultat attendu | Preuve exigée |
 | --- | --- | --- | --- |
-| **HA / Proxmox VE** | Simuler l'indisponibilité d'un nœud hébergeant une VM critique | Le service reste disponible ou est rétabli dans le délai cible | **Compte rendu + horodatage** |
-| **Sauvegarde / PBS** | Lancer une sauvegarde puis tester une restauration | Sauvegarde exploitable et restauration réussie | **Journal de sauvegarde + preuve de restauration** |
-| **Supervision / Zabbix** | Vérifier la remontée et déclencher une alerte | Les 30 postes visibles, alerte remontée correctement | **Capture/export Zabbix + journal** |
-| **IaC / Ansible** | Déployer ou reconfigurer une machine de test, puis rejouer le playbook | Configuration identique et standardisée, sans action manuelle | **Playbook + sortie d'exécution + état final** |
+| **HA / Proxmox VE** | simuler l'indisponibilité d'un nœud hébergeant une VM critique | service disponible ou rétabli dans le délai cible | **compte rendu + horodatage** |
+| **Sauvegarde / PBS** | lancer une sauvegarde puis tester une restauration | sauvegarde exploitable, restauration réussie | **journal + preuve de restauration** |
+| **Supervision / Zabbix** | vérifier la remontée et déclencher une alerte | 30 postes visibles, alerte remontée | **capture ou export + journal** |
+| **IaC / Ansible** | déployer une machine de test, puis rejouer le playbook | configuration identique, sans action manuelle | **playbook + sortie + état final** |
 
-> La recette vérifie chaque brique **séparément puis leur fonctionnement conjoint**, et les tests sont réalisés sur l'**environnement de validation avant la mise en production**.
+La recette vérifie chaque brique **séparément puis conjointement**, sur l'**environnement de validation avant la mise en production**.
 
-### Indicateurs complémentaires proposés
+### Indicateurs proposés
 
-Ces indicateurs sont **proposés** et restent à valider.
+La perte maximale est scindée en deux : la réplication couvre la panne matérielle, la sauvegarde couvre le retour à un état antérieur. Un chiffre unique ne peut pas décrire les deux risques.
 
 | Domaine | Indicateur | Cible proposée |
 | --- | --- | --- |
-| Sauvegarde | RPO (perte de données maximale) | < 15 min |
+| Disponibilité | Perte en cas de panne matérielle d'un nœud | < 15 min, portée par la réplication |
+| Sauvegarde | Perte de récupération en cas de sinistre logique | < 24 h 30, portée par la sauvegarde et sa copie |
 | Sauvegarde | Temps de restauration d'une VM critique | < 30 min |
 | Ansible | Temps de déploiement ou de reconfiguration | < 15 min |
 | Zabbix | Réactivité des alertes vers la DSI | < 2 min |
 
 ---
 
-## 13. Rappel des exigences et priorités
+## 13. Exigences et priorités
 
-| # | Exigence | Priorité | Brique retenue |
+| # | Exigence | Priorité | Brique |
 | --- | --- | --- | --- |
 | 1 | Accès continu au DPI via haute disponibilité des VM | **Must** | Proxmox VE HA |
-| 2 | Sauvegarde 3-2-1 et restauration | **Must** | PBS + copie secondaire |
-| 3 | Automatisation des serveurs et applications | **Must** | Ansible + playbooks |
+| 2 | Sauvegarde 3-2-1 et restauration | **Must** | PBS et copie secondaire |
+| 3 | Automatisation des serveurs et applications | **Must** | Ansible et playbooks |
 | 4 | Supervision centralisée des 30 postes | Should | Zabbix |
 
-> Les exigences **Must** sont traitées en priorité, en vérifiant que les options retenues restent compatibles avec l'enveloppe maximale de 15 000 €.
+Les exigences **Must** sont traitées en priorité, en vérifiant que les options retenues restent compatibles avec l'enveloppe de 15 000 €.
 
 ---
 
-_Les identifiants techniques détaillés (adressage complet, empreintes, identifiants machine) sont conservés dans une annexe interne non jointe à ce document._
+*Les identifiants techniques détaillés — adressage complet, empreintes, identifiants machine — sont conservés dans une annexe interne non jointe.*
 
-_Source : cahier des charges Santélia, Bloc 2 AIS — Groupe 2._
+*Source : cahier des charges Santélia, Bloc 2 AIS — Groupe 2.*

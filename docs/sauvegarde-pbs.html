@@ -85,15 +85,7 @@
           <span class="card__icon" aria-hidden="true">💾</span>
           <span class="card__tag">01 / Mise en œuvre</span>
           <h3>Sauvegarde et restauration</h3>
-          <p>
-            Deux serveurs de sauvegarde sur deux machines physiques distinctes.
-            La protection du stockage alloué, les comptes de service à
-            privilèges minimaux, la confiance dans le certificat, la sauvegarde
-            en mode instantané, la restauration vers une machine distincte, puis
-            la copie secondaire qui se resynchronise toutes les demi-heures. Les
-            huit points de vigilance identifiés en conditions réelles sont
-            documentés, dont deux relèvent de la sécurité.
-          </p>
+          <p>Deux serveurs sur deux machines distinctes&nbsp;: sauvegarde, restauration, copie.</p>
           <div class="pills">
             <span class="pill">Proxmox Backup Server</span>
             <span class="pill">3-2-1</span>
@@ -115,15 +107,7 @@
           <span class="card__icon" aria-hidden="true">🧾</span>
           <span class="card__tag">02 / Exploitation</span>
           <h3>Journal des commandes&nbsp;: sauvegarde</h3>
-          <p>
-            La séquence complète de mise en œuvre, environnement par
-            environnement, telle qu'elle a été jouée. L'ordre des opérations y
-            est déterminant&nbsp;: déclarer le stockage au bon niveau, contrôler
-            l'empreinte du certificat, et vérifier que la sauvegarde reste
-            cohérente applicative grâce à l'agent invité. Le raccordement des
-            deux serveurs, la déclaration de l'empreinte et la tâche de
-            synchronisation y figurent, relevés à l'appui.
-          </p>
+          <p>L'ordre compte&nbsp;: niveau du stockage, empreinte du certificat, cohérence par agent invité.</p>
           <div class="pills">
             <span class="pill">procédure</span>
             <span class="pill">rejeu</span>
@@ -147,12 +131,7 @@
           <span class="card__icon" aria-hidden="true">🔐</span>
           <span class="card__tag">Chiffrement</span>
           <h3>Protection des sauvegardes au repos</h3>
-          <p>
-            Le chiffrement de l'entrepôt protège les données stockées.
-            Contrepartie à assumer&nbsp;: la clé doit être conservée hors du
-            serveur, faute de quoi les sauvegardes deviennent définitivement
-            illisibles.
-          </p>
+          <p>La clé doit vivre hors du serveur, sinon les sauvegardes sont définitivement illisibles.</p>
           <div class="card__foot">
             <span class="status status--todo">À faire</span>
           </div>
@@ -162,12 +141,7 @@
           <span class="card__icon" aria-hidden="true">🗄️</span>
           <span class="card__tag">Stockage dédié</span>
           <h3>Isoler la copie secondaire</h3>
-          <p>
-            La copie secondaire cohabite aujourd'hui avec un dépôt de sauvegarde
-            de fichiers sur le même volume&nbsp;: la perte de ce volume les
-            emporterait tous les deux. Un stockage distinct met la copie hors de
-            portée de cet incident.
-          </p>
+          <p>La copie partage son volume avec un dépôt de fichiers&nbsp;: un incident emporterait les deux.</p>
           <div class="card__foot">
             <span class="status status--todo">À faire</span>
           </div>
@@ -177,11 +151,7 @@
           <span class="card__icon" aria-hidden="true">🌐</span>
           <span class="card__tag">Périmètre</span>
           <h3>Élargir la sauvegarde</h3>
-          <p>
-            La sauvegarde couvre la machine critique produite par la brique
-            précédente. L'étendre aux autres machines de l'infrastructure reste
-            à faire, avec la même chaîne de copie.
-          </p>
+          <p>La machine critique est couverte. Les autres machines restent à raccorder.</p>
           <div class="card__foot">
             <span class="status status--todo">À faire</span>
           </div>
@@ -191,44 +161,15 @@
       <article>
         <h2>Ce que démontre la brique</h2>
         <ul>
-          <li>
-            Une sauvegarde <strong>cohérente applicative</strong>, obtenue par
-            l'appel à l'agent invité qui gèle puis libère le système de fichiers
-            avant et après la capture. Sans lui, la sauvegarde resterait
-            utilisable mais serait comparable à un arrêt brutal.
-          </li>
-          <li>
-            Une <strong>restauration réellement exécutée</strong>, vers une
-            machine distincte de l'originale, et une machine qui redémarre et
-            rend son service.
-          </li>
-          <li>
-            Une <strong>déduplication efficace</strong>, avec plus de quatre
-            cinquièmes des données réutilisées dès la première passe, et
-            98&nbsp;% à la seconde.
-          </li>
-          <li>
-            Un <strong>compte de service à privilèges minimaux</strong> et une
-            connexion authentifiée par l'empreinte du certificat du serveur.
-          </li>
-          <li>
-            Une
-            <strong>copie secondaire sur une machine physique distincte</strong
-            >, qui tire ses données du serveur primaire sans détenir le moindre
-            droit d'écriture chez lui, et ne retransfère que ce qu'elle ne
-            possède pas déjà.
-          </li>
-          <li>
-            Une <strong>fenêtre de perte maîtrisée</strong>, calculée sur le
-            maillon le plus lent de la chaîne et non sur la fréquence de la
-            copie.
-          </li>
-          <li>
-            <strong>Huit points de vigilance</strong> identifiés en conditions
-            réelles, dont une adresse IPv6 globale exposée hors du mécanisme de
-            traduction d'adresses.
-          </li>
+          <li>Sauvegarde cohérente&nbsp;: système de fichiers gelé puis libéré par l'agent invité</li>
+          <li>Restauration exécutée vers une machine distincte, qui redémarre et rend son service</li>
+          <li>Déduplication&nbsp;: 82&nbsp;% réutilisés dès la première passe, 98&nbsp;% à la seconde</li>
+          <li>Compte de service à privilèges minimaux, connexion authentifiée par empreinte</li>
+          <li>Copie sur une machine distincte, qui tire ses données sans détenir de droit d'écriture</li>
+          <li>Perte maximale calculée sur le maillon le plus lent, pas sur la fréquence de copie</li>
+          <li>Huit points de vigilance, dont une adresse IPv6 globale hors du mécanisme de traduction</li>
         </ul>
+
 
         <h2 id="captures">Le serveur primaire en images</h2>
 

@@ -742,11 +742,21 @@ ha-manager status
 
 ## A.11 Portée de cette annexe
 
-Ces commandes ont été exécutées manuellement, une par une, lors de la mise au point du montage.
+Commandes exécutées manuellement, une par une, lors de la mise au point. Elles constituent la **cible de la phase d'automatisation** : chaque séquence correspond à un futur rôle, rejouable et documenté.
 
-**Elles constituent la cible de la phase d'automatisation** : le cahier des charges prévoit d'« automatiser et standardiser les configurations des serveurs et des applications », avec protection des secrets [1]. Chaque séquence décrite ici correspond à un futur rôle d'automatisation, rejouable et documenté.
+Sept points de vigilance ont été relevés au cours du montage.
 
-> Sept points de vigilance relevés lors de la mise au point, répartis entre la configuration du cluster (volume d'amorçage non répliqué, fichier de résolution local des clones, agents invités) et l'exploitation de la haute disponibilité (fenêtre de réplication, séquencement des interventions). Ils sont détaillés dans le document de recette associé.
+| # | Point | Traité dans |
+| --- | --- | --- |
+| 1 | Volume d'amorçage local non répliqué | Document de recette, 3.1 |
+| 2 | Perte de données liée à l'intervalle de réplication | Document de recette, 3.2 |
+| 3 | Séquencement des interventions de disponibilité | Document de recette, 3.3 |
+| 4 | Clés d'hôte SSH dupliquées par le clonage | Document d'architecture, § 7 |
+| 5 | Identifiant machine dupliqué | Document d'architecture, § 7 |
+| 6 | Adresse réseau dupliquée | Document d'architecture, § 7 |
+| 7 | Fichier de résolution local hérité | Document d'architecture, § 9 |
+
+Le septième est le plus discret : il ne se manifeste qu'au moment de la jonction au cluster, et c'est le seul des sept à avoir bloqué une opération nette plutôt que de provoquer un comportement erratique.
 
 ---
 

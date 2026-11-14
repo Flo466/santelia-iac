@@ -119,29 +119,20 @@
           <span class="card__icon" aria-hidden="true">🛡️</span>
           <span class="card__tag">01 / Haute disponibilité</span>
           <h3>Cluster Proxmox VE et continuité des VM critiques</h3>
-          <p>
-            Trois nœuds en cluster, quorum tenu à deux votes sur trois,
-            réplication des volumes entre nœuds et groupe de haute
-            disponibilité. La perte d'un nœud laisse le cluster opérationnel,
-            sans dispositif externe de vote.
-          </p>
+          <p>Trois nœuds, quorum à deux votes, réplication entre nœuds.</p>
           <div class="req">
-            <b>Test de recette</b>
-            <span
-              >Simuler l'indisponibilité d'un nœud hébergeant une VM
-              critique.</span
-            >
+            <b>Test</b>
+            <span>Simuler la panne d'un nœud hébergeant une VM critique.</span>
           </div>
           <div class="req">
-            <b>Preuve attendue</b>
-            <span>Compte rendu et horodatage de la bascule.</span>
+            <b>Preuve</b>
+            <span>Compte rendu horodaté de la bascule.</span>
           </div>
           <div class="req">
             <b>Continuité &middot; RTO</b>
             <span
-              >Délai cible de 5 à 10 minutes. Rétablissement constaté en 2 min
-              24 s&nbsp;: cible tenue. <strong>PCA</strong> &mdash; le service
-              repart ailleurs, sans être reconstruit.</span
+              >Cible 5 à 10 min, <strong>constaté 2 min 24 s</strong>.
+              <strong>PCA</strong> &mdash; le service repart ailleurs.</span
             >
           </div>
           <div class="card__foot">
@@ -154,28 +145,20 @@
           <span class="card__icon" aria-hidden="true">💾</span>
           <span class="card__tag">02 / Sauvegarde</span>
           <h3>Proxmox Backup Server et stratégie de copie</h3>
-          <p>
-            Sauvegarde structurée avec copie secondaire, pour que la perte d'un
-            site de stockage ne fasse pas perdre les données. Le test porte sur
-            la restauration réelle, pas sur l'existence des sauvegardes.
-          </p>
+          <p>Sauvegarde dédupliquée, copie secondaire, restauration testée.</p>
           <div class="req">
-            <b>Test de recette</b>
-            <span
-              >Lancer une sauvegarde, puis restaurer et vérifier que la machine
-              redémarre.</span
-            >
+            <b>Test</b>
+            <span>Sauvegarder, puis restaurer vers une machine distincte.</span>
           </div>
           <div class="req">
-            <b>Preuve attendue</b>
+            <b>Preuve</b>
             <span>Journal de sauvegarde et preuve de restauration.</span>
           </div>
           <div class="req">
             <b>Reprise &middot; RPO</b>
             <span
-              >Perte de données maximale de 24 h 30 au pire, copie secondaire
-              comprise. <strong>PRA</strong> &mdash; le service est reconstruit
-              à partir d'un état antérieur connu.</span
+              >Perte maximale <strong>24 h 30</strong>, copie comprise.
+              <strong>PRA</strong> &mdash; le service est reconstruit.</span
             >
           </div>
           <div class="card__foot">
@@ -188,24 +171,14 @@
           <span class="card__icon" aria-hidden="true">🛰️</span>
           <span class="card__tag">03 / Supervision</span>
           <h3>Supervision centralisée et remontée d'alerte</h3>
-          <p>
-            Les équipements du parc sont visibles depuis un point unique, et une
-            anomalie déclenche une alerte. La supervision est hébergée hors de
-            l'infrastructure supervisée, sans quoi elle disparaît avec ce
-            qu'elle surveille.
-          </p>
+          <p>Les équipements visibles depuis un point unique, hors de l'infrastructure supervisée.</p>
           <div class="req">
-            <b>Test de recette</b>
-            <span
-              >Vérifier la remontée des équipements et déclencher une
-              alerte.</span
-            >
+            <b>Test</b>
+            <span>Vérifier la remontée et déclencher une alerte.</span>
           </div>
           <div class="req">
-            <b>Preuve attendue</b>
-            <span
-              >Export de la console de supervision et journal d'alerte.</span
-            >
+            <b>Preuve</b>
+            <span>Export de la console et journal d'alerte.</span>
           </div>
           <div class="card__foot">
             <span class="status status--todo">À faire</span>
@@ -216,22 +189,14 @@
           <span class="card__icon" aria-hidden="true">⚙️</span>
           <span class="card__tag">04 / Automatisation</span>
           <h3>Déploiement reproductible par Ansible</h3>
-          <p>
-            L'état attendu des serveurs et des applications est décrit dans des
-            rôles. Une machine est déployée par le code, puis le projet est
-            rejoué pour vérifier qu'aucune configuration ne repose sur une
-            intervention manuelle.
-          </p>
+          <p>L'état attendu décrit dans des rôles, déployé par le code puis rejoué.</p>
           <div class="req">
-            <b>Test de recette</b>
-            <span
-              >Déployer une machine de test, puis rejouer le projet
-              complet.</span
-            >
+            <b>Test</b>
+            <span>Déployer une machine, puis rejouer le projet complet.</span>
           </div>
           <div class="req">
-            <b>Preuve attendue</b>
-            <span>Projet, sortie d'exécution et état final identique.</span>
+            <b>Preuve</b>
+            <span>Projet, sortie d'exécution, état final identique.</span>
           </div>
           <div class="card__foot">
             <span class="status status--todo">À faire</span>

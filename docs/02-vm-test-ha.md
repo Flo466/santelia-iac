@@ -1,243 +1,153 @@
-# Santélia — VM critique `vm-test-ha` : construction et provisionnement
+# Santélia — Machine critique : construction et provisionnement
 
-> Document rendable — décrit la mise en place de la machine de test de la brique HA.
-> Les mesures de disponibilité et le compte rendu de recette sont dans le document « Santélia — Test de recette HA : simulation de panne de nœud ».
-
----
-
-## 1. Objet de ce document
-
-Ce document décrit la **construction** d'une machine virtuelle minimale destinée à servir d'objet de test pour la brique de haute disponibilité.
-
-Il ne traite ni des mesures ni du compte rendu de recette, qui font l'objet d'un document distinct.
-
-Le cahier des charges répartit les rôles ainsi : Proxmox VE HA traite la continuité des VM, Proxmox Backup Server la sauvegarde et la restauration, Zabbix la supervision, et Ansible l'automatisation et la standardisation. La préparation de la HA et l'intégration des VM critiques constituent la phase 2 du planning, avec pour jalon une **HA opérationnelle sur l'environnement cible**.
-
-**Pourquoi une machine minimale plutôt que le service réel :** elle permet de valider le mécanisme complet sans introduire d'autres variables. Une fois le mécanisme prouvé, le contenu pourra être remplacé par le service réel sans retoucher au mécanisme.
+> Brique 01 — socle du service rendu par la haute disponibilité.
+> Construite comme banc de test, elle est désormais la machine de production du service.
 
 ---
 
-## 2. Approche retenue : image cloud et provisionnement automatique
+## 1. Ce que produit ce document
 
-Plutôt qu'une installation interactive depuis une image d'installation, une **image cloud** et un mécanisme de **provisionnement automatique** ont été utilisés.
+Une machine virtuelle minimale, apte à servir d'objet de test à la haute disponibilité.
+
+**Pourquoi une machine minimale.** Elle valide le mécanisme complet sans introduire d'autres variables. Une fois le mécanisme prouvé, le contenu est remplacé sans retoucher au mécanisme : le dispositif s'appuie sur l'**identifiant** de la machine, pas sur son nom.
+
+---
+
+## 2. Image cloud plutôt qu'installation
 
 | | Image d'installation | Image cloud |
 | --- | --- | --- |
 | Nature | Support d'installation | Disque système **déjà installé** |
 | Format | `.iso` | `.qcow2` |
-| Au démarrage | Un programme d'installation pose des questions | Le système démarre directement |
-| Utilisateur, réseau | Configurés manuellement | Définis par **données de configuration** |
+| Au démarrage | Un programme pose des questions | Le système démarre directement |
+| Utilisateur, réseau | Configurés à la main | Définis par **données de configuration** |
 | Reproductibilité | Faible | **Élevée** |
 
-### Principe du provisionnement automatique
+Un service embarqué s'exécute au **premier démarrage**, lit les instructions fournies par l'hyperviseur et les applique : utilisateur, clé d'authentification, réseau. Il ne s'exécute **qu'une fois**.
 
-Un service embarqué dans l'image s'exécute au **premier démarrage**. Il lit des instructions fournies par l'hyperviseur et les applique : création de l'utilisateur, dépôt d'une clé d'authentification, configuration réseau. Il ne s'exécute **qu'une seule fois**, puis se marque comme terminé.
+Côté hyperviseur, ces instructions sont des **options de configuration**. Un petit périphérique de type CD-ROM est généré automatiquement pour les transporter.
 
-Côté hyperviseur, ces instructions ne sont pas rédigées à la main : elles se renseignent sous forme d'**options dans la configuration de la machine**, et un petit périphérique de type CD-ROM est généré automatiquement pour les transporter jusqu'à l'invité.
-
-**Intérêt pour le projet :** la machine est décrite en **données** plutôt que configurée manuellement. C'est la même démarche que l'automatisation attendue en phase de standardisation, où les configurations des serveurs et des applications doivent être automatisées et documentées.
+**La machine est décrite en données, pas configurée à la main.** C'est déjà la démarche attendue en phase de standardisation.
 
 ---
 
 ## 3. Vérifications préalables
 
-Trois contrôles avant toute création.
-
 | Contrôle | Objet |
 | --- | --- |
-| Adresse réseau disponible | Vérifier qu'aucune machine ne répond, et que l'adresse est hors de la plage d'attribution automatique |
-| Clé d'authentification présente sur le nœud | C'est elle qui sera injectée dans la machine |
-| Numéro de machine libre | Dans un cluster, les numéros sont **uniques à l'échelle du cluster**, pas par nœud |
-
-> Les numéros déjà attribués à d'autres projets hébergés sur le même hôte physique doivent être évités. Prévoir des plages distinctes par projet.
+| Adresse réseau disponible | Aucune réponse, et hors plage d'attribution automatique |
+| Clé d'authentification sur le nœud | C'est elle qui sera injectée |
+| Numéro de machine libre | **Unique à l'échelle du cluster**, pas par nœud |
 
 ---
 
-## 4. Création de la machine
+## 4. Construction
 
-### 4.1 Récupération de l'image cloud
+| Étape | Opération | Point déterminant |
+| --- | --- | --- |
+| 1 | Récupération de l'image cloud | Le fichier doit peser **plusieurs centaines de mégaoctets**. Quelques kilo-octets = page d'erreur |
+| 2 | Création de la coquille, **sans disque** | Pont réseau **présent sur tous les nœuds**, sinon la reprise ailleurs est impossible |
+| 3 | Import de l'image, puis raccordement | L'import seul ne raccorde pas le disque : étape intermédiaire volontaire |
+| 4 | Agrandissement du disque | **Obligatoire.** Sans lui, toute installation de paquet échoue par manque d'espace |
+| 5 | Disque d'amorçage et ordre de démarrage | Sans disque à la création, l'hyperviseur place le réseau en premier |
+| 6 | Console série | **Les images cloud n'ont pas d'affichage graphique.** Sans elle, la console reste noire et on croit à une panne |
+| 7 | Configuration de provisionnement | Utilisateur, chemin du fichier de clés autorisées, adresse statique, serveur de noms |
 
-L'image est récupérée depuis les dépôts officiels de la distribution.
+| Paramètre de la machine | Valeur | Raison |
+| --- | --- | --- |
+| Mémoire dynamique | **Désactivée** | Erratique dans un hyperviseur déjà virtualisé |
+| Agent invité | Activé | Ouvre le canal de communication |
+| Démarrage automatique | Activé | Retour après redémarrage de l'hôte |
+| Récupération des blocs libérés | Activée | Le stockage thin récupère l'espace |
 
-**Contrôle :** le fichier doit faire **plusieurs centaines de mégaoctets**. Une taille de quelques kilo-octets indique une page d'erreur et non une image.
-
-### 4.2 Création de la coquille
-
-Une machine est créée **sans disque**, avec les paramètres suivants.
-
-| Paramètre | Justification |
-| --- | --- |
-| Mémoire fixe, gestion dynamique **désactivée** | La gestion mémoire dynamique est erratique dans un hyperviseur lui-même virtualisé |
-| Interface réseau sur un pont **existant sur tous les nœuds** | Indispensable pour que la machine puisse redémarrer sur un autre nœud après une reprise |
-| Agent invité activé | Ouvre le canal de communication avec l'agent (voir § 6) |
-| Démarrage automatique activé | La machine revient après un redémarrage de l'hôte |
-
-À ce stade, la machine est une **coquille vide** : aucun disque, aucune image de démarrage.
-
-### 4.3 Import de l'image comme disque
-
-L'image est importée puis **raccordée** à la machine.
-
-> Le retour de l'import indique que le disque est **importé mais pas encore raccordé**. C'est une étape intermédiaire volontaire.
-
-### 4.4 Agrandissement du disque
-
-Les images cloud sont volontairement **minuscules** — deux à trois gigaoctets — afin que la taille finale soit choisie au déploiement.
-
-> **L'agrandissement est obligatoire.** Sans lui, la machine démarre mais toute installation de paquet échoue rapidement par manque d'espace.
-
-Taille retenue : **8 Gio**, avec option de récupération de l'espace libéré activée.
-
-### 4.5 Disque d'amorçage, ordre de démarrage et console série
-
-| Option | Rôle |
-| --- | --- |
-| Disque de provisionnement en position secondaire | Crée le périphérique qui transporte les instructions jusqu'à la machine |
-| Ordre de démarrage forcé sur le disque | Sans disque au moment de la création, l'hyperviseur place le réseau en premier |
-| Console série activée | **Les images cloud n'ont pas d'affichage graphique.** Elles écrivent sur la console série : sans cette option, la console reste noire et on croit à une panne |
-
-### 4.6 Renseignement de la configuration
-
-| Élément | Valeur |
-| --- | --- |
-| Utilisateur invité | Compte d'administration non privilégié |
-| Clé d'authentification | Injectée depuis le fichier de clés autorisées du nœud |
-| Adresse réseau | Adresse statique du réseau d'administration |
-| Serveur de noms | Passerelle du réseau |
-
-L'utilisation du chemin vers le fichier de clés autorisées évite de recopier une clé à la main : l'hyperviseur lit le fichier et l'injecte.
-
-### 4.7 Contrôle de la configuration
-
-Le contrôle consiste à vérifier que figurent bien : le disque **avec sa taille finale** — preuve que l'agrandissement a été appliqué —, le périphérique de provisionnement, l'ordre de démarrage, la console série, l'utilisateur et l'adresse réseau.
+Taille retenue : **8 Gio**.
 
 ---
 
 ## 5. Contrôles après démarrage
 
-Un délai de **30 à 60 secondes** est nécessaire au premier démarrage, le temps que le provisionnement automatique crée l'utilisateur, dépose la clé et applique la configuration réseau.
+Compter **30 à 60 secondes** au premier démarrage, le temps que le provisionnement crée l'utilisateur, dépose la clé et applique le réseau.
 
 | Vérification | Résultat obtenu | Interprétation |
 | --- | --- | --- |
-| Réponse réseau | Réponses en 2 à 4 ms | La machine communique |
-| Connexion à distance | Réussie **sans mot de passe** | L'utilisateur a été créé **et** la clé injectée |
-| Empreinte de la clé d'hôte | Aucune autre machine connue sous cette adresse | Identité propre, aucun partage |
-| Espace disque | **7,7 Gio** sur la partition racine | L'agrandissement et l'extension de partition ont fonctionné |
-| État du provisionnement | Terminé, sans erreur | Configuration appliquée intégralement |
-| Agent invité | **Inactif** | ⚠️ Voir § 6 |
+| Réponse réseau | 2 à 4 ms | La machine communique |
+| Connexion à distance | réussie **sans mot de passe** | Utilisateur créé **et** clé injectée |
+| Empreinte de la clé d'hôte | aucune autre machine sous cette adresse | Identité propre |
+| Espace disque | **7,7 Gio** sur la racine | Agrandissement et extension de partition appliqués |
+| État du provisionnement | terminé, sans erreur | Configuration appliquée intégralement |
+| Agent invité | **installé et actif** | Voir § 6 |
 
-**Conclusion :** le déploiement d'une machine virtuelle **sans aucune installation interactive** est validé. Aucune question posée, aucune intervention dans la console.
+**Déploiement sans aucune installation interactive : validé.** Aucune question posée, aucune intervention en console.
 
 ---
 
 ## 6. Point de vigilance — agent invité
 
-**Constat.** L'activation de l'agent dans la configuration de la machine ouvre le **canal** de communication, mais **n'installe pas le logiciel dans l'invité**. L'image cloud de la distribution ne l'embarque pas par défaut, d'où un état inactif constaté après démarrage.
-
-**Conséquence.**
-
 | Sans agent | Avec agent |
 | --- | --- |
-| L'hyperviseur ne connaît pas l'adresse réseau de la machine | L'adresse est remontée automatiquement |
-| Les arrêts de la machine peuvent aboutir à un délai d'attente dépassé | Arrêt propre fiable |
-| La supervision ne peut pas exploiter les informations invitées | Inventaire et mesures disponibles |
+| L'hyperviseur ignore l'adresse réseau de la machine | Adresse remontée automatiquement |
+| Les arrêts aboutissent à un délai d'attente dépassé | Arrêt propre fiable |
+| La supervision n'exploite aucune information invitée | Inventaire et mesures disponibles |
 
-**Mesure appliquée.** Installation et activation du logiciel dans l'invité, puis vérification depuis l'hyperviseur que la communication est établie et que les informations système remontent.
+**Activer l'agent dans la configuration ouvre le canal, il n'installe pas le logiciel.** L'image cloud de la distribution ne l'embarque pas : l'état inactif constaté après démarrage vient de là.
 
-**Réserve.** Non bloquant pour un redémarrage sur un autre nœud, qui fonctionne avec ou sans agent, mais **nécessaire** pour les opérations d'arrêt propre et pour la supervision.
+**Mesure appliquée.** Installation et activation dans l'invité, puis contrôle depuis l'hyperviseur que la communication est établie et que les informations système remontent.
+
+**Non bloquant** pour un redémarrage sur un autre nœud, qui fonctionne avec ou sans agent. **Nécessaire** aux arrêts propres et à la supervision.
 
 ---
 
-## 7. Dispositif témoin installé dans la machine
+## 7. Dispositif témoin
 
-Pour que la vérification de disponibilité porte sur **le service rendu** et non sur l'état de la machine, un serveur web minimal est installé, accompagné d'une **page dynamique**.
+Pour que la vérification porte sur **le service rendu** et non sur l'état de la machine.
 
-| Point | Pourquoi |
+| Choix | Pourquoi |
 | --- | --- |
-| Service **réel** plutôt qu'un script isolé | Il possède un état vérifiable et un comportement de production |
-| Activation au démarrage | **Sans cette activation, le service ne redémarrerait pas après une reprise et la vérification perdrait sa valeur** |
-| Page **dynamique** plutôt que statique | La page lit l'état réel de la machine à chaque requête : horodatage de démarrage, heure de réponse, ancienneté. Une page statique afficherait indéfiniment la même valeur et ne prouverait rien |
+| Service **réel** plutôt qu'un script isolé | État vérifiable, comportement de production |
+| Activation au démarrage | Sans elle, le service ne revient pas après reprise et la vérification perd sa valeur |
+| Page **dynamique** plutôt que statique | Elle relit l'état réel à chaque requête : démarrage, heure de réponse, ancienneté. Une page statique afficherait indéfiniment la même valeur |
 
-> C'est une distinction essentielle pour un engagement de continuité : l'hyperviseur considère une machine démarrée bien avant que le service rendu ne le soit.
+**L'hyperviseur considère une machine démarrée bien avant que le service rendu ne le soit.** C'est la distinction sur laquelle repose toute la mesure de recette.
 
 ---
 
-## 8. Reproductibilité de la construction
+## 8. Reproductibilité
 
 | Élément | Comportement constaté |
 | --- | --- |
-| Clé d'authentification | Injectée automatiquement au provisionnement |
-| Identifiant machine | Dérivé de l'identifiant unique exposé par l'hyperviseur : **unique par construction au clonage**. Une restauration le recopie — voir la note ci-dessous |
-| Configuration réseau | Appliquée par le provisionnement automatique |
+| Clé d'authentification | Injectée au provisionnement |
+| Identifiant machine | Dérivé de l'identifiant matériel exposé par l'hyperviseur. **Unique par construction au clonage** |
+| Configuration réseau | Appliquée par le provisionnement |
 | Disque | Raccordé et agrandi selon la taille choisie |
 
-Cette machine est **reproductible à l'identique** : les étapes décrites ici constituent déjà une configuration décrite en données, et non une suite d'opérations manuelles.
+**Clonage.** L'opération régénère l'identifiant matériel, donc chaque clone dispose du sien dès le premier démarrage. La régénération de l'identifiant machine y est une **ceinture de sécurité**.
 
-**Cas particulier de la restauration.** Contrairement au clonage, la restauration d'une
-machine recopie sa configuration, identifiant matériel compris. L'identifiant machine dérivant
-de cet identifiant, une machine restaurée porte donc celui de l'originale : la régénération
-n'est plus une ceinture de sécurité, mais une obligation.
+**Restauration.** Elle recopie la configuration, identifiant matériel compris. La machine restaurée porte donc l'identifiant machine de l'originale : la régénération devient une **obligation**, et doit être précédée du changement de l'identifiant matériel.
 
-Constaté en conditions réelles : la machine restaurée et son original portaient le même
-identifiant machine, hérité de la configuration recopiée. La correction passe par le changement
-de l'identifiant matériel **avant** la régénération de l'identifiant machine, faute de quoi la
-régénération reproduit la valeur d'origine.
-
-**Fait notable constaté pendant la mise au point :** une configuration appliquée manuellement dans la machine invitée, après coup, n'est **pas reproductible** et peut être perdue lors d'une reprise ou d'une synchronisation de disque. Ce constat est détaillé et exploité dans le document de recette associé.
+> Constaté en conditions réelles : la machine restaurée et son originale portaient le même identifiant machine, hérité de la configuration recopiée.
 
 ---
 
-## 9. Suite donnée
+## 9. Du banc de test au service réel
 
-| Étape | Objet | Document |
-| --- | --- | --- |
-| Réplication vers un second nœud | Permettre au nœud survivant de retrouver le disque | Document de configuration du cluster |
-| Déclaration en ressource haute disponibilité | Confier la surveillance de la machine au gestionnaire | Document de configuration du cluster |
-| **Simulation de panne et mesure** | Vérifier la reprise et le délai de rétablissement du service | **Document « Test de recette HA »** |
-| Standardisation | Reproduire cette construction par playbook plutôt qu'à la main | Phase de standardisation |
-| **Déploiement du service applicatif** | Installer l'environnement de conteneurs et l'application de gestion de patients sur la machine préparée | Étape à venir — voir ci-dessous |
+La construction a été menée sous le nom `vm-test-ha`, pour valider le mécanisme sans introduire d'autres variables. La machine est **désormais la machine de production** du service, et non plus un objet de démonstration.
 
-### Passage de l'objet de test au service réel
+| Élément | État |
+| --- | --- |
+| Nom de la machine | `srv-dpi-santelia` |
+| Mémoire | 2 Gio, plus 2 Gio de mémoire d'échange |
+| Clés d'hôte et identifiant machine | régénérés |
+| Groupe de disponibilité, réplication, sauvegarde | **aucune reconfiguration**, ils s'appuient sur l'identifiant |
+| Contenu applicatif | **à déployer** : environnement de conteneurs, application de gestion de patients, base de données |
 
-La construction décrite dans ce document a été menée sous le nom `vm-test-ha`, afin de valider le
-mécanisme sans introduire d'autres variables. Le principe retenu est celui du **remplacement
-progressif du contenu** : le dispositif de disponibilité, la réplication et la sauvegarde
-s'appuient sur l'identifiant de machine et non sur son nom, ce qui permet de changer ce que la
-machine héberge sans les reconfigurer.
+**Ce que cette bascule démontre.** Le dispositif de continuité est indifférent à ce que la machine héberge. Renommer, redimensionner et régénérer l'identité n'a demandé aucune intervention sur la réplication ni sur la sauvegarde : c'est le principe du **remplacement progressif du contenu**.
 
-**Ce qui est fait.** La machine a été renommée, sa mémoire portée à 2 Gio et une mémoire d'échange
-ajoutée. Les deux couches d'identité ont été traitées séparément — étiquette côté hyperviseur,
-nom côté système invité — avec régénération des clés d'hôte et de l'identifiant machine. Ces
-opérations n'ont demandé **aucune reconfiguration** du groupe de disponibilité, de la tâche de
-réplication ni de la tâche de sauvegarde. La procédure suivie est décrite au journal des
-commandes.
+**Ce qu'elle ne démontre pas encore.** La machine est un socle préparé, pas encore un service rendu. Tant que l'application n'est pas déployée, la chaîne complète — démarrage du système, démarrage des conteneurs, disponibilité de la base — n'a pas été mesurée.
 
-**Ce qui reste à faire.** Le contenu applicatif n'est pas encore déployé. La machine doit recevoir
-un environnement d'exécution de conteneurs, une application de gestion de patients et sa base de
-données. Tant que ce déploiement n'est pas fait, la machine reste un socle préparé, et non un
-service en production.
+**Conséquence sur les 2 min 24 s.** La mesure porte sur une machine minimale, dont le système redémarre en quelques secondes. Elle reste valable pour le **mécanisme**. Elle ne préjuge pas du démarrage applicatif, qui s'y ajoutera. Une nouvelle campagne est à prévoir après déploiement, avec le même protocole et les mêmes horodatages.
 
-**Conséquence sur les mesures.** Le délai de rétablissement de 2 min 24 s a été mesuré sur une
-machine minimale, dont le système redémarre en quelques secondes. Il reste valable comme mesure
-du **mécanisme** de reprise. Il ne préjuge pas de celui du service applicatif, dont le démarrage
-et la reprise de la base de données s'ajoutent au temps de bascule. Une nouvelle campagne de
-mesure est donc à prévoir après déploiement, avec le même protocole et les mêmes horodatages.
-
-**Pourquoi la mesure reste défendable dans l'intervalle.** La cible de rétablissement est de 5 à
-10 minutes pour un rétablissement constaté de 2 min 24 s. La marge disponible absorbe le temps de
-démarrage applicatif ; c'est précisément ce que la nouvelle mesure devra confirmer.
+**Pourquoi la mesure reste défendable dans l'intervalle.** La cible est de 5 à 10 minutes pour un rétablissement constaté de 2 min 24 s : la marge absorbe le temps de démarrage applicatif. C'est ce que la nouvelle mesure devra confirmer.
 
 ---
 
-## 10. Situation dans le planning
-
-| Phase | Contenu | Jalon | Statut |
-| --- | --- | --- | --- |
-| 2. Haute disponibilité | Préparation de la HA et intégration des VM critiques | **HA opérationnelle sur l'environnement cible** | ✅ Mécanisme prouvé — contenu applicatif à déployer |
-| 3. Sauvegarde | Proxmox Backup Server et stratégie 3-2-1 | Sauvegardes + premier test de restauration | ✅ Livrée — brique 2 |
-| 4. Supervision | Zabbix, équipements et les 30 postes | Supervision centralisée et alertes | À venir |
-| 5. IaC | Playbooks Ansible et standardisation | Playbooks validés et documentés | À venir |
-
----
-
-_Source : cahier des charges Santélia, Bloc 2 AIS — Groupe 2._
+*Source : cahier des charges Santélia, Bloc 2 AIS — Groupe 2.*

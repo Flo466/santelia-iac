@@ -18,16 +18,7 @@ d'erreur sur ce montage.
 | **Serveur de sauvegarde primaire** | Stocke les sauvegardes |
 | **Serveur de sauvegarde secondaire** | Porte la copie, hors du support primaire |
 
-Deux conséquences pratiques en découlent, et elles ont chacune provoqué une erreur en séance.
-
-**Un stockage déclaré sur l'hôte n'est pas visible depuis le cluster**, et inversement. C'est ce
-qui a fait échouer la première sauvegarde, traité au point de vigilance n° 3 du document de
-synthèse.
-
-**La commande d'administration du serveur de sauvegarde n'est pas dans le chemin d'exécution
-d'un utilisateur ordinaire.** Elle réside dans le répertoire des commandes réservées aux comptes
-privilégiés. Sans élévation, le shell répond simplement que la commande est introuvable. Toutes
-les commandes de cette famille se lancent donc avec élévation.
+Deux réflexes en découlent. **Un stockage déclaré sur l'hôte n'est pas visible depuis le cluster**, et inversement : c'est ce qui fait échouer la première sauvegarde, point de vigilance n° 3. Et **la commande d'administration du serveur de sauvegarde n'est pas dans le chemin d'un utilisateur ordinaire** : sans élévation, le shell répond qu'elle est introuvable. Toutes les commandes de cette famille se lancent donc avec élévation.
 
 ---
 
@@ -275,10 +266,7 @@ configuration. Retenir « **système local uniquement** ».
 | Type de configuration de messagerie | Système local uniquement |
 | Nom de messagerie système | `<nom-complet-de-la-machine>.local` |
 
-Le serveur n'a aucun besoin d'émettre du courrier vers l'extérieur : il n'en produit que pour ses
-propres notifications, qui restent consultables localement. Choisir une configuration ouverte au
-réseau aurait conduit l'agent à tenter des remises vers des serveurs distants, à se faire
-refuser, et à remplir le journal d'erreurs sans aucun bénéfice.
+Le serveur n'émet aucun courrier vers l'extérieur : il n'en produit que pour ses propres notifications. Une configuration ouverte au réseau ferait échouer chaque remise et remplirait le journal d'erreurs sans bénéfice.
 
 **Contrôles après installation :**
 
@@ -475,11 +463,31 @@ Relevé :
 
 ```
 │ id           │ copie-depuis-pbs01
+│ owner        │ root@pam
 │ remote-store │ datastore-santelia
 │ store        │ santelia-copie
 │ remote       │ pbs01
 │ schedule     │ */30
 ```
+
+**Propriétaire de la tâche.** Le champ se fixe à la création et se modifie ensuite :
+
+```
+sudo proxmox-backup-manager sync-job update <nom-tache> --owner root@pam
+```
+
+Il doit correspondre au propriétaire des **groupes de sauvegarde**, c'est-à-dire au compte qui a
+produit les archives. Un groupe appartient au compte qui l'a écrit, et une synchronisation n'accepte
+de copier que les groupes de son propre propriétaire. Rattacher la tâche à un autre compte produit
+un refus explicite au moment de la copie :
+
+```
+[vm/100]: sync group vm/100 failed - owner check failed (pbs-sync@pbs != root@pam)
+```
+
+Restreindre la tâche au compte de service supposerait donc de transférer la propriété de chaque
+groupe, y compris ceux des machines à venir. Le compte dédié reste en place comme cible d'une
+restriction ultérieure.
 
 **Le sens de la copie.** La tâche est **tirée** par le serveur secondaire, elle n'est pas poussée
 par le primaire. Le serveur primaire n'a donc aucune connaissance de la copie, et aucun droit sur
@@ -557,21 +565,19 @@ La présente section ne conserve que la planification de la tâche et ses contr�
 
 ---
 
-## A.16 Fenêtre de perte, de bout en bout
+## A.16 Deux pertes, deux cibles
 
-Trois mécanismes agissent à trois rythmes différents. Ils ne se cumulent pas, et c'est le plus
-lent qui impose la fenêtre de perte de la stratégie.
+| Mécanisme | Rythme | Ce qu'il apporte | Perte maximale |
+| --- | --- | --- | --- |
+| Réplication des volumes | 15 min | Disponibilité. Ne protège pas d'une erreur logique | **15 min** |
+| Sauvegarde sur le serveur primaire | Quotidienne | Point de restauration exploitable | **24 h** |
+| Synchronisation de la copie | 30 min | Propagation de l'archive la plus récente | **+30 min** |
 
-| Mécanisme | Rythme | Ce qu'il apporte |
-| --- | --- | --- |
-| Réplication des volumes | 15 min | Disponibilité. Ne protège pas de la perte de données |
-| Sauvegarde sur le serveur primaire | Quotidienne | Point de restauration exploitable |
-| Synchronisation de la copie | 30 min | Propagation de l'archive la plus récente |
+**Perte de disponibilité : 15 min.** Un nœud tombe, la machine redémarre ailleurs sur un volume répliqué au plus vieux de 15 minutes.
 
-**Fenêtre de perte au pire : 24 h 30.** La synchronisation peut être parfaitement à jour et
-néanmoins ne contenir qu'une archive de la veille, si la sauvegarde nocturne n'a pas produit de
-nouvelle archive. La fréquence de la copie ne doit donc jamais être présentée comme la fenêtre de
-perte de la stratégie : le maillon le plus lent commande.
+**Perte de récupération : 24 h 30 au pire.** Une suppression ou un chiffrement ne se corrige pas par la réplication, qui transporte l'erreur. Il faut restaurer, donc revenir à la dernière archive produite par la sauvegarde quotidienne, plus le délai de propagation.
+
+**Le maillon le plus lent commande.** La synchronisation peut être à jour et ne contenir qu'une archive de la veille. Sa fréquence mesure la fiabilité de la copie, pas la fraîcheur de la donnée.
 
 ---
 

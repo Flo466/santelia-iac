@@ -14,7 +14,7 @@
       <div class="wrap">
         <p class="eyebrow">Sant&eacute;lia &middot; dossier technique</p>
         <h1>Cahier des charges technique &amp; fonctionnel</h1>
-        <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 01/11/2026</p>
+        <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 14/11/2026</p>
       </div>
     </header>
     <main class="wrap" id="contenu">
@@ -369,8 +369,14 @@ validées.</p>
 <tbody>
 <tr>
 <td>Sauvegarde</td>
-<td>RPO (perte de données)</td>
-<td>Cible proposée : &lt; 15 min.</td>
+<td>Perte de disponibilité — panne matérielle d’un nœud</td>
+<td>Cible proposée : &lt; 15 min, portée par la réplication</td>
+</tr>
+<tr>
+<td>Sauvegarde</td>
+<td>Perte de récupération — sinistre logique</td>
+<td>Cible proposée : &lt; 24 h 30, portée par la sauvegarde et sa
+copie</td>
 </tr>
 <tr>
 <td>Sauvegarde</td>
@@ -389,6 +395,15 @@ validées.</p>
 </tr>
 </tbody>
 </table>
+<blockquote>
+<p><strong>Pourquoi deux indicateurs de perte.</strong> Une cible unique
+de 15 minutes décrirait la perte en cas de panne matérielle, couverte
+par la réplication, mais ne serait pas tenable en cas de suppression ou
+de chiffrement : la réplication transporte l’erreur vers le second nœud.
+La récupération d’un état antérieur repose sur la sauvegarde, dont le
+rythme quotidien impose 24 h 30. <strong>15 minutes pour la
+disponibilité, 24 h 30 pour la récupération.</strong></p>
+</blockquote>
 <hr />
 <h2 id="planning-prévisionnel-de-mise-en-œuvre">7. Planning prévisionnel
 de mise en œuvre</h2>
@@ -652,7 +667,7 @@ exigences.</p></article>
     </main>
     <footer>
       <div class="wrap">
-        <p>Sant&eacute;lia &middot; documentation technique &middot; 01/11/2026</p>
+        <p>Sant&eacute;lia &middot; documentation technique &middot; 14/11/2026</p>
       </div>
     </footer>
   </body>

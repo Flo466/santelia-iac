@@ -14,7 +14,7 @@
       <div class="wrap">
         <p class="eyebrow">Sant&eacute;lia &middot; dossier technique</p>
         <h1>Santélia — Journal des commandes : sauvegarde</h1>
-        <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 01/11/2026</p>
+        <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 14/11/2026</p>
       </div>
     </header>
     <main class="wrap" id="contenu">
@@ -62,18 +62,13 @@ est la principale source d’erreur sur ce montage.</p>
 </tr>
 </tbody>
 </table>
-<p>Deux conséquences pratiques en découlent, et elles ont chacune
-provoqué une erreur en séance.</p>
-<p><strong>Un stockage déclaré sur l’hôte n’est pas visible depuis le
-cluster</strong>, et inversement. C’est ce qui a fait échouer la
-première sauvegarde, traité au point de vigilance n° 3 du document de
-synthèse.</p>
-<p><strong>La commande d’administration du serveur de sauvegarde n’est
-pas dans le chemin d’exécution d’un utilisateur ordinaire.</strong> Elle
-réside dans le répertoire des commandes réservées aux comptes
-privilégiés. Sans élévation, le shell répond simplement que la commande
-est introuvable. Toutes les commandes de cette famille se lancent donc
-avec élévation.</p>
+<p>Deux réflexes en découlent. <strong>Un stockage déclaré sur l’hôte
+n’est pas visible depuis le cluster</strong>, et inversement : c’est ce
+qui fait échouer la première sauvegarde, point de vigilance n° 3. Et
+<strong>la commande d’administration du serveur de sauvegarde n’est pas
+dans le chemin d’un utilisateur ordinaire</strong> : sans élévation, le
+shell répond qu’elle est introuvable. Toutes les commandes de cette
+famille se lancent donc avec élévation.</p>
 <hr />
 <h2 id="a.1-récupération-de-limage-dinstallation-sur-lhôte">A.1
 Récupération de l’image d’installation — sur l’hôte</h2>
@@ -257,11 +252,9 @@ messagerie intégré demande son type de configuration. Retenir «
 </tr>
 </tbody>
 </table>
-<p>Le serveur n’a aucun besoin d’émettre du courrier vers l’extérieur :
-il n’en produit que pour ses propres notifications, qui restent
-consultables localement. Choisir une configuration ouverte au réseau
-aurait conduit l’agent à tenter des remises vers des serveurs distants,
-à se faire refuser, et à remplir le journal d’erreurs sans aucun
+<p>Le serveur n’émet aucun courrier vers l’extérieur : il n’en produit
+que pour ses propres notifications. Une configuration ouverte au réseau
+ferait échouer chaque remise et remplirait le journal d’erreurs sans
 bénéfice.</p>
 <p><strong>Contrôles après installation :</strong></p>
 <pre><code>systemctl status proxmox-backup-proxy --no-pager | head -5
@@ -451,10 +444,25 @@ sudo proxmox-backup-manager sync-job list
 sudo proxmox-backup-manager sync-job show &lt;nom-tache&gt;</code></pre>
 <p>Relevé :</p>
 <pre><code>│ id           │ copie-depuis-pbs01
+│ owner        │ root@pam
 │ remote-store │ datastore-santelia
 │ store        │ santelia-copie
 │ remote       │ pbs01
 │ schedule     │ */30</code></pre>
+<p><strong>Propriétaire de la tâche.</strong> Le champ se fixe à la
+création et se modifie ensuite :</p>
+<pre><code>sudo proxmox-backup-manager sync-job update &lt;nom-tache&gt; --owner root@pam</code></pre>
+<p>Il doit correspondre au propriétaire des <strong>groupes de
+sauvegarde</strong>, c’est-à-dire au compte qui a produit les archives.
+Un groupe appartient au compte qui l’a écrit, et une synchronisation
+n’accepte de copier que les groupes de son propre propriétaire.
+Rattacher la tâche à un autre compte produit un refus explicite au
+moment de la copie :</p>
+<pre><code>[vm/100]: sync group vm/100 failed - owner check failed (pbs-sync@pbs != root@pam)</code></pre>
+<p>Restreindre la tâche au compte de service supposerait donc de
+transférer la propriété de chaque groupe, y compris ceux des machines à
+venir. Le compte dédié reste en place comme cible d’une restriction
+ultérieure.</p>
 <p><strong>Le sens de la copie.</strong> La tâche est
 <strong>tirée</strong> par le serveur secondaire, elle n’est pas poussée
 par le primaire. Le serveur primaire n’a donc aucune connaissance de la
@@ -545,55 +553,62 @@ en <strong>annexe A.1, A.2, A.4 et A.7 du document de synthèse</strong>.
 La présente section ne conserve que la planification de la tâche et ses
 contrôles.</p>
 <hr />
-<h2 id="a.16-fenêtre-de-perte-de-bout-en-bout">A.16 Fenêtre de perte, de
-bout en bout</h2>
-<p>Trois mécanismes agissent à trois rythmes différents. Ils ne se
-cumulent pas, et c’est le plus lent qui impose la fenêtre de perte de la
-stratégie.</p>
+<h2 id="a.16-deux-pertes-deux-cibles">A.16 Deux pertes, deux cibles</h2>
 <table>
 <colgroup>
-<col style="width: 33%" />
-<col style="width: 33%" />
-<col style="width: 33%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
 </colgroup>
 <thead>
 <tr>
 <th>Mécanisme</th>
 <th>Rythme</th>
 <th>Ce qu’il apporte</th>
+<th>Perte maximale</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>Réplication des volumes</td>
 <td>15 min</td>
-<td>Disponibilité. Ne protège pas de la perte de données</td>
+<td>Disponibilité. Ne protège pas d’une erreur logique</td>
+<td><strong>15 min</strong></td>
 </tr>
 <tr>
 <td>Sauvegarde sur le serveur primaire</td>
 <td>Quotidienne</td>
 <td>Point de restauration exploitable</td>
+<td><strong>24 h</strong></td>
 </tr>
 <tr>
 <td>Synchronisation de la copie</td>
 <td>30 min</td>
 <td>Propagation de l’archive la plus récente</td>
+<td><strong>+30 min</strong></td>
 </tr>
 </tbody>
 </table>
-<p><strong>Fenêtre de perte au pire : 24 h 30.</strong> La
-synchronisation peut être parfaitement à jour et néanmoins ne contenir
-qu’une archive de la veille, si la sauvegarde nocturne n’a pas produit
-de nouvelle archive. La fréquence de la copie ne doit donc jamais être
-présentée comme la fenêtre de perte de la stratégie : le maillon le plus
-lent commande.</p>
+<p><strong>Perte de disponibilité : 15 min.</strong> Un nœud tombe, la
+machine redémarre ailleurs sur un volume répliqué au plus vieux de 15
+minutes.</p>
+<p><strong>Perte de récupération : 24 h 30 au pire.</strong> Une
+suppression ou un chiffrement ne se corrige pas par la réplication, qui
+transporte l’erreur. Il faut restaurer, donc revenir à la dernière
+archive produite par la sauvegarde quotidienne, plus le délai de
+propagation.</p>
+<p><strong>Le maillon le plus lent commande.</strong> La synchronisation
+peut être à jour et ne contenir qu’une archive de la veille. Sa
+fréquence mesure la fiabilité de la copie, pas la fraîcheur de la
+donnée.</p>
 <hr />
 <p><em>Documentation publiée depuis le dépôt du projet — version du
 12/10/2026.</em></p></article>
     </main>
     <footer>
       <div class="wrap">
-        <p>Sant&eacute;lia &middot; documentation technique &middot; 01/11/2026</p>
+        <p>Sant&eacute;lia &middot; documentation technique &middot; 14/11/2026</p>
       </div>
     </footer>
   </body>

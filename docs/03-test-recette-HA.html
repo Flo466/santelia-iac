@@ -16,7 +16,7 @@ nœud</title>
         <p class="eyebrow">Sant&eacute;lia &middot; dossier technique</p>
         <h1>Santélia — Test de recette HA : simulation de panne de
 nœud</h1>
-        <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 01/11/2026</p>
+        <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 14/11/2026</p>
       </div>
     </header>
     <main class="wrap" id="contenu">
@@ -202,8 +202,6 @@ témoin)</td>
 </table>
 <h3 id="du-démarrage-annoncé-au-service-réellement-rendu">2.3 Du
 démarrage annoncé au service réellement rendu</h3>
-<p>Ce paragraphe explique la différence entre trois instants souvent
-confondus.</p>
 <table>
 <colgroup>
 <col style="width: 33%" />
@@ -416,26 +414,7 @@ reprise</td>
 </tr>
 </tbody>
 </table>
-<h3 id="cohérence-avec-la-stratégie-du-projet">4.2 Cohérence avec la
-stratégie du projet</h3>
-<p>Le cahier des charges retient Proxmox VE HA comme brique de
-continuité de service, en réponse à « l’accès continu au DPI » et à la
-réduction du temps d’interruption. L’incident de référence du projet —
-une panne de plus de six heures bloquant la prise de rendez-vous sur un
-site — est ici ramené à <strong>2 min 24 s</strong>.</p>
-<h3 id="lien-avec-lautomatisation">4.3 Lien avec l’automatisation</h3>
-<p>Les points de vigilance des sections 3.1 et 3.2 ont une cause commune
-: une configuration <strong>appliquée manuellement</strong> sur un nœud,
-sans possibilité de rejeu. Elle est perdue dès qu’une reprise ou une
-synchronisation de disque intervient.</p>
-<p>Ce constat est la justification expérimentale de l’exigence suivante
-: « automatiser et standardiser les configurations des serveurs et des
-applications », avec protection des secrets. Une configuration décrite
-et rejouable ne peut pas être perdue de cette manière.</p>
-<p>Ce résultat relie directement deux briques du projet et constitue un
-argument à présenter en recette.</p>
-<hr />
-<h2 id="suites-à-donner">5. Suites à donner</h2>
+<h3 id="ce-que-le-test-relie">4.2 Ce que le test relie</h3>
 <table>
 <colgroup>
 <col style="width: 50%" />
@@ -443,33 +422,21 @@ argument à présenter en recette.</p>
 </colgroup>
 <thead>
 <tr>
-<th>Suite</th>
-<th>Objet</th>
+<th>Lien</th>
+<th>Contenu</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Restitution de la ressource sur son nœud prioritaire</td>
-<td>Vérifier le retour à trois nœuds et la stabilité</td>
+<td>Avec le besoin client</td>
+<td>L’incident de référence — six heures de blocage de la prise de
+rendez-vous — est ramené à <strong>2 min 24 s</strong></td>
 </tr>
 <tr>
-<td>Nouveau test après standardisation</td>
-<td>Démontrer que la configuration survit à une reprise grâce au
-rejeu</td>
-</tr>
-<tr>
-<td>Mesure du RPO réel</td>
-<td>Chronométrer précisément la fenêtre de perte avec synchronisation
-forcée</td>
-</tr>
-<tr>
-<td>Second chemin de communication de cluster</td>
-<td>Écart à documenter, pour supprimer le point unique</td>
-</tr>
-<tr>
-<td>Test de recette suivant</td>
-<td>Sauvegarde et restauration (brique PBS) — « journal de sauvegarde +
-preuve de restauration »</td>
+<td>Avec l’automatisation</td>
+<td>Les points 3.1 et 3.2 ont la même cause : une configuration
+manuelle, non rejouable, perdue à la reprise. Justification
+expérimentale de l’exigence Ansible</td>
 </tr>
 </tbody>
 </table>
@@ -656,7 +623,7 @@ accompagnés de leur conversion.</p>
     </main>
     <footer>
       <div class="wrap">
-        <p>Sant&eacute;lia &middot; documentation technique &middot; 01/11/2026</p>
+        <p>Sant&eacute;lia &middot; documentation technique &middot; 14/11/2026</p>
       </div>
     </footer>
   </body>
