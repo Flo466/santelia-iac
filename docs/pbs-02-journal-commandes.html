@@ -486,10 +486,10 @@ copie secondaire ne copie qu’une archive figée.</p>
 <pre><code>pvesh create /cluster/backup \
   --storage &lt;stockage-pbs&gt; \
   --vmid &lt;vmid&gt; \
-  --schedule &quot;02:00&quot; \
+  --schedule &quot;02,14:00&quot; \
   --mode snapshot \
   --compress zstd \
-  --prune-backups &quot;keep-daily=7,keep-weekly=4,keep-monthly=3&quot; \
+  --prune-backups &quot;keep-daily=14,keep-weekly=4,keep-monthly=3&quot; \
   --comment &quot;&lt;libelle&gt;&quot;</code></pre>
 <p><strong>Contrôles :</strong></p>
 <pre><code>cat /etc/pve/jobs.cfg
@@ -497,11 +497,11 @@ pvesh get /cluster/backup</code></pre>
 <p>Relevé :</p>
 <pre><code>vzdump: &lt;identifiant-de-tache&gt;
        comment Sauvegarde quotidienne de la machine critique
-       schedule 02:00
+       schedule 02,14:00
        compress zstd
        enabled 1
        mode snapshot
-       prune-backups keep-daily=7,keep-monthly=3,keep-weekly=4
+       prune-backups keep-daily=14,keep-monthly=3,keep-weekly=4
        storage pbs-santelia
        vmid 100</code></pre>
 <table>
@@ -520,8 +520,8 @@ pvesh get /cluster/backup</code></pre>
 <tbody>
 <tr>
 <td><code>schedule</code></td>
-<td><code>02:00</code></td>
-<td>Une exécution par jour</td>
+<td><code>02,14:00</code></td>
+<td>Deux exécutions par jour, 02 h et 14 h</td>
 </tr>
 <tr>
 <td><code>mode</code></td>
@@ -535,7 +535,7 @@ pvesh get /cluster/backup</code></pre>
 </tr>
 <tr>
 <td><code>prune-backups</code></td>
-<td>7 quotidiennes, 4 hebdomadaires, 3 mensuelles</td>
+<td>14 quotidiennes, 4 hebdomadaires, 3 mensuelles</td>
 <td>Profondeur d’historique conservée</td>
 </tr>
 <tr>
@@ -593,7 +593,7 @@ contrôles.</p>
 <p><strong>Perte de disponibilité : 15 min.</strong> Un nœud tombe, la
 machine redémarre ailleurs sur un volume répliqué au plus vieux de 15
 minutes.</p>
-<p><strong>Perte de récupération : 24 h 30 au pire.</strong> Une
+<p><strong>Perte de récupération : 12 h 30 au pire.</strong> Une
 suppression ou un chiffrement ne se corrige pas par la réplication, qui
 transporte l’erreur. Il faut restaurer, donc revenir à la dernière
 archive produite par la sauvegarde quotidienne, plus le délai de

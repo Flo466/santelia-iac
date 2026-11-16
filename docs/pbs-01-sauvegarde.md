@@ -78,7 +78,7 @@
 | Cause type | Nœud qui tombe, disque qui meurt | Suppression, corruption, rançongiciel, erreur de manipulation |
 | Mécanisme | Réplication et gestion de disponibilité | Sauvegarde dédupliquée et copie secondaire |
 | Rythme | 15 min | Quotidienne, plus 30 min de propagation |
-| **Perte maximale** | **15 min** | **24 h 30 au pire** |
+| **Perte maximale** | **15 min** | **12 h 30 au pire** |
 | Rétablissement | **2 min 24 s** mesurés, cible de 5 à 10 min | Restauration mesurée à 9,27 s pour 8 Gio |
 | Angle mort | Réplique aussi les erreurs | Ne rend pas le service disponible |
 
@@ -121,9 +121,9 @@
 | Cohérence de la sauvegarde | agent invité sollicité | Conforme |
 | Taux de réutilisation | 82 %, puis 98 % | Conforme |
 | Copie secondaire présente | plusieurs points de restauration, machine distincte | Conforme |
-| Rétention configurée | 7 quotidiennes, 4 hebdomadaires, 3 mensuelles | Conforme |
+| Rétention configurée | 14 quotidiennes, 4 hebdomadaires, 3 mensuelles | Conforme |
 | Perte de disponibilité | **15 min** au pire, intervalle de réplication | Conforme |
-| Perte de récupération | **24 h 30** au pire, sauvegarde et propagation | Conforme |
+| Perte de récupération | **12 h 30** au pire, sauvegarde et propagation | Conforme |
 
 La rétention est portée par la tâche planifiée. L'espace n'est réellement libéré qu'à l'exécution de la collecte des blocs orphelins, tâche distincte et planifiée séparément.
 

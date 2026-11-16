@@ -517,10 +517,10 @@ quoi elle ne se reproduit jamais, et la copie secondaire ne copie qu'une archive
 pvesh create /cluster/backup \
   --storage <stockage-pbs> \
   --vmid <vmid> \
-  --schedule "02:00" \
+  --schedule "02,14:00" \
   --mode snapshot \
   --compress zstd \
-  --prune-backups "keep-daily=7,keep-weekly=4,keep-monthly=3" \
+  --prune-backups "keep-daily=14,keep-weekly=4,keep-monthly=3" \
   --comment "<libelle>"
 ```
 
@@ -536,21 +536,21 @@ Relevé :
 ```
 vzdump: <identifiant-de-tache>
        comment Sauvegarde quotidienne de la machine critique
-       schedule 02:00
+       schedule 02,14:00
        compress zstd
        enabled 1
        mode snapshot
-       prune-backups keep-daily=7,keep-monthly=3,keep-weekly=4
+       prune-backups keep-daily=14,keep-monthly=3,keep-weekly=4
        storage pbs-santelia
        vmid 100
 ```
 
 | Paramètre | Valeur | Objet |
 | --- | --- | --- |
-| `schedule` | `02:00` | Une exécution par jour |
+| `schedule` | `02,14:00` | Deux exécutions par jour, 02 h et 14 h |
 | `mode` | `snapshot` | Sauvegarde sans interruption de service |
 | `compress` | `zstd` | Compression avant transfert |
-| `prune-backups` | 7 quotidiennes, 4 hebdomadaires, 3 mensuelles | Profondeur d'historique conservée |
+| `prune-backups` | 14 quotidiennes, 4 hebdomadaires, 3 mensuelles | Profondeur d'historique conservée |
 | `enabled` | `1` | La tâche est active |
 
 **Exécution manuelle de contrôle :**
@@ -575,7 +575,7 @@ La présente section ne conserve que la planification de la tâche et ses contr�
 
 **Perte de disponibilité : 15 min.** Un nœud tombe, la machine redémarre ailleurs sur un volume répliqué au plus vieux de 15 minutes.
 
-**Perte de récupération : 24 h 30 au pire.** Une suppression ou un chiffrement ne se corrige pas par la réplication, qui transporte l'erreur. Il faut restaurer, donc revenir à la dernière archive produite par la sauvegarde quotidienne, plus le délai de propagation.
+**Perte de récupération : 12 h 30 au pire.** Une suppression ou un chiffrement ne se corrige pas par la réplication, qui transporte l'erreur. Il faut restaurer, donc revenir à la dernière archive produite par la sauvegarde quotidienne, plus le délai de propagation.
 
 **Le maillon le plus lent commande.** La synchronisation peut être à jour et ne contenir qu'une archive de la veille. Sa fréquence mesure la fiabilité de la copie, pas la fraîcheur de la donnée.
 

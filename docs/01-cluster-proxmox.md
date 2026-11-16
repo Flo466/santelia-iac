@@ -250,7 +250,7 @@ La perte maximale est scindée en deux : la réplication couvre la panne matéri
 | Domaine | Indicateur | Cible proposée |
 | --- | --- | --- |
 | Disponibilité | Perte en cas de panne matérielle d'un nœud | < 15 min, portée par la réplication |
-| Sauvegarde | Perte de récupération en cas de sinistre logique | < 24 h 30, portée par la sauvegarde et sa copie |
+| Sauvegarde | Perte de récupération en cas de sinistre logique | < 12 h 30, portée par la sauvegarde et sa copie |
 | Sauvegarde | Temps de restauration d'une VM critique | < 30 min |
 | Ansible | Temps de déploiement ou de reconfiguration | < 15 min |
 | Zabbix | Réactivité des alertes vers la DSI | < 2 min |
