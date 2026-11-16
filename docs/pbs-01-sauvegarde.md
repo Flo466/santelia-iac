@@ -62,7 +62,7 @@
 | Lecture | Primaire | Compte de service en lecture seule | `pbs-reader@pbs`, rôle `DatastoreReader` |
 | Confiance | Primaire → secondaire | Empreinte du certificat relevée puis déclarée | `78:05:ce:…:0f:26` |
 | Déclaration | Secondaire | Dépôt distant rattaché au primaire | Adresse et compte de lecture |
-| Planification | Secondaire | Synchronisation toutes les 30 minutes | Sens tiré, aucun droit d'écriture chez la source |
+| Planification | Secondaire | Quatre passes par jour (02:30, 08:30, 14:30, 20:30) | Sens tiré, aucun droit d'écriture chez la source |
 | Propriétaire | Secondaire | Compte sous lequel la tâche s'exécute | `root@pam`, propriétaire des groupes de sauvegarde |
 
 **Sens de la copie.** Le secondaire tire, il ne reçoit pas. Le primaire ignore l'existence de la copie et n'a aucun droit dessus : un compte en lecture seule lui suffit.
@@ -107,7 +107,7 @@
 **N° 6 — adresse IPv6 globale.** L'invité obtient une adresse IPv6 publique en plus de son IPv4 privée. La traduction d'adresses ne s'applique pas à IPv6 : l'infrastructure paraît protégée alors qu'un second protocole contourne le mécanisme.
 > Principal enseignement de sécurité de la brique.
 
-**N° 8 — fréquence de copie.** Une tâche toutes les 30 minutes donne l'impression d'une perte de 30 minutes. Elle ne propage pourtant qu'une archive déjà existante.
+**N° 8 — fréquence de copie.** Quatre passes par jour donnent l'impression d'une perte de quelques heures. La copie ne propage pourtant qu'une archive déjà existante.
 
 ---
 

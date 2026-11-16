@@ -14,7 +14,7 @@
       <div class="wrap">
         <p class="eyebrow">Sant&eacute;lia &middot; dossier technique</p>
         <h1>Santélia — Journal des commandes : sauvegarde</h1>
-        <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 14/11/2026</p>
+        <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 16/11/2026</p>
       </div>
     </header>
     <main class="wrap" id="contenu">
@@ -438,7 +438,7 @@ Tâche de synchronisation — sur le serveur secondaire</h2>
   --remote &lt;nom-remote&gt; \
   --remote-store &lt;entrepot-primaire&gt; \
   --store &lt;entrepot-copie&gt; \
-  --schedule &#39;*/30&#39;
+  --schedule &#39;02,08,14,20:30&#39;
 
 sudo proxmox-backup-manager sync-job list
 sudo proxmox-backup-manager sync-job show &lt;nom-tache&gt;</code></pre>
@@ -448,7 +448,7 @@ sudo proxmox-backup-manager sync-job show &lt;nom-tache&gt;</code></pre>
 │ remote-store │ datastore-santelia
 │ store        │ santelia-copie
 │ remote       │ pbs01
-│ schedule     │ */30</code></pre>
+│ schedule     │ 02,08,14,20:30</code></pre>
 <p><strong>Propriétaire de la tâche.</strong> Le champ se fixe à la
 création et se modifie ensuite :</p>
 <pre><code>sudo proxmox-backup-manager sync-job update &lt;nom-tache&gt; --owner root@pam</code></pre>
@@ -608,7 +608,7 @@ donnée.</p>
     </main>
     <footer>
       <div class="wrap">
-        <p>Sant&eacute;lia &middot; documentation technique &middot; 14/11/2026</p>
+        <p>Sant&eacute;lia &middot; documentation technique &middot; 16/11/2026</p>
       </div>
     </footer>
   </body>

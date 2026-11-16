@@ -453,7 +453,7 @@ sudo proxmox-backup-manager sync-job create <nom-tache> \
   --remote <nom-remote> \
   --remote-store <entrepot-primaire> \
   --store <entrepot-copie> \
-  --schedule '*/30'
+  --schedule '02,08,14,20:30'
 
 sudo proxmox-backup-manager sync-job list
 sudo proxmox-backup-manager sync-job show <nom-tache>
@@ -467,7 +467,7 @@ Relevé :
 │ remote-store │ datastore-santelia
 │ store        │ santelia-copie
 │ remote       │ pbs01
-│ schedule     │ */30
+│ schedule     │ 02,08,14,20:30
 ```
 
 **Propriétaire de la tâche.** Le champ se fixe à la création et se modifie ensuite :
