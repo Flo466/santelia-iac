@@ -284,7 +284,7 @@ ip -br addr
 
 **Le troisième contrôle est le plus important des trois.** L'installation installe un nouveau jeu
 d'outils réseau, susceptible de reprendre la gestion des interfaces et de casser la configuration
-existante. C'est le risque identifié au point de vigilance n° 5 du document de synthèse. L'adresse
+existante. C'est le risque d'une installation qui reprend la gestion des interfaces réseau. L'adresse
 inchangée confirme que la protection appliquée a tenu, et que la machine reste joignable.
 
 ---
@@ -440,7 +440,7 @@ contient sont interprétés par le shell et la commande part en arrière-plan.
 **Pourquoi cette empreinte compte.** Sans elle, le serveur secondaire accepterait le certificat
 que lui présenterait n'importe quel serveur répondant à cette adresse. Une interception réseau
 suffirait à rediriger la copie vers un serveur tiers, qui l'accepterait sans rien signaler.
-C'est le point de contrôle de confiance décrit au point de vigilance n° 8 du document de synthèse.
+C'est le point de contrôle de confiance décrit au point de vigilance n° 1 du document de synthèse.
 
 ---
 

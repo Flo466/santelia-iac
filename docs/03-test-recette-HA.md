@@ -222,8 +222,6 @@ Membership information
 
 ### A.4 Conversion des horodatages
 
-### A.4 Conversion des horodatages
-
 **Conversion et lecture :** la machine invitée étant en temps universel, il faut ajouter deux heures pour se ramener au référentiel des mesures.
 
 | Élément | Sortie brute (UTC) | Converti (heure locale) |
