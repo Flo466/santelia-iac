@@ -155,7 +155,7 @@ Ces points ont été mis en évidence lors de la mise au point du montage. Ils c
 
 ---
 
-## 6. Rappel des cibles de recette
+## 5. Rappel des cibles de recette
 
 | Brique | Test | Résultat attendu | Preuve | Statut |
 | --- | --- | --- | --- | --- |
@@ -219,6 +219,10 @@ Membership information
 ```
 
 **Lecture :** trois nœuds déclarés, majorité requise de 2 votes, état **quorate** maintenu pendant l'indisponibilité d'un nœud.
+
+### A.4 Conversion des horodatages
+
+### A.4 Conversion des horodatages
 
 **Conversion et lecture :** la machine invitée étant en temps universel, il faut ajouter deux heures pour se ramener au référentiel des mesures.
 

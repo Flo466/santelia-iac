@@ -476,7 +476,7 @@ pvesr enable 100-0
 pvesr delete 100-0
 ```
 
-> La désactivation du job **élargit** la fenêtre de perte de données. Elle est à éviter avant une coupure volontaire.
+> La désactivation du job **élargit** la perte de disponibilité. Elle est à éviter avant une coupure volontaire.
 
 ### A.7.5 Déclaration en ressource à haute disponibilité
 
@@ -749,7 +749,7 @@ Sept points de vigilance ont été relevés au cours du montage.
 | # | Point | Traité dans |
 | --- | --- | --- |
 | 1 | Volume d'amorçage local non répliqué | Document de recette, 3.1 |
-| 2 | Perte de données liée à l'intervalle de réplication | Document de recette, 3.2 |
+| 2 | Perte de disponibilité liée à l'intervalle de réplication | Document de recette, 3.2 |
 | 3 | Séquencement des interventions de disponibilité | Document de recette, 3.3 |
 | 4 | Clés d'hôte SSH dupliquées par le clonage | Document d'architecture, § 7 |
 | 5 | Identifiant machine dupliqué | Document d'architecture, § 7 |
