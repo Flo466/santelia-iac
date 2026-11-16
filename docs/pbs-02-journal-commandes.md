@@ -535,7 +535,7 @@ Relevé :
 
 ```
 vzdump: <identifiant-de-tache>
-       comment Sauvegarde quotidienne de la machine critique
+       comment Sauvegarde deux fois par jour de la machine critique
        schedule 02,14:00
        compress zstd
        enabled 1
@@ -570,12 +570,12 @@ La présente section ne conserve que la planification de la tâche et ses contr�
 | Mécanisme | Rythme | Ce qu'il apporte | Perte maximale |
 | --- | --- | --- | --- |
 | Réplication des volumes | 15 min | Disponibilité. Ne protège pas d'une erreur logique | **15 min** |
-| Sauvegarde sur le serveur primaire | Quotidienne | Point de restauration exploitable | **24 h** |
-| Synchronisation de la copie | 30 min | Propagation de l'archive la plus récente | **+30 min** |
+| Sauvegarde sur le serveur primaire | Deux fois par jour | Point de restauration exploitable | **12 h** |
+| Synchronisation de la copie | Quatre passes par jour | Propagation de l'archive la plus récente | **+30 min** |
 
 **Perte de disponibilité : 15 min.** Un nœud tombe, la machine redémarre ailleurs sur un volume répliqué au plus vieux de 15 minutes.
 
-**Perte de récupération : 12 h 30 au pire.** Une suppression ou un chiffrement ne se corrige pas par la réplication, qui transporte l'erreur. Il faut restaurer, donc revenir à la dernière archive produite par la sauvegarde quotidienne, plus le délai de propagation.
+**Perte de récupération : 12 h 30 au pire.** Une suppression ou un chiffrement ne se corrige pas par la réplication, qui transporte l'erreur. Il faut restaurer, donc revenir à la dernière archive produite par la sauvegarde biquotidienne, plus le délai de propagation.
 
 **Le maillon le plus lent commande.** La synchronisation peut être à jour et ne contenir qu'une archive de la veille. Sa fréquence mesure la fiabilité de la copie, pas la fraîcheur de la donnée.
 

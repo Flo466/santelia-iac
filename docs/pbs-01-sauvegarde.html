@@ -42,6 +42,10 @@ hors du support primaire. Mise à jour : 12/10/2026</p>
 <td><strong>9 s</strong>, 98 % réutilisé</td>
 </tr>
 <tr>
+<td>Sauvegardes par jour</td>
+<td><strong>2</strong>, à 02 h 00 et 14 h 00</td>
+</tr>
+<tr>
 <td>Restauration</td>
 <td><strong>9,27 s</strong> à 884 Mo/s, 8 Gio restitués</td>
 </tr>
@@ -290,7 +294,7 @@ ailleurs.</p>
 <tr>
 <td>Rythme</td>
 <td>15 min</td>
-<td>Quotidienne, plus 30 min de propagation</td>
+<td>Deux fois par jour, propagation sous 30 min</td>
 </tr>
 <tr>
 <td><strong>Perte maximale</strong></td>
@@ -315,7 +319,7 @@ propagation</strong>. C’est une propriété de fiabilité de la copie, pas
 de fraîcheur de la donnée.</p>
 <p><strong>Le chiffre à ne pas annoncer.</strong> « 30 minutes » décrit
 la fréquence de la copie. Annoncé comme perte maximale, il est faux d’un
-facteur 48, et l’écart ne se découvre qu’au moment de restaurer.</p>
+facteur 25, et l’écart ne se découvre qu’au moment de restaurer.</p>
 <hr />
 <h2 id="points-de-vigilance">4. Points de vigilance</h2>
 <table>
@@ -384,9 +388,10 @@ adresse IPv6 publique en plus de son IPv4 privée. La traduction
 d’adresses ne s’applique pas à IPv6 : l’infrastructure paraît protégée
 alors qu’un second protocole contourne le mécanisme. &gt; Principal
 enseignement de sécurité de la brique.</p>
-<p><strong>N° 8 — fréquence de copie.</strong> Quatre passes par jour
-donnent l’impression d’une perte de quelques heures. La copie ne propage
-pourtant qu’une archive déjà existante.</p>
+<p><strong>N° 8 — fréquence de copie.</strong> Quatre passes par jour ne
+réduisent pas la perte de récupération : elle est imposée par la
+sauvegarde biquotidienne. La copie ne propage pourtant qu’une archive
+déjà existante.</p>
 <hr />
 <h2 id="recette">5. Recette</h2>
 <table>

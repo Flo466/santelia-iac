@@ -118,7 +118,7 @@ Les indicateurs ci-dessous reprennent des idées de précision technique apport�
 | Ansible | Temps de déploiement / reconfiguration | Cible proposée : nouvelle configuration appliquée < 15 min. |
 | Zabbix | Réactivité des alertes | Cible proposée : alerte envoyée à la DSI < 2 min. |
 
-> **Pourquoi deux indicateurs de perte.** Une cible unique de 15 minutes décrirait la perte en cas de panne matérielle, couverte par la réplication, mais ne serait pas tenable en cas de suppression ou de chiffrement : la réplication transporte l'erreur vers le second nœud. La récupération d'un état antérieur repose sur la sauvegarde, dont le rythme quotidien impose 12 h 30. **15 minutes pour la disponibilité, 12 h 30 pour la récupération.**
+> **Pourquoi deux indicateurs de perte.** Une cible unique de 15 minutes décrirait la perte en cas de panne matérielle, couverte par la réplication, mais ne serait pas tenable en cas de suppression ou de chiffrement : la réplication transporte l'erreur vers le second nœud. La récupération d'un état antérieur repose sur la sauvegarde, dont le rythme de deux sauvegardes par jour impose 12 h 30. **15 minutes pour la disponibilité, 12 h 30 pour la récupération.**
 
 ---
 

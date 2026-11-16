@@ -11,6 +11,7 @@
 | --- | --- |
 | Sauvegarde initiale | **12 s**, 82 % réutilisé |
 | Sauvegarde suivante | **9 s**, 98 % réutilisé |
+| Sauvegardes par jour | **2**, à 02 h 00 et 14 h 00 |
 | Restauration | **9,27 s** à 884 Mo/s, 8 Gio restitués |
 | Copie, 1re passe | **442,898 Mio** en 363 blocs |
 | Copie, 2e passe | **16,43 Mio** en 32 blocs |
@@ -77,14 +78,14 @@
 | --- | --- | --- |
 | Cause type | Nœud qui tombe, disque qui meurt | Suppression, corruption, rançongiciel, erreur de manipulation |
 | Mécanisme | Réplication et gestion de disponibilité | Sauvegarde dédupliquée et copie secondaire |
-| Rythme | 15 min | Quotidienne, plus 30 min de propagation |
+| Rythme | 15 min | Deux fois par jour, propagation sous 30 min |
 | **Perte maximale** | **15 min** | **12 h 30 au pire** |
 | Rétablissement | **2 min 24 s** mesurés, cible de 5 à 10 min | Restauration mesurée à 9,27 s pour 8 Gio |
 | Angle mort | Réplique aussi les erreurs | Ne rend pas le service disponible |
 
 **Ce que la copie ajoute.** Elle ne réduit pas la perte de récupération, elle en réduit le **délai de propagation**. C'est une propriété de fiabilité de la copie, pas de fraîcheur de la donnée.
 
-**Le chiffre à ne pas annoncer.** « 30 minutes » décrit la fréquence de la copie. Annoncé comme perte maximale, il est faux d'un facteur 48, et l'écart ne se découvre qu'au moment de restaurer.
+**Le chiffre à ne pas annoncer.** « 30 minutes » décrit la fréquence de la copie. Annoncé comme perte maximale, il est faux d'un facteur 25, et l'écart ne se découvre qu'au moment de restaurer.
 
 ---
 
@@ -107,7 +108,7 @@
 **N° 6 — adresse IPv6 globale.** L'invité obtient une adresse IPv6 publique en plus de son IPv4 privée. La traduction d'adresses ne s'applique pas à IPv6 : l'infrastructure paraît protégée alors qu'un second protocole contourne le mécanisme.
 > Principal enseignement de sécurité de la brique.
 
-**N° 8 — fréquence de copie.** Quatre passes par jour donnent l'impression d'une perte de quelques heures. La copie ne propage pourtant qu'une archive déjà existante.
+**N° 8 — fréquence de copie.** Quatre passes par jour ne réduisent pas la perte de récupération : elle est imposée par la sauvegarde biquotidienne. La copie ne propage pourtant qu'une archive déjà existante.
 
 ---
 

@@ -496,7 +496,7 @@ copie secondaire ne copie qu’une archive figée.</p>
 pvesh get /cluster/backup</code></pre>
 <p>Relevé :</p>
 <pre><code>vzdump: &lt;identifiant-de-tache&gt;
-       comment Sauvegarde quotidienne de la machine critique
+       comment Sauvegarde deux fois par jour de la machine critique
        schedule 02,14:00
        compress zstd
        enabled 1
@@ -578,13 +578,13 @@ contrôles.</p>
 </tr>
 <tr>
 <td>Sauvegarde sur le serveur primaire</td>
-<td>Quotidienne</td>
+<td>Deux fois par jour</td>
 <td>Point de restauration exploitable</td>
-<td><strong>24 h</strong></td>
+<td><strong>12 h</strong></td>
 </tr>
 <tr>
 <td>Synchronisation de la copie</td>
-<td>30 min</td>
+<td>Quatre passes par jour</td>
 <td>Propagation de l’archive la plus récente</td>
 <td><strong>+30 min</strong></td>
 </tr>
@@ -596,7 +596,7 @@ minutes.</p>
 <p><strong>Perte de récupération : 12 h 30 au pire.</strong> Une
 suppression ou un chiffrement ne se corrige pas par la réplication, qui
 transporte l’erreur. Il faut restaurer, donc revenir à la dernière
-archive produite par la sauvegarde quotidienne, plus le délai de
+archive produite par la sauvegarde biquotidienne, plus le délai de
 propagation.</p>
 <p><strong>Le maillon le plus lent commande.</strong> La synchronisation
 peut être à jour et ne contenir qu’une archive de la veille. Sa

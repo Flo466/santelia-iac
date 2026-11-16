@@ -111,15 +111,15 @@ Ces points ont été mis en évidence lors de la mise au point du montage. Ils c
 
 **Réserve à documenter.** Le détachement du volume d'amorçage retire la possibilité de modifier la configuration invitée par le mécanisme de provisionnement automatique. Ce compromis est acceptable pour une machine déjà provisionnée.
 
-### 3.2 Fenêtre de perte de données liée à l'intervalle de réplication
+### 3.2 Perte de disponibilité liée à l'intervalle de réplication
 
 **Constat.** Une configuration appliquée **manuellement après la dernière synchronisation** n'est pas présente sur la copie répliquée. Lors d'une reprise, elle est donc absente sur le nœud d'accueil.
 
-**Conséquence.** Le service redémarre, mais dans un état antérieur. La fenêtre de perte correspond à l'intervalle de réplication, soit **15 minutes** dans notre configuration : c'est la définition même du **RPO**.
+**Conséquence.** Le service redémarre, mais dans un état antérieur. La perte de disponibilité correspond à l'intervalle de réplication, soit **15 minutes** dans notre configuration. C'est la perte de disponibilité, que le cahier des charges distingue de la perte de récupération, couverte par la sauvegarde.
 
 **Mesure appliquée.** **Forcer une synchronisation immédiatement avant toute coupure volontaire.** Cette opération a été validée : lors du test de référence, le service témoin s'est retrouvé **intact et fonctionnel** après la reprise.
 
-**Effet induit à connaître.** La désactivation du mécanisme de réplication avant un test **élargit** la fenêtre de perte au lieu de la réduire. Elle doit être évitée.
+**Effet induit à connaître.** La désactivation du mécanisme de réplication avant un test **élargit** la perte de disponibilité au lieu de la réduire. Elle doit être évitée.
 
 ### 3.3 Séquencement des interventions
 
@@ -160,7 +160,7 @@ Ces points ont été mis en évidence lors de la mise au point du montage. Ils c
 | Brique | Test | Résultat attendu | Preuve | Statut |
 | --- | --- | --- | --- | --- |
 | **HA / Proxmox VE** | Simuler l'indisponibilité d'un nœud hébergeant une VM critique | Le service reste disponible ou est rétabli dans le délai cible | **Compte rendu + horodatage** | ✅ **2 min 24 s** |
-| Sauvegarde / PBS | Lancer une sauvegarde puis tester une restauration | Sauvegarde exploitable et restauration réussie | Journal de sauvegarde + preuve de restauration | À faire |
+| Sauvegarde / PBS | Lancer une sauvegarde puis tester une restauration | Sauvegarde exploitable et restauration réussie | Journal de sauvegarde + preuve de restauration | ✅ **9,27 s** |
 | Supervision / Zabbix | Vérifier la remontée et déclencher une alerte | Les 30 postes visibles, alerte remontée | Capture/export Zabbix + journal | À faire |
 | IaC / Ansible | Déployer ou reconfigurer une machine de test, puis rejouer le playbook | Configuration identique et standardisée, sans action manuelle | Playbook + sortie d'exécution + état final | À faire |
 

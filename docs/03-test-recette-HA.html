@@ -338,24 +338,24 @@ supprime cette classe de problème par construction.</p>
 d’amorçage retire la possibilité de modifier la configuration invitée
 par le mécanisme de provisionnement automatique. Ce compromis est
 acceptable pour une machine déjà provisionnée.</p>
-<h3
-id="fenêtre-de-perte-de-données-liée-à-lintervalle-de-réplication">3.2
-Fenêtre de perte de données liée à l’intervalle de réplication</h3>
+<h3 id="perte-de-disponibilité-liée-à-lintervalle-de-réplication">3.2
+Perte de disponibilité liée à l’intervalle de réplication</h3>
 <p><strong>Constat.</strong> Une configuration appliquée
 <strong>manuellement après la dernière synchronisation</strong> n’est
 pas présente sur la copie répliquée. Lors d’une reprise, elle est donc
 absente sur le nœud d’accueil.</p>
 <p><strong>Conséquence.</strong> Le service redémarre, mais dans un état
-antérieur. La fenêtre de perte correspond à l’intervalle de réplication,
-soit <strong>15 minutes</strong> dans notre configuration : c’est la
-définition même du <strong>RPO</strong>.</p>
+antérieur. La perte de disponibilité correspond à l’intervalle de
+réplication, soit <strong>15 minutes</strong> dans notre configuration.
+C’est la perte de disponibilité, que le cahier des charges distingue de
+la perte de récupération, couverte par la sauvegarde.</p>
 <p><strong>Mesure appliquée.</strong> <strong>Forcer une synchronisation
 immédiatement avant toute coupure volontaire.</strong> Cette opération a
 été validée : lors du test de référence, le service témoin s’est
 retrouvé <strong>intact et fonctionnel</strong> après la reprise.</p>
 <p><strong>Effet induit à connaître.</strong> La désactivation du
-mécanisme de réplication avant un test <strong>élargit</strong> la
-fenêtre de perte au lieu de la réduire. Elle doit être évitée.</p>
+mécanisme de réplication avant un test <strong>élargit</strong> la perte
+de disponibilité au lieu de la réduire. Elle doit être évitée.</p>
 <h3 id="séquencement-des-interventions">3.3 Séquencement des
 interventions</h3>
 <p><strong>Constat.</strong> Une intervention effectuée pendant que le
@@ -473,7 +473,7 @@ recette</h2>
 <td>Lancer une sauvegarde puis tester une restauration</td>
 <td>Sauvegarde exploitable et restauration réussie</td>
 <td>Journal de sauvegarde + preuve de restauration</td>
-<td>À faire</td>
+<td>✅ <strong>9,27 s</strong></td>
 </tr>
 <tr>
 <td>Supervision / Zabbix</td>
