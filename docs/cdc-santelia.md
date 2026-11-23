@@ -71,14 +71,13 @@ Ces exigences décrivent le comportement attendu et sont formulées avec des cri
 
 | # | Exigence | Critère de mesure |
 |---|---|---|
-| 1 | Disponibilité du service critique | *à confirmer* |
+| 1 | Disponibilité du service critique | Rétablissement du service en moins de 10 minutes après la perte d'un nœud ; perte de disponibilité limitée à 15 minutes. |
 | 2 | Rétablissement en cas d'incident | Retour du service critique dans un délai cible de 5 à 10 minutes. |
 | 3 | Supervision en temps réel | Les 30 postes concernés sont visibles dans Zabbix et leurs informations remontent correctement. |
 | 4 | Délai de mise en œuvre | Solution déployée et opérationnelle dans un délai maximal de 2 à 3 mois. |
-| 5 | Traçabilité des accès | *à confirmer* |
+| 5 | Traçabilité des accès | Chaque action d'administration est horodatée et attribuable ; les comptes de service sont nominatifs et à privilèges minimaux. |
 | 6 | Continuité d'alimentation | Les équipements critiques sont protégés par les onduleurs prévus dans l'architecture. |
 
-> Les critères des lignes 1 et 5 n'ont pas été récupérés lors de l'extraction du document d'origine. À compléter depuis le PDF source avant publication.
 
 ---
 
