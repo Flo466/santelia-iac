@@ -1,0 +1,1317 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#f1efe4" />
+    <title>Santélia — Audit de vulnérabilités</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <a class="skip" href="#contenu">Aller au contenu</a>
+    <header class="masthead">
+      <div class="wrap">
+        <p class="eyebrow">Sant&eacute;lia &middot; dossier technique</p>
+        <h1>Santélia — Audit de vulnérabilités</h1>
+        <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 26/11/2026</p>
+      </div>
+    </header>
+    <main class="wrap" id="contenu">
+      <a class="back" href="index.html">&larr; Sommaire</a>
+      <article><blockquote>
+<p>Audit de l’infrastructure existante. Inventaire, analyse,
+préconisations et preuve de remédiation. 26/11/2026</p>
+</blockquote>
+<hr />
+<h2 id="périmètre-et-cadre">1. Périmètre et cadre</h2>
+<p>L’audit porte sur le cluster Proxmox déployé dans les briques 01 et
+02, et non sur une maquette. La demande est celle d’un DSI : savoir ce
+qui est exposé, avec quelle gravité, et dans quel ordre corriger.</p>
+<h3 id="cibles-auditées">1.1 Cibles auditées</h3>
+<table>
+<thead>
+<tr>
+<th>Cible</th>
+<th>Adresse</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pve-a</code></td>
+<td>192.168.1.151</td>
+<td>Nœud principal du cluster</td>
+</tr>
+<tr>
+<td><code>pve-b</code></td>
+<td>192.168.1.152</td>
+<td>Nœud secondaire</td>
+</tr>
+<tr>
+<td><code>pve-c</code></td>
+<td>192.168.1.153</td>
+<td>Votant de quorum</td>
+</tr>
+</tbody>
+</table>
+<h3 id="cadre-et-autorisation">1.2 Cadre et autorisation</h3>
+<p>L’auditeur est <strong>propriétaire et administrateur</strong> du
+réseau audité. Aucune cible hors de ce réseau n’a été scannée. Le
+balayage de découverte a porté sur l’ensemble du segment, puis
+l’inventaire détaillé a été restreint aux trois nœuds du cluster.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Hors périmètre</th>
+<th>Raison</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>srv-dpi-santelia</code> — 192.168.1.160</td>
+<td>Machine applicative, aucune donnée métier déployée</td>
+</tr>
+<tr>
+<td><code>pbs01</code> — 192.168.1.161</td>
+<td>Serveur de sauvegarde, à traiter dans une seconde passe</td>
+</tr>
+<tr>
+<td>Autres hôtes du segment</td>
+<td>Usage domestique, sans lien avec Santélia</td>
+</tr>
+</tbody>
+</table>
+<h3 id="écart-assumé-avec-le-périmètre-de-référence">1.3 Écart assumé
+avec le périmètre de référence</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Point de référence</th>
+<th>Réalité de l’infrastructure</th>
+<th>Adaptation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nœuds démarrés dans VirtualBox</td>
+<td>Cluster en service depuis le 05/10, en imbrication dans Proxmox</td>
+<td>Remplacement du démarrage par un contrôle d’état</td>
+</tr>
+<tr>
+<td>Réseau <code>192.168.56.0/24</code></td>
+<td>Réseau réel <code>192.168.1.0/24</code></td>
+<td>Adressage réel, autorisation du propriétaire</td>
+</tr>
+<tr>
+<td>Kali en VirtualBox, deux cartes</td>
+<td>Station d’audit hébergée sur le même hyperviseur que les cibles</td>
+<td>Une seule carte, sur le pont <code>vmbr0</code></td>
+</tr>
+<tr>
+<td><code>eth1</code> en <code>.50</code></td>
+<td>Interface <code>eth0</code>, adresse <code>192.168.1.245</code></td>
+<td>Adresse hors plage d’attribution automatique</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Ce que cette adaptation change à la valeur du test.</strong>
+Elle ne l’affaiblit pas : elle porte sur une infrastructure réellement
+en service, avec ses écarts réels. Les outils et la méthode restent
+identiques.</p>
+<hr />
+<h2 id="méthode-et-outillage">2. Méthode et outillage</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Outil</th>
+<th>Version</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nmap</td>
+<td>7.99</td>
+<td>Découverte, inventaire des ports, identification de services</td>
+</tr>
+<tr>
+<td>OpenVAS / GVM</td>
+<td>25.04.0</td>
+<td>Détection de vulnérabilités</td>
+</tr>
+</tbody>
+</table>
+<h3 id="station-daudit">2.1 Station d’audit</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Élément</th>
+<th>Valeur</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Machine</td>
+<td><code>kali-audit</code>, machine virtuelle dédiée</td>
+</tr>
+<tr>
+<td>Adresse</td>
+<td>192.168.1.245, hors plage d’attribution automatique</td>
+</tr>
+<tr>
+<td>Ressources</td>
+<td><strong>6 Gio de mémoire</strong>, 2 vCPU, <strong>45 Gio de
+disque</strong></td>
+</tr>
+<tr>
+<td>Position réseau</td>
+<td>Pont <code>vmbr0</code>, segment de niveau 2 commun avec les
+cibles</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Pourquoi la position compte.</strong> La station voit
+exactement ce que verrait un poste interne au réseau, non un poste
+d’administration filtré. L’accès SSH passe par un rebond via l’hôte
+physique, mais <strong>le rebond ne concerne que la session
+d’administration</strong> : les scans partent de la station.</p>
+<h3 id="bis-construction-de-la-station-de-bout-en-bout">2.1 bis
+Construction de la station, de bout en bout</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Étape</th>
+<th>Point déterminant</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Création de la machine</td>
+<td>Processeur <strong>natif</strong>, mémoire dynamique désactivée,
+démarrage automatique <strong>désactivé</strong></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Mise en réseau sur le pont</td>
+<td>Adresse vérifiée libre, hors plage d’attribution automatique</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Installation du système</td>
+<td><strong>Serveur SSH obligatoire</strong>, sans lui aucune
+administration à distance</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Installation de GVM et synchronisation</td>
+<td>L’initialisation ne doit pas être interrompue</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Droit réseau du moteur</td>
+<td><strong>Sans ce droit, le scan s’arrête à 0 %</strong></td>
+</tr>
+<tr>
+<td>6</td>
+<td>Activation des services au démarrage</td>
+<td>Aucun n’est actif par défaut : un redémarrage perd la pile</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Tunnel vers l’interface</td>
+<td>Écoute locale uniquement, jamais exposée au segment</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Démarrage automatique désactivé, volontairement.</strong> Une
+station d’audit ne se relance pas avec l’hyperviseur.</p>
+<p><strong>Le point de rupture le plus coûteux est l’étape 5.</strong>
+Installation complète, interface qui répond, flux synchronisé, et aucun
+scan ne démarre.</p>
+<pre><code>getcap /usr/sbin/openvas</code></pre>
+<table>
+<thead>
+<tr>
+<th>Résultat</th>
+<th>Interprétation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cap_net_admin,cap_net_raw=eip</code></td>
+<td>Le moteur peut analyser</td>
+</tr>
+<tr>
+<td>Sortie vide</td>
+<td>Le scan échouera à 0 % : droit à ajouter</td>
+</tr>
+</tbody>
+</table>
+<pre><code>sudo setcap cap_net_raw,cap_net_admin+eip /usr/sbin/openvas</code></pre>
+<p><strong>Accès à l’interface</strong>, sur l’adresse de bouclage
+uniquement :</p>
+<pre><code>ssh -L 9392:127.0.0.1:9392 kali-audit</code></pre>
+<h3 id="dimensionnement-un-constat-mesuré">2.2 Dimensionnement — un
+constat mesuré</h3>
+<p>Le dimensionnement initial du disque, fixé à <strong>28 Gio</strong>,
+s’est révélé insuffisant pendant la synchronisation du flux de
+vulnérabilités. Le dimensionnement n’était cadré que sur la mémoire et
+les processeurs, sans indication de taille de disque : l’arbitrage a
+donc été fait à l’installation, et il était trop court.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Élément</th>
+<th>Valeur constatée</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tests de vulnérabilités téléchargés</td>
+<td><strong>95 109</strong></td>
+</tr>
+<tr>
+<td>Occupation après synchronisation</td>
+<td>27 Gio sur 28</td>
+</tr>
+<tr>
+<td>Cause de l’occupation</td>
+<td>Flux NVT, base PostgreSQL, paquets GVM</td>
+</tr>
+<tr>
+<td>Conséquence</td>
+<td><strong>Disque plein, arrêt de PostgreSQL, interface
+indisponible</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Correction appliquée.</strong> Disque porté à <strong>45
+Gio</strong>, avec redémarrage de l’invité nécessaire pour que le noyau
+relise la taille du disque avant extension de la partition.</p>
+<p><strong>Recommandation pour un déploiement ultérieur.</strong></p>
+<table>
+<thead>
+<tr>
+<th>Ressource</th>
+<th>Minimum</th>
+<th>Confortable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Disque</td>
+<td>45 Gio</td>
+<td>60 Gio</td>
+</tr>
+<tr>
+<td>Mémoire</td>
+<td><strong>6 Gio</strong></td>
+<td>8 Gio</td>
+</tr>
+<tr>
+<td>Processeurs</td>
+<td>2</td>
+<td>4</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Sur la mémoire.</strong> La machine a été portée à 6 Gio. En
+dessous, le moteur est arrêté par le système pour manque de mémoire et
+la synchronisation ne se termine jamais.</p>
+<p><strong>Enseignement.</strong> Une base de vulnérabilités complète
+n’est pas un outil léger. Le chiffre de 28 Gio correspondait à un
+système et un outil installés, pas à un flux synchronisé. Ce constat ne
+figure dans aucun document de référence : il vient de la mise en
+œuvre.</p>
+<h3 id="vocabulaire-de-lanalyse">2.3 Vocabulaire de l’analyse</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Terme</th>
+<th>Définition retenue</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Vulnérabilité</strong></td>
+<td>Faiblesse d’un système : service mal configuré, logiciel obsolète,
+accès trop large</td>
+</tr>
+<tr>
+<td><strong>Menace</strong></td>
+<td>Ce qui peut exploiter la faiblesse : attaquant, logiciel
+malveillant, erreur humaine</td>
+</tr>
+<tr>
+<td><strong>Risque</strong></td>
+<td>Vulnérabilité × menace × conséquences. La même faille sur un serveur
+de test et sur le DPI n’a pas la même valeur</td>
+</tr>
+<tr>
+<td><strong>CVE</strong></td>
+<td>Identifiant public d’une faille connue, permettant de retrouver
+l’avis et le correctif</td>
+</tr>
+<tr>
+<td><strong>CVSS</strong></td>
+<td>Note de gravité de 0 à 10 : faible 0,1 à 3,9 ; moyenne 4,0 à 6,9 ;
+élevée 7,0 à 8,9 ; critique 9,0 à 10</td>
+</tr>
+<tr>
+<td><strong>QoD</strong></td>
+<td><em>Quality of Detection</em>, confiance de l’outil dans sa propre
+détection, en pourcentage</td>
+</tr>
+<tr>
+<td><strong>Faux positif</strong></td>
+<td>Alerte de l’outil qui ne correspond pas à une faille réelle : d’où
+la colonne « à vérifier »</td>
+</tr>
+<tr>
+<td><strong>Priorité</strong></td>
+<td>P1 immédiat, P2 dans le mois, P3 plus tard. Elle dépend de la
+gravité <strong>et</strong> de l’importance de la machine</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="inventaire">3. Inventaire</h2>
+<h3 id="découverte-du-segment">3.1 Découverte du segment</h3>
+<pre><code>nmap -sn 192.168.1.0/24</code></pre>
+<p><strong>16 hôtes actifs sur 256</strong>, en 5,4 secondes.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Machine</th>
+<th>Adresse</th>
+<th>Constructeur déclaré</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>proxmox-hote</code></td>
+<td>192.168.1.150</td>
+<td>Dell</td>
+<td>Hôte physique</td>
+</tr>
+<tr>
+<td><code>pve-a</code></td>
+<td>192.168.1.151</td>
+<td>Proxmox Server Solutions</td>
+<td>Nœud principal</td>
+</tr>
+<tr>
+<td><code>pve-b</code></td>
+<td>192.168.1.152</td>
+<td>Proxmox Server Solutions</td>
+<td>Nœud secondaire</td>
+</tr>
+<tr>
+<td><code>pve-c</code></td>
+<td>192.168.1.153</td>
+<td>Proxmox Server Solutions</td>
+<td>Votant de quorum</td>
+</tr>
+<tr>
+<td><code>srv-dpi-santelia</code></td>
+<td>192.168.1.160</td>
+<td>Proxmox Server Solutions</td>
+<td>Machine applicative</td>
+</tr>
+<tr>
+<td><code>pbs01</code></td>
+<td>192.168.1.161</td>
+<td>Proxmox Server Solutions</td>
+<td>Sauvegarde primaire</td>
+</tr>
+<tr>
+<td><code>srv-debian</code></td>
+<td>192.168.1.125</td>
+<td>Dell</td>
+<td>Sauvegarde secondaire</td>
+</tr>
+<tr>
+<td><code>kali-audit</code></td>
+<td>192.168.1.245</td>
+<td>—</td>
+<td>Station d’audit</td>
+</tr>
+</tbody>
+</table>
+<p>Les huit autres hôtes relèvent de l’usage domestique du réseau et
+sortent du périmètre.</p>
+<h3 id="ce-quapprend-un-attaquant-en-cinq-secondes">3.2 Ce qu’apprend un
+attaquant en cinq secondes</h3>
+<p><strong>Ce qu’apprend un attaquant qui arrive sur ce
+réseau.</strong></p>
+<p>Trois choses, sans aucun privilège et sans déclencher d’alerte :</p>
+<p><strong>La cartographie.</strong> Seize machines actives, leur
+adresse, leur adresse matérielle. L’attaquant sait combien de cibles il
+a devant lui avant d’avoir testé le moindre port.</p>
+<p><strong>La nature de l’infrastructure.</strong> Le préfixe matériel
+<code>BC:24:11</code> identifie sans ambiguïté cinq machines virtuelles
+Proxmox : les trois nœuds, la machine applicative et le serveur de
+sauvegarde. Le cluster est donc immédiatement reconnaissable et
+séparable du reste du parc — ce qui désigne aussi les cibles les plus
+intéressantes.</p>
+<p><strong>La topologie physique.</strong> Deux machines Dell en
+<code>.150</code> et <code>.125</code> indiquent les hôtes porteurs.
+L’attaquant comprend qu’il a affaire à une infrastructure virtualisée
+sur deux châssis, et non à des serveurs isolés.</p>
+<h3 id="tableau-dinventaire-des-trois-nœuds">3.3 Tableau d’inventaire
+des trois nœuds</h3>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Machine</th>
+<th>IP</th>
+<th>Ports ouverts</th>
+<th>Service / version</th>
+<th>Rôle pour Santélia</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pve-a</code></td>
+<td>192.168.1.151</td>
+<td>22, 111, 3128, 8006</td>
+<td>OpenSSH 9.2p1 Debian 12 · rpcbind 2-4 · proxy SPICE · interface
+web</td>
+<td>Nœud principal, héberge la machine critique</td>
+</tr>
+<tr>
+<td><code>pve-b</code></td>
+<td>192.168.1.152</td>
+<td>22, 111, 3128, 8006</td>
+<td>identique</td>
+<td>Nœud secondaire, cible de réplication</td>
+</tr>
+<tr>
+<td><code>pve-c</code></td>
+<td>192.168.1.153</td>
+<td>22, 111, 3128, 8006</td>
+<td>identique</td>
+<td>Votant de quorum</td>
+</tr>
+</tbody>
+</table>
+<p><strong>65 531 ports fermés sur 65 535.</strong> Les trois nœuds
+présentent une signature strictement identique, ce qui est cohérent avec
+leur création par clonage.</p>
+<h3 id="deux-enseignements-de-méthode">3.4 Deux enseignements de
+méthode</h3>
+<p><strong>Pourquoi les noms de service affichés sont faux.</strong></p>
+<p>Un scan <strong>sans identification de version</strong> lit
+simplement la correspondance entre numéro de port et nom de service. Il
+affiche donc <code>squid-http</code> pour 3128 et
+<code>wpl-analytics</code> pour 8006, alors qu’il s’agit du proxy SPICE
+et de l’interface d’administration Proxmox. C’est une <strong>déduction
+par convention</strong>, pas une observation.</p>
+<p>L’option qui tranche est <strong><code>-sV</code></strong>. Le même
+port 3128 s’affiche alors « Proxmox Virtual Environment REST API ».
+C’est la démonstration directe que le nom seul ne prouve rien.</p>
+<p><strong>Second enseignement :</strong> le port 8006 n’appartient pas
+aux mille ports les plus courants. Il n’apparaît qu’au scan complet. Une
+analyse limitée aux ports usuels conclurait à tort que l’interface
+d’administration n’est pas exposée.</p>
+<h3 id="absence-notable">3.5 Absence notable</h3>
+<p><strong>Aucun service NFS.</strong> Le port 2049 est fermé sur les
+trois nœuds, contrairement à la configuration de référence. Le stockage
+des machines virtuelles n’est pas exposé par ce protocole.</p>
+<hr />
+<h2 id="analyse-et-priorisation">4. Analyse et priorisation</h2>
+<h3 id="tableau-des-constats">4.1 Tableau des constats</h3>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>N°</th>
+<th>Constat (hôte:port, service)</th>
+<th>Pourquoi c’est un risque</th>
+<th>Gravité</th>
+<th>À vérifier</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>pve-a/b/c:8006</code> — interface d’administration
+Proxmox</td>
+<td>Donne la maîtrise complète de l’infrastructure qui héberge le
+service critique</td>
+<td><strong>Haute</strong></td>
+<td>Non, mesuré</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>pve-a/b/c:22</code> — SSH, OpenSSH 9.2p1</td>
+<td>Surface d’attaque pour des tentatives d’authentification
+répétées</td>
+<td><strong>Moyenne</strong></td>
+<td>Non, mesuré</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>pve-a/b/c:111</code> — rpcbind</td>
+<td>Révèle les programmes RPC disponibles, facilite l’énumération</td>
+<td><strong>Faible</strong></td>
+<td>Non, mesuré</td>
+</tr>
+</tbody>
+</table>
+<h3 id="justification-de-chaque-constat">4.2 Justification de chaque
+constat</h3>
+<p><strong>Constat 1.</strong> L’interface web permet de créer, détruire
+et déplacer les machines virtuelles. Elle est joignable depuis n’importe
+quelle adresse du segment, y compris depuis les objets connectés du
+réseau domestique. Sa compromission équivaut à la perte de
+l’infrastructure.</p>
+<p><strong>Constat 2.</strong> Le service SSH accepte les connexions de
+tout le réseau, avec le nombre de tentatives par défaut. La faille n’est
+pas dans le service lui-même mais dans son exposition et dans l’absence
+de limitation.</p>
+<p><strong>Constat 3.</strong> <code>rpcbind</code> ne donne pas d’accès
+direct, mais il indique à un attaquant quels services RPC existent.
+Comme aucun service NFS ne l’accompagne, l’exposition réelle reste
+faible.</p>
+<h3 id="décisions-et-priorités">4.3 Décisions et priorités</h3>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>N°</th>
+<th>Décision</th>
+<th>Priorité</th>
+<th>Raison liée à Santélia</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Corriger</strong></td>
+<td><strong>P1</strong></td>
+<td>Cette interface pilote l’infrastructure qui porte le DPI. Une
+compromission arrête la prise de rendez-vous, exactement l’incident que
+le projet doit empêcher</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Corriger</strong></td>
+<td><strong>P2</strong></td>
+<td>Mesure de réduction de surface, à traiter dans le mois. Elle ne
+bloque pas le service</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Compenser</strong></td>
+<td><strong>P3</strong></td>
+<td>Aucun service NFS ne l’accompagne. Le risque est informatif, pas
+opérationnel</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="préconisations">5. Préconisations</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Priorité</th>
+<th>Préconisation</th>
+<th>Mesure</th>
+<th>État</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>P1</strong></td>
+<td>Filtrer l’accès à l’interface d’administration</td>
+<td>Activer le pare-feu Proxmox, avec les règles minimales</td>
+<td><strong>Planifié</strong> — non exécuté dans cette passe</td>
+</tr>
+<tr>
+<td><strong>P2</strong></td>
+<td>Limiter les tentatives d’authentification SSH</td>
+<td><code>MaxAuthTries</code> ramené à 3</td>
+<td><strong>Exécuté</strong>, voir section 6</td>
+</tr>
+<tr>
+<td><strong>P3</strong></td>
+<td>Réduire l’exposition RPC</td>
+<td>Désactiver <code>rpcbind</code> si aucun service NFS n’est
+utilisé</td>
+<td><strong>Différé</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pourquoi-le-filtrage-nest-pas-exécuté-dans-cette-passe">5.1
+Pourquoi le filtrage n’est pas exécuté dans cette passe</h3>
+<p>Le pare-feu Proxmox filtre <strong>aussi</strong> le trafic interne
+au cluster : communication de quorum, migration, gestion de
+disponibilité. Une règle trop stricte coupe le cluster et provoque
+l’incident qu’on cherchait à éviter.</p>
+<p>Cette mesure exige donc une fenêtre d’intervention, une session de
+secours ouverte, une application sur <strong>un seul nœud</strong> puis
+un contrôle avant extension. Elle ne s’improvise pas en fin de
+séance.</p>
+<p><strong>Ce n’est pas un renoncement, c’est un séquencement.</strong>
+La correction retenue pour la preuve est celle qui présente le meilleur
+rapport bénéfice/risque immédiat.</p>
+<hr />
+<h2 id="remédiation-et-preuve">6. Remédiation et preuve</h2>
+<h3 id="mesure-retenue">6.1 Mesure retenue</h3>
+<p><strong>Réduire le nombre de tentatives d’authentification SSH à
+3</strong>, sur le nœud <code>pve-a</code>.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Critère</th>
+<th>Évaluation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Risque pour le cluster</td>
+<td><strong>Nul</strong> : le réglage ne touche pas aux communications
+entre nœuds</td>
+</tr>
+<tr>
+<td>Réversible</td>
+<td>Oui, une ligne et un redémarrage du service</td>
+</tr>
+<tr>
+<td>Mesurable</td>
+<td>Oui, une commande donne la valeur effective avant et après</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Ce que cette mesure ne fait pas.</strong> Elle réduit la
+surface d’attaque, elle ne supprime pas l’exposition. Le service reste
+joignable depuis tout le réseau. C’est une mesure de réduction, à
+compléter par le filtrage P1.</p>
+<p><strong>Avertissement respecté.</strong> <code>PermitRootLogin</code>
+n’est <strong>pas</strong> modifié : les nœuds du cluster communiquent
+entre eux en SSH avec le compte root. Le désactiver casserait le
+cluster.</p>
+<h3 id="état-avant">6.2 État AVANT</h3>
+<table>
+<thead>
+<tr>
+<th>Relevé</th>
+<th>Valeur</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>maxauthtries</code> avant modification</td>
+<td><strong>6</strong></td>
+</tr>
+<tr>
+<td>Cluster avant modification</td>
+<td><strong>3 nœuds, 3 votes, quorum 2, Quorate</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Le relevé du fichier montre la directive <strong>présente mais
+commentée</strong> :</p>
+<pre><code>35:#MaxAuthTries 6</code></pre>
+<p>Elle existe donc pour information, sans effet : le serveur applique
+sa valeur par défaut.</p>
+<h3 id="modification">6.3 Modification</h3>
+<pre><code>nano /etc/ssh/sshd_config
+# MaxAuthTries 3
+
+sshd -t
+systemctl restart ssh</code></pre>
+<p>Le test de syntaxe précède systématiquement le redémarrage : une
+configuration invalide couperait l’accès distant au nœud.</p>
+<h3 id="état-après">6.4 État APRÈS</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Relevé</th>
+<th>Valeur</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>maxauthtries</code> après modification</td>
+<td><strong>3</strong></td>
+<td>Mesure appliquée</td>
+</tr>
+<tr>
+<td>Nouvelle connexion SSH fonctionnelle</td>
+<td><code>hostname</code> renvoie <strong>pve-a</strong></td>
+<td>Service opérationnel</td>
+</tr>
+<tr>
+<td>Cluster après modification</td>
+<td><strong>3 nœuds, 3 votes, quorum 2, Quorate</strong></td>
+<td>Aucune régression</td>
+</tr>
+<tr>
+<td>Ports ouverts au re-scan</td>
+<td><strong>22, 111, 3128</strong> — identiques au relevé initial</td>
+<td>Aucune dégradation</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Résultat : 6 → 3, sans interruption de service et sans perte
+de quorum.</strong></p>
+<h3 id="contrôle-de-non-régression">6.5 Contrôle de non-régression</h3>
+<pre><code>sshd -T | grep -i maxauthtries
+pvecm status
+nmap -sV 192.168.1.151</code></pre>
+<p>Le troisième vérifie que le cluster reste joignable depuis la station
+d’audit, et que les ports ouverts n’ont pas changé.</p>
+<p><strong>Une réserve à connaître.</strong> Le contrôle a été fait avec
+un scan des mille ports les plus courants, qui ne voit pas le port 8006.
+La comparaison stricte exigerait un scan complet. Elle a été faite avant
+modification, pas après : limite du relevé, sans incidence sur la
+mesure.</p>
+<h3 id="seconde-remédiation-algorithmes-dauthentification-ssh">6.6
+Seconde remédiation — algorithmes d’authentification SSH</h3>
+<p>Même nature que la précédente : configuration du service, aucun effet
+sur le quorum.</p>
+<p><strong>État AVANT</strong>, depuis la station d’audit :</p>
+<pre><code>nmap -p 22 --script ssh2-enum-algos 192.168.1.151</code></pre>
+<p><strong>10 algorithmes MAC annoncés</strong>, dont quatre faibles :
+<code>umac-64-etm</code>, <code>hmac-sha1-etm</code>,
+<code>umac-64</code>, <code>hmac-sha1</code>.</p>
+<p><strong>Modification</strong>, un fichier de réglage dédié :</p>
+<pre><code>echo &#39;MACs hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256,hmac-sha2-512,umac-128@openssh.com&#39; &gt; /etc/ssh/sshd_config.d/10-macs.conf
+
+sshd -t
+sshd -T | grep -i &#39;^macs&#39;
+systemctl reload ssh</code></pre>
+<p><strong>Point de vigilance rencontré.</strong> Après création du
+fichier, la valeur effective affichait déjà les six algorithmes, mais le
+relevé réseau en annonçait toujours dix. Ni le fichier ni son inclusion
+n’étaient en cause : l’<strong>absence de rechargement du
+service</strong> laissait l’ancienne configuration active.
+<code>sshd -t</code> valide une syntaxe, il ne prouve pas qu’une
+modification est appliquée.</p>
+<p><strong>État APRÈS</strong> :</p>
+<table>
+<thead>
+<tr>
+<th>Relevé</th>
+<th>Valeur</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Algorithmes MAC annoncés</td>
+<td><strong>6</strong>, contre 10 avant</td>
+</tr>
+<tr>
+<td><code>umac-64</code> et <code>hmac-sha1</code></td>
+<td><strong>disparus</strong></td>
+</tr>
+<tr>
+<td>Nouvelle connexion SSH</td>
+<td>fonctionnelle</td>
+</tr>
+<tr>
+<td>Cluster</td>
+<td>toujours quorate</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Confirmé par l’outil</strong> : le second scan ne remonte
+plus le résultat « Weak MAC Algorithm(s) Supported » (section 7.4).</p>
+<p><strong>Retour arrière</strong> : supprimer le fichier puis recharger
+le service.</p>
+<hr />
+<h2 id="analyse-de-vulnérabilités-openvas">7. Analyse de vulnérabilités
+OpenVAS</h2>
+<h3 id="outil-et-flux">7.1 Outil et flux</h3>
+<table>
+<thead>
+<tr>
+<th>Élément</th>
+<th>Valeur</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Version</td>
+<td>GVM 25.04.0, scanner OpenVAS 23.51.0, gestionnaire 26.41.0</td>
+</tr>
+<tr>
+<td>Tests de vulnérabilités disponibles</td>
+<td><strong>95 109</strong></td>
+</tr>
+<tr>
+<td>Tests produits</td>
+<td>534</td>
+</tr>
+<tr>
+<td>Référentiels</td>
+<td>SCAP et CERT présents</td>
+</tr>
+</tbody>
+</table>
+<h3 id="cible-et-configuration-retenues">7.2 Cible et configuration
+retenues</h3>
+<table>
+<thead>
+<tr>
+<th>Champ</th>
+<th>Valeur</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nom de la cible</td>
+<td><code>Santelia-pve-a</code></td>
+</tr>
+<tr>
+<td>Hôte</td>
+<td>192.168.1.151</td>
+</tr>
+<tr>
+<td>Configuration de scan</td>
+<td>Full and fast</td>
+</tr>
+<tr>
+<td>Mode</td>
+<td>non authentifié</td>
+</tr>
+</tbody>
+</table>
+<h3 id="résultats-deux-scans-comparés">7.3 Résultats — deux scans
+comparés</h3>
+<p><strong>Premier scan, avant remédiation. Durée 29 minutes.</strong>
+54 résultats, dont 1 CVE.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Sévérité</th>
+<th>Nombre</th>
+<th>Détail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Critique</strong></td>
+<td><strong>1</strong></td>
+<td>Proxmox VE End of Life — 10,0</td>
+</tr>
+<tr>
+<td>Élevée</td>
+<td>0</td>
+<td></td>
+</tr>
+<tr>
+<td>Moyenne</td>
+<td>0</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Basse</strong></td>
+<td><strong>3</strong></td>
+<td>TCP Timestamps 2,6 · <strong>Weak MAC 2,6</strong> · ICMP Timestamp
+2,1</td>
+</tr>
+<tr>
+<td>Log (0,0)</td>
+<td>50</td>
+<td>Informations, pas des failles</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Second scan, après remédiation des algorithmes MAC. Durée 21
+minutes.</strong></p>
+<table>
+<thead>
+<tr>
+<th>Sévérité</th>
+<th>Nombre</th>
+<th>Évolution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Critique</strong></td>
+<td><strong>1</strong></td>
+<td>Inchangé — Proxmox VE End of Life</td>
+</tr>
+<tr>
+<td>Élevée</td>
+<td>0</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Moyenne</td>
+<td>0</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>Basse</strong></td>
+<td><strong>2</strong></td>
+<td><strong>3 → 2</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="la-preuve-par-loutil">7.4 La preuve par l’outil</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Résultat</th>
+<th>Premier scan</th>
+<th>Second scan</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Proxmox VE End of Life</td>
+<td>10,0 — critique</td>
+<td>10,0 — critique</td>
+</tr>
+<tr>
+<td>TCP Timestamps Information Disclosure</td>
+<td>2,6 — basse</td>
+<td>2,6 — basse</td>
+</tr>
+<tr>
+<td><strong>Weak MAC Algorithm(s) Supported (SSH)</strong></td>
+<td><strong>2,6 — basse, port 22</strong></td>
+<td><strong>disparu</strong></td>
+</tr>
+<tr>
+<td>ICMP Timestamp Reply Information Disclosure</td>
+<td>2,1 — basse</td>
+<td>2,1 — basse</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Le résultat visé a disparu du rapport.</strong> Les six
+algorithmes restants ne sont plus considérés comme faibles : la
+remédiation est confirmée par deux sources indépendantes, l’énumération
+directe des algorithmes négociés et le scan de vulnérabilités.</p>
+<p><strong>Ce que le scan ne voit pas.</strong> L’interface
+d’administration sur 8006 ne produit aucun résultat de vulnérabilité :
+c’est une exposition, pas une faille. Nmap reste la source du constat n°
+1.</p>
+<h3 id="un-résultat-à-nuancer-la-détection-de-fin-de-vie">7.5 Un
+résultat à nuancer — la détection de fin de vie</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Élément examiné</th>
+<th>Constat</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Gravité annoncée</td>
+<td><strong>10,0</strong>, note maximale</td>
+</tr>
+<tr>
+<td>QoD</td>
+<td>80 % : l’outil n’est pas certain</td>
+</tr>
+<tr>
+<td>Méthode de détection</td>
+<td>Empreinte de version sur une réponse HTTP, pas un test actif</td>
+</tr>
+<tr>
+<td>Vérification de la version réelle</td>
+<td><code>pveversion</code> — 8.4, publiée en 2024, encore
+maintenue</td>
+</tr>
+<tr>
+<td>Nature du risque</td>
+<td><strong>État de maintenance</strong>, pas une faille
+exploitable</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Ce qui fait nuancer.</strong> Ce résultat ne décrit pas une
+faiblesse technique : il signale qu’une version plus récente existe.
+Aucune exploitation n’y est associée, et la version installée reçoit
+toujours ses correctifs. Le classer en priorité absolue reviendrait à
+traiter un indicateur de veille comme une vulnérabilité.</p>
+<p><strong>Comment le vérifier et le traiter.</strong> Contrôler la
+version réelle sur les trois nœuds, consulter le cycle de maintenance de
+l’éditeur, puis décider d’une fenêtre de mise à jour. La criticité
+réelle porte sur le <strong>processus</strong> — personne ne surveille
+les versions — plus que sur la machine.</p>
+<p><strong>L’enseignement.</strong> Une note de 10 sur un résultat à 80
+% de confiance, fondé sur une empreinte de version, illustre pourquoi la
+colonne « à vérifier » existe dans le tableau des constats. L’outil
+propose, l’auditeur décide.</p>
+<p><strong>Et sur la QoD.</strong> Le filtre par défaut du rapport est
+<code>min_qod=70</code> : l’interface masque les détections de confiance
+inférieure à 70 %. Les résultats à vérifier en premier sont donc ceux
+qu’on ne voit pas sans baisser ce seuil — une alerte grave à 40 % de
+confiance reste invisible sur un écran qui semble propre.</p>
+<hr />
+<h2 id="ce-que-cet-audit-relie-au-dossier-santélia">8. Ce que cet audit
+relie au dossier Santélia</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Écart déjà documenté</th>
+<th>Ce que l’audit en fait</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Pare-feu Proxmox désactivé</strong></td>
+<td>Passe de « simplification assumée » à <strong>constat mesuré,
+gravité haute, priorité P1</strong></td>
+</tr>
+<tr>
+<td>Vérification d’empreinte désactivée côté Ansible</td>
+<td>Reste un écart ouvert, non mesurable par scan externe</td>
+</tr>
+<tr>
+<td>Adresse IPv6 globale sur les invités</td>
+<td>Constat confirmé sur la station d’audit, à étendre aux nœuds</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Et une justification supplémentaire pour
+l’automatisation.</strong> Une correction appliquée à la main revient au
+prochain rebuild. Une règle de filtrage décrite dans un rôle Ansible,
+rejouée à chaque déploiement, garantit que la correction tient. L’audit
+produit le constat ; l’automatisation garantit qu’il ne réapparaît
+pas.</p>
+<hr />
+<h2 id="annexe-a-relevés-bruts">Annexe A — Relevés bruts</h2>
+<p>Relevés reproduits tels qu’ils ont été obtenus. Les blocs sont des
+extraits : les lignes de latence et les listes d’hôtes complètes ont été
+écartées.</p>
+<h3 id="a.1-découverte-du-segment">A.1 Découverte du segment</h3>
+<pre><code>Nmap done: 256 IP addresses (16 hosts up) scanned in 5.41 seconds</code></pre>
+<h3 id="a.2-nœud-principal-scan-complet-et-identification">A.2 Nœud
+principal — scan complet et identification</h3>
+<pre><code>Nmap scan report for 192.168.1.151
+Not shown: 997 closed tcp ports (reset)
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 9.2p1 Debian 2+deb12u5 (protocol 2.0)
+111/tcp  open  rpcbind 2-4 (RPC #100000)
+3128/tcp open  http    Proxmox Virtual Environment REST API 3.0
+MAC Address: BC:24:11:91:2B:7B (Proxmox Server Solutions GmbH)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel</code></pre>
+<h3 id="a.3-nœud-principal-scan-des-65-535-ports">A.3 Nœud principal —
+scan des 65 535 ports</h3>
+<pre><code>Nmap scan report for 192.168.1.151
+Not shown: 65531 closed tcp ports (reset)
+PORT     STATE SERVICE
+22/tcp   open  ssh
+111/tcp  open  rpcbind
+3128/tcp open  squid-http
+8006/tcp open  wpl-analytics
+MAC Address: BC:24:11:91:2B:7B (Proxmox Server Solutions GmbH)</code></pre>
+<p><strong>Lecture :</strong> les services 3128 et 8006 sont nommés
+d’après leur numéro de port. L’identification avec l’option
+<code>-sV</code> montre qu’il s’agit du proxy SPICE et de l’interface
+d’administration.</p>
+<h3 id="a.4-nœuds-secondaires-scan-des-65-535-ports">A.4 Nœuds
+secondaires — scan des 65 535 ports</h3>
+<pre><code>Nmap scan report for 192.168.1.152
+Not shown: 65531 closed tcp ports (reset)
+PORT     STATE SERVICE
+22/tcp   open  ssh
+111/tcp  open  rpcbind
+3128/tcp open  squid-http
+8006/tcp open  wpl-analytics
+MAC Address: BC:24:11:BB:44:D4 (Proxmox Server Solutions GmbH)</code></pre>
+<pre><code>Nmap scan report for 192.168.1.153
+Not shown: 65531 closed tcp ports (reset)
+PORT     STATE SERVICE
+22/tcp   open  ssh
+111/tcp  open  rpcbind
+3128/tcp open  squid-http
+8006/tcp open  wpl-analytics
+MAC Address: BC:24:11:AF:C8:7C (Proxmox Server Solutions GmbH)</code></pre>
+<h3 id="a.5-état-du-cluster-avant-remédiation">A.5 État du cluster —
+avant remédiation</h3>
+<pre><code>Quorum information
+------------------
+Nodes:            3
+Total votes:      3
+Quorum:           2
+Flags:            Quorate</code></pre>
+<h3 id="a.6-remédiation-ssh-avant-et-après">A.6 Remédiation SSH — avant
+et après</h3>
+<pre><code># Avant
+maxauthtries 6
+
+# Fichier de configuration
+35:#MaxAuthTries 6
+
+# Après modification
+35:MaxAuthTries 3
+
+# Valeur effectivement appliquée après redémarrage du service
+maxauthtries 3</code></pre>
+<p><strong>Lecture :</strong> la directive était présente mais
+commentée, donc inactive — le serveur appliquait sa valeur par défaut de
+6. La décommenter avec la valeur 3 rend la limitation effective.</p>
+<h3 id="a.7-contrôles-de-non-régression">A.7 Contrôles de
+non-régression</h3>
+<pre><code>Nodes:            3
+Total votes:      3
+Quorum:           2
+Flags:            Quorate</code></pre>
+<pre><code>pve-a</code></pre>
+<pre><code>Nmap scan report for 192.168.1.151
+Not shown: 997 closed tcp ports (reset)
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 9.2p1 Debian 2+deb12u5 (protocol 2.0)
+111/tcp  open  rpcbind 2-4 (RPC #100000)
+3128/tcp open  http    Proxmox Virtual Environment REST API 3.0
+MAC Address: BC:24:11:91:2B:7B (Proxmox Server Solutions GmbH)</code></pre>
+<p><strong>Lecture :</strong> le cluster est toujours quorate, une
+nouvelle connexion SSH aboutit, et l’inventaire des ports est inchangé.
+La mesure n’a dégradé aucun service.</p>
+<h3 id="a.8-capacité-réseau-du-moteur-de-scan">A.8 Capacité réseau du
+moteur de scan</h3>
+<pre><code>/usr/sbin/openvas cap_net_admin,cap_net_raw=eip</code></pre>
+<p><strong>Lecture :</strong> sans cette capacité, aucun scan ne
+démarre.</p>
+<h3 id="a.9-premier-scan-29-minutes">A.9 Premier scan — 29 minutes</h3>
+<pre><code>Scan Duration  0:29 h
+Scan Status    Done
+Hosts scanned  1
+Results        54
+CVEs           1
+Filter         apply_overrides=0 levels=chml min_qod=70</code></pre>
+<pre><code>Proxmox Virtual Environment End of Life Detection   10.0 (Critical)  QoD 80%  general/tcp
+TCP Timestamps Information Disclosure                2.6 (Low)        QoD 80%  general/tcp
+Weak MAC Algorithm(s) Supported (SSH)                2.6 (Low)        QoD 80%  22/tcp
+ICMP Timestamp Reply Information Disclosure          2.1 (Low)        QoD 80%  general/icmp</code></pre>
+<h3 id="a.10-remédiation-des-algorithmes-mac-avant-et-après">A.10
+Remédiation des algorithmes MAC — avant et après</h3>
+<pre><code># AVANT — 10 algorithmes annoncés
+umac-64-etm@openssh.com        umac-128-etm@openssh.com
+hmac-sha2-256-etm@openssh.com  hmac-sha2-512-etm@openssh.com
+hmac-sha1-etm@openssh.com      umac-64@openssh.com
+umac-128@openssh.com           hmac-sha2-256
+hmac-sha2-512                  hmac-sha1
+
+# APRÈS — 6 algorithmes annoncés
+hmac-sha2-256-etm@openssh.com  hmac-sha2-512-etm@openssh.com
+umac-128-etm@openssh.com       hmac-sha2-256
+hmac-sha2-512                  umac-128@openssh.com</code></pre>
+<p><strong>Lecture :</strong> les quatre algorithmes faibles ont
+disparu. La correction a été appliquée après le premier scan : on mesure
+l’état avant, puis on corrige.</p>
+<h3 id="a.11-second-scan-21-minutes-après-remédiation">A.11 Second scan
+— 21 minutes, après remédiation</h3>
+<pre><code>Scan Duration  0:21 h
+Scan Status    Done</code></pre>
+<pre><code>Proxmox Virtual Environment End of Life Detection   10.0 (Critical)  QoD 80%  general/tcp
+TCP Timestamps Information Disclosure                2.6 (Low)        QoD 80%  general/tcp
+ICMP Timestamp Reply Information Disclosure          2.1 (Low)        QoD 80%  general/icmp</code></pre>
+<p><strong>Lecture :</strong> le résultat « Weak MAC Algorithm(s)
+Supported (SSH) » a disparu du rapport. Les deux autres résultats de
+gravité basse sont inchangés, ainsi que la détection de fin de vie. La
+remédiation est confirmée par l’outil.</p>
+<hr />
+<p><em>Documentation technique — deux scans exécutés, deux remédiations
+prouvées.</em></p></article>
+    </main>
+    <footer>
+      <div class="wrap">
+        <p>Sant&eacute;lia &middot; documentation technique &middot; 26/11/2026</p>
+      </div>
+    </footer>
+  </body>
+</html>
