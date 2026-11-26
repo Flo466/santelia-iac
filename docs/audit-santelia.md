@@ -39,16 +39,6 @@ L'auditeur est **propriétaire et administrateur** du réseau audité. Aucune ci
 
 **Ce que ces choix changent à la valeur du test.** Rien : ils ne réduisent pas la portée de l'analyse. L'audit porte sur une infrastructure réellement en service, avec ses écarts réels, et non sur une maquette reconstituée pour l'exercice.
 
---- | --- | --- |
-| Nœuds démarrés dans VirtualBox | Cluster en service depuis le 05/10, en imbrication dans Proxmox | Remplacement du démarrage par un contrôle d'état |
-| Réseau `192.168.56.0/24` | Réseau réel `192.168.1.0/24` | Adressage réel, autorisation du propriétaire |
-| Kali en VirtualBox, deux cartes | Station d'audit hébergée sur le même hyperviseur que les cibles | Une seule carte, sur le pont `vmbr0` |
-| `eth1` en `.50` | Interface `eth0`, adresse `192.168.1.245` | Adresse hors plage d'attribution automatique |
-
-**Ce que cette adaptation change à la valeur du test.** Elle ne l'affaiblit pas : elle porte sur une infrastructure réellement en service, avec ses écarts réels. Les outils et la méthode restent identiques.
-
----
-
 ## 2. Méthode et outillage
 
 | Outil | Version | Rôle |

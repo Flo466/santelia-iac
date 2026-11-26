@@ -129,20 +129,6 @@ attribution</td>
 : ils ne réduisent pas la portée de l’analyse. L’audit porte sur une
 infrastructure réellement en service, avec ses écarts réels, et non sur
 une maquette reconstituée pour l’exercice.</p>
-<p>— | — | — | | Nœuds démarrés dans VirtualBox | Cluster en service
-depuis le 05/10, en imbrication dans Proxmox | Remplacement du démarrage
-par un contrôle d’état | | Réseau <code>192.168.56.0/24</code> | Réseau
-réel <code>192.168.1.0/24</code> | Adressage réel, autorisation du
-propriétaire | | Kali en VirtualBox, deux cartes | Station d’audit
-hébergée sur le même hyperviseur que les cibles | Une seule carte, sur
-le pont <code>vmbr0</code> | | <code>eth1</code> en <code>.50</code> |
-Interface <code>eth0</code>, adresse <code>192.168.1.245</code> |
-Adresse hors plage d’attribution automatique |</p>
-<p><strong>Ce que cette adaptation change à la valeur du test.</strong>
-Elle ne l’affaiblit pas : elle porte sur une infrastructure réellement
-en service, avec ses écarts réels. Les outils et la méthode restent
-identiques.</p>
-<hr />
 <h2 id="méthode-et-outillage">2. Méthode et outillage</h2>
 <table>
 <colgroup>

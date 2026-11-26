@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Audit de vulnérabilités — Santélia</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<a class="skip" href="#contenu">Aller au contenu</a>
+
+<header class="masthead">
+  <div class="wrap">
+    <p class="eyebrow">Santélia &middot; audit de sécurité &middot; hors périmètre du cahier des charges</p>
+    <h1>Audit de vulnérabilités du cluster</h1>
+    <p class="lede">
+      Inventaire réseau, analyse de vulnérabilités et deux remédiations prouvées
+      avant et après. Le périmètre porte sur les trois nœuds du cluster, scannés
+      depuis une station d'audit dédiée.
+    </p>
+    <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 26 novembre 2026</p>
+  </div>
+</header>
+
+<main id="contenu">
+  <div class="wrap">
+
+    <nav class="back">
+      <a href="index.html">&larr; Sommaire</a>
+    </nav>
+
+    <div class="banner">
+      <div class="lab">Statut</div>
+      <div class="val"><strong>Deux scans exécutés</strong></div>
+      <div class="sep"></div>
+      <div class="lab">Résultats</div>
+      <div class="val"><strong>1 critique &middot; 3 basses</strong></div>
+      <div class="sep"></div>
+      <div class="lab">Remédiations</div>
+      <div class="val"><strong>2 prouvées</strong></div>
+    </div>
+
+    <h2 class="sec-title">L'audit en une image</h2>
+    <p class="sec-hint">Cinq étapes, deux scans</p>
+
+    <figure>
+      <img src="figures/fig-15-audit-chaine.svg"
+           alt="Chaîne complète de l'audit : station d'audit, inventaire Nmap, premier scan de 29 minutes, remédiation, second scan de 21 minutes. En bas, comparaison des résultats avant et après : la faiblesse SSH sur les algorithmes MAC disparaît." />
+      <figcaption>
+        La station d'audit, l'inventaire, les deux scans et la comparaison des
+        résultats. La faiblesse corrigée disparaît du second rapport.
+      </figcaption>
+    </figure>
+
+    <h2 class="sec-title">Document de la brique</h2>
+    <p class="sec-hint">1 document</p>
+
+    <div class="grid">
+      <a class="card card--full" href="audit-santelia.html">
+        <span class="card__icon" aria-hidden="true">🔍</span>
+        <span class="card__tag">Audit / infrastructure existante</span>
+        <h3>Audit de vulnérabilités</h3>
+        <p>
+          Périmètre, inventaire des trois nœuds, analyse des résultats OpenVAS,
+          trois constats priorisés et deux remédiations prouvées avant et après.
+        </p>
+        <div class="pills">
+          <span class="pill">Nmap</span>
+          <span class="pill">OpenVAS</span>
+          <span class="pill">CVSS</span>
+          <span class="pill">QoD</span>
+          <span class="pill">remédiation</span>
+          <span class="pill">avant / après</span>
+        </div>
+        <div class="card__foot">
+          Consulter <span aria-hidden="true">&rarr;</span>
+          <span class="status status--ok">Mesuré</span>
+        </div>
+      </a>
+    </div>
+
+    <article>
+      <h2>Ce que l'audit démontre</h2>
+      <ul>
+        <li>Un inventaire complet des trois nœuds, 65 531 ports fermés sur 65 535</li>
+        <li>Le port 8006 révélé par un scan complet, invisible sur les mille ports courants</li>
+        <li>Deux scans OpenVAS comparés : 29 minutes, puis 21 minutes</li>
+        <li>Une faiblesse SSH corrigée, confirmée par l'énumération directe et par l'outil</li>
+        <li>Un résultat critique de 10,0 relativisé par l'analyse de sa QoD</li>
+      </ul>
+
+      <h2>La distinction à garder en tête</h2>
+      <p>
+        Nmap établit ce qui est <strong>exposé</strong>, OpenVAS dit à quel
+        <strong>point</strong> c'est fragile. Les deux ne se remplacent pas :
+        l'interface d'administration sur 8006 ne produit aucun résultat de
+        vulnérabilité, et pourtant sa compromission équivaudrait à la perte de
+        l'infrastructure.
+      </p>
+      <p>
+        C'est pourquoi la colonne « à vérifier » existe dans le tableau des
+        constats. L'outil propose, l'auditeur décide.
+      </p>
+    </article>
+
+  </div>
+</main>
+
+<footer>
+  <p>Santélia &middot; documentation technique &middot; 26 novembre 2026</p>
+</footer>
+
+</body>
+</html>
