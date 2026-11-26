@@ -27,10 +27,19 @@ L'auditeur est **propriétaire et administrateur** du réseau audité. Aucune ci
 | `pbs01` — 192.168.1.161 | Serveur de sauvegarde, à traiter dans une seconde passe |
 | Autres hôtes du segment | Usage domestique, sans lien avec Santélia |
 
-### 1.3 Écart assumé avec le périmètre de référence
+### 1.3 Choix d'adaptation
 
-| Point de référence | Réalité de l'infrastructure | Adaptation |
-| --- | --- | --- |
+| Choix retenu | Justification |
+| --- | --- |
+| Station d'audit hébergée sur l'hyperviseur | Un seul mécanisme d'accès, et une position réseau identique à celle d'un poste interne |
+| Une seule interface réseau | La station est déjà sur le segment commun ; la double carte n'apporterait rien |
+| Adressage `192.168.1.0/24` | Réseau réel de l'infrastructure auditée, dont l'auditeur est propriétaire |
+| Adresse fixe en `.245` | Hors plage d'attribution automatique, vérifiée libre avant attribution |
+| Analyse non authentifiée | Aucun compte privilégié fourni à l'outil pendant le scan |
+
+**Ce que ces choix changent à la valeur du test.** Rien : ils ne réduisent pas la portée de l'analyse. L'audit porte sur une infrastructure réellement en service, avec ses écarts réels, et non sur une maquette reconstituée pour l'exercice.
+
+--- | --- | --- |
 | Nœuds démarrés dans VirtualBox | Cluster en service depuis le 05/10, en imbrication dans Proxmox | Remplacement du démarrage par un contrôle d'état |
 | Réseau `192.168.56.0/24` | Réseau réel `192.168.1.0/24` | Adressage réel, autorisation du propriétaire |
 | Kali en VirtualBox, deux cartes | Station d'audit hébergée sur le même hyperviseur que les cibles | Une seule carte, sur le pont `vmbr0` |

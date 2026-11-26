@@ -86,44 +86,58 @@ l’inventaire détaillé a été restreint aux trois nœuds du cluster.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="écart-assumé-avec-le-périmètre-de-référence">1.3 Écart assumé
-avec le périmètre de référence</h3>
+<h3 id="choix-dadaptation">1.3 Choix d’adaptation</h3>
 <table>
 <colgroup>
-<col style="width: 33%" />
-<col style="width: 33%" />
-<col style="width: 33%" />
+<col style="width: 50%" />
+<col style="width: 50%" />
 </colgroup>
 <thead>
 <tr>
-<th>Point de référence</th>
-<th>Réalité de l’infrastructure</th>
-<th>Adaptation</th>
+<th>Choix retenu</th>
+<th>Justification</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Nœuds démarrés dans VirtualBox</td>
-<td>Cluster en service depuis le 05/10, en imbrication dans Proxmox</td>
-<td>Remplacement du démarrage par un contrôle d’état</td>
+<td>Station d’audit hébergée sur l’hyperviseur</td>
+<td>Un seul mécanisme d’accès, et une position réseau identique à celle
+d’un poste interne</td>
 </tr>
 <tr>
-<td>Réseau <code>192.168.56.0/24</code></td>
-<td>Réseau réel <code>192.168.1.0/24</code></td>
-<td>Adressage réel, autorisation du propriétaire</td>
+<td>Une seule interface réseau</td>
+<td>La station est déjà sur le segment commun ; la double carte
+n’apporterait rien</td>
 </tr>
 <tr>
-<td>Kali en VirtualBox, deux cartes</td>
-<td>Station d’audit hébergée sur le même hyperviseur que les cibles</td>
-<td>Une seule carte, sur le pont <code>vmbr0</code></td>
+<td>Adressage <code>192.168.1.0/24</code></td>
+<td>Réseau réel de l’infrastructure auditée, dont l’auditeur est
+propriétaire</td>
 </tr>
 <tr>
-<td><code>eth1</code> en <code>.50</code></td>
-<td>Interface <code>eth0</code>, adresse <code>192.168.1.245</code></td>
-<td>Adresse hors plage d’attribution automatique</td>
+<td>Adresse fixe en <code>.245</code></td>
+<td>Hors plage d’attribution automatique, vérifiée libre avant
+attribution</td>
+</tr>
+<tr>
+<td>Analyse non authentifiée</td>
+<td>Aucun compte privilégié fourni à l’outil pendant le scan</td>
 </tr>
 </tbody>
 </table>
+<p><strong>Ce que ces choix changent à la valeur du test.</strong> Rien
+: ils ne réduisent pas la portée de l’analyse. L’audit porte sur une
+infrastructure réellement en service, avec ses écarts réels, et non sur
+une maquette reconstituée pour l’exercice.</p>
+<p>— | — | — | | Nœuds démarrés dans VirtualBox | Cluster en service
+depuis le 05/10, en imbrication dans Proxmox | Remplacement du démarrage
+par un contrôle d’état | | Réseau <code>192.168.56.0/24</code> | Réseau
+réel <code>192.168.1.0/24</code> | Adressage réel, autorisation du
+propriétaire | | Kali en VirtualBox, deux cartes | Station d’audit
+hébergée sur le même hyperviseur que les cibles | Une seule carte, sur
+le pont <code>vmbr0</code> | | <code>eth1</code> en <code>.50</code> |
+Interface <code>eth0</code>, adresse <code>192.168.1.245</code> |
+Adresse hors plage d’attribution automatique |</p>
 <p><strong>Ce que cette adaptation change à la valeur du test.</strong>
 Elle ne l’affaiblit pas : elle porte sur une infrastructure réellement
 en service, avec ses écarts réels. Les outils et la méthode restent
