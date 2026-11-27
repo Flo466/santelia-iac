@@ -157,8 +157,6 @@ Les huit autres hôtes relèvent de l'usage domestique du réseau et sortent du 
 
 ### 3.2 Ce qu'apprend un attaquant en cinq secondes
 
-**Ce qu'apprend un attaquant qui arrive sur ce réseau.**
-
 Trois choses, sans aucun privilège et sans déclencher d'alerte :
 
 **La cartographie.** Seize machines actives, leur adresse, leur adresse matérielle. L'attaquant sait combien de cibles il a devant lui avant d'avoir testé le moindre port.
@@ -226,7 +224,8 @@ L'option qui tranche est **`-sV`**. Le même port 3128 s'affiche alors « Proxmo
 | Priorité | Préconisation | Mesure | État |
 | --- | --- | --- | --- |
 | **P1** | Filtrer l'accès à l'interface d'administration | Activer le pare-feu Proxmox, avec les règles minimales | **Planifié** — non exécuté dans cette passe |
-| **P2** | Limiter les tentatives d'authentification SSH | `MaxAuthTries` ramené à 3 | **Exécuté**, voir section 6 |
+| **P2** | Limiter les tentatives d'authentification SSH | `MaxAuthTries` ramené à 3 | **Exécuté**, voir section 6.1 |
+| **P2** | Retirer les algorithmes cryptographiques faibles | Six algorithmes MAC conservés sur dix | **Exécuté**, voir section 6.6 |
 | **P3** | Réduire l'exposition RPC | Désactiver `rpcbind` si aucun service NFS n'est utilisé | **Différé** |
 
 ### 5.1 Pourquoi le filtrage n'est pas exécuté dans cette passe
