@@ -39,6 +39,8 @@ L'auditeur est **propriétaire et administrateur** du réseau audité. Aucune ci
 
 **Ce que ces choix changent à la valeur du test.** Rien : ils ne réduisent pas la portée de l'analyse. L'audit porte sur une infrastructure réellement en service, avec ses écarts réels, et non sur une maquette reconstituée pour l'exercice.
 
+---
+
 ## 2. Méthode et outillage
 
 | Outil | Version | Rôle |
@@ -57,7 +59,7 @@ L'auditeur est **propriétaire et administrateur** du réseau audité. Aucune ci
 
 **Pourquoi la position compte.** La station voit exactement ce que verrait un poste interne au réseau, non un poste d'administration filtré. L'accès SSH passe par un rebond via l'hôte physique, mais **le rebond ne concerne que la session d'administration** : les scans partent de la station.
 
-### 2.1 bis Construction de la station, de bout en bout
+### 2.2 Construction de la station, de bout en bout
 
 | # | Étape | Point déterminant |
 | --- | --- | --- |
@@ -92,7 +94,7 @@ sudo setcap cap_net_raw,cap_net_admin+eip /usr/sbin/openvas
 ssh -L 9392:127.0.0.1:9392 kali-audit
 ```
 
-### 2.2 Dimensionnement — un constat mesuré
+### 2.3 Dimensionnement — un constat mesuré
 
 Le dimensionnement initial du disque, fixé à **28 Gio**, s'est révélé insuffisant pendant la synchronisation du flux de vulnérabilités. Le dimensionnement n'était cadré que sur la mémoire et les processeurs, sans indication de taille de disque : l'arbitrage a donc été fait à l'installation, et il était trop court.
 
@@ -117,7 +119,7 @@ Le dimensionnement initial du disque, fixé à **28 Gio**, s'est révélé insuf
 
 **Enseignement.** Une base de vulnérabilités complète n'est pas un outil léger. Le chiffre de 28 Gio correspondait à un système et un outil installés, pas à un flux synchronisé. Ce constat ne figure dans aucun document de référence : il vient de la mise en œuvre.
 
-### 2.3 Vocabulaire de l'analyse
+### 2.4 Vocabulaire de l'analyse
 
 | Terme | Définition retenue |
 | --- | --- |
@@ -188,6 +190,8 @@ L'option qui tranche est **`-sV`**. Le même port 3128 s'affiche alors « Proxmo
 ### 3.5 Absence notable
 
 **Aucun service NFS.** Le port 2049 est fermé sur les trois nœuds, contrairement à la configuration de référence. Le stockage des machines virtuelles n'est pas exposé par ce protocole.
+
+**Conséquence sur l'analyse.** Le constat le plus critique de la référence — un partage de stockage lisible par toute machine du réseau — n'existe pas dans ce périmètre. Les constats retenus portent donc sur les services effectivement exposés.
 
 ---
 

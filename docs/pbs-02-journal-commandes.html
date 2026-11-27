@@ -113,9 +113,12 @@ que l’adresse est libre.</p>
 lvmconfig --type current activation/thin_pool_autoextend_threshold
 lvmconfig --type default activation/thin_pool_autoextend_threshold
 lvmconfig --type default activation/thin_pool_autoextend_percent</code></pre>
-<p>Aucune valeur n’est définie dans la configuration courante, les
-valeurs par défaut sont donc inactives : le seuil effectif est de 100 %,
-l’extension automatique ne se déclenche jamais.</p>
+<p>Au moment du relevé initial, aucune valeur n’était définie dans la
+configuration courante : le seuil effectif était de 100 %, l’extension
+automatique ne se déclenchait jamais.</p>
+<p><strong>État actuel de l’hôte :</strong> seuil fixé à <strong>80
+%</strong>, extension de <strong>10 %</strong>. Le contrôle se fait par
+<code>lvmconfig --type current</code>.</p>
 <p><strong>Correction appliquée :</strong></p>
 <pre><code>grep -n &quot;^activation {&quot; /etc/lvm/lvm.conf
 nano +&lt;numero&gt; /etc/lvm/lvm.conf</code></pre>

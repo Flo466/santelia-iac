@@ -85,7 +85,7 @@
 
 **Ce que la copie ajoute.** Elle ne réduit pas la perte de récupération, elle en réduit le **délai de propagation**. C'est une propriété de fiabilité de la copie, pas de fraîcheur de la donnée.
 
-**Le chiffre à ne pas annoncer.** « 30 minutes » décrit la fréquence de la copie. Annoncé comme perte maximale, il est faux d'un facteur 25, et l'écart ne se découvre qu'au moment de restaurer.
+**Le chiffre à ne pas annoncer.** « 30 minutes » décrit le délai de propagation vers la copie, pas une perte maximale. Annoncé comme tel, il est faux d'un facteur 25, et l'écart ne se découvre qu'au moment de restaurer.
 
 ---
 

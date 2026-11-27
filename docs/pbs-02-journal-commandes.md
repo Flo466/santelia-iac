@@ -83,8 +83,11 @@ lvmconfig --type default activation/thin_pool_autoextend_threshold
 lvmconfig --type default activation/thin_pool_autoextend_percent
 ```
 
-Aucune valeur n'est définie dans la configuration courante, les valeurs par défaut sont donc
-inactives : le seuil effectif est de 100 %, l'extension automatique ne se déclenche jamais.
+Au moment du relevé initial, aucune valeur n'était définie dans la configuration courante : le
+seuil effectif était de 100 %, l'extension automatique ne se déclenchait jamais.
+
+**État actuel de l'hôte :** seuil fixé à **80 %**, extension de **10 %**. Le contrôle se fait par
+`lvmconfig --type current`.
 
 **Correction appliquée :**
 

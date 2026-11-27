@@ -129,6 +129,7 @@ attribution</td>
 : ils ne réduisent pas la portée de l’analyse. L’audit porte sur une
 infrastructure réellement en service, avec ses écarts réels, et non sur
 une maquette reconstituée pour l’exercice.</p>
+<hr />
 <h2 id="méthode-et-outillage">2. Méthode et outillage</h2>
 <table>
 <colgroup>
@@ -194,8 +195,8 @@ exactement ce que verrait un poste interne au réseau, non un poste
 d’administration filtré. L’accès SSH passe par un rebond via l’hôte
 physique, mais <strong>le rebond ne concerne que la session
 d’administration</strong> : les scans partent de la station.</p>
-<h3 id="bis-construction-de-la-station-de-bout-en-bout">2.1 bis
-Construction de la station, de bout en bout</h3>
+<h3 id="construction-de-la-station-de-bout-en-bout">2.2 Construction de
+la station, de bout en bout</h3>
 <table>
 <colgroup>
 <col style="width: 33%" />
@@ -277,7 +278,7 @@ scan ne démarre.</p>
 <p><strong>Accès à l’interface</strong>, sur l’adresse de bouclage
 uniquement :</p>
 <pre><code>ssh -L 9392:127.0.0.1:9392 kali-audit</code></pre>
-<h3 id="dimensionnement-un-constat-mesuré">2.2 Dimensionnement — un
+<h3 id="dimensionnement-un-constat-mesuré">2.3 Dimensionnement — un
 constat mesuré</h3>
 <p>Le dimensionnement initial du disque, fixé à <strong>28 Gio</strong>,
 s’est révélé insuffisant pendant la synchronisation du flux de
@@ -353,7 +354,7 @@ n’est pas un outil léger. Le chiffre de 28 Gio correspondait à un
 système et un outil installés, pas à un flux synchronisé. Ce constat ne
 figure dans aucun document de référence : il vient de la mise en
 œuvre.</p>
-<h3 id="vocabulaire-de-lanalyse">2.3 Vocabulaire de l’analyse</h3>
+<h3 id="vocabulaire-de-lanalyse">2.4 Vocabulaire de l’analyse</h3>
 <table>
 <colgroup>
 <col style="width: 50%" />
@@ -564,6 +565,10 @@ d’administration n’est pas exposée.</p>
 <p><strong>Aucun service NFS.</strong> Le port 2049 est fermé sur les
 trois nœuds, contrairement à la configuration de référence. Le stockage
 des machines virtuelles n’est pas exposé par ce protocole.</p>
+<p><strong>Conséquence sur l’analyse.</strong> Le constat le plus
+critique de la référence — un partage de stockage lisible par toute
+machine du réseau — n’existe pas dans ce périmètre. Les constats retenus
+portent donc sur les services effectivement exposés.</p>
 <hr />
 <h2 id="analyse-et-priorisation">4. Analyse et priorisation</h2>
 <h3 id="tableau-des-constats">4.1 Tableau des constats</h3>
