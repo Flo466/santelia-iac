@@ -1,0 +1,62 @@
+services:
+  zabbix-db:
+    image: postgres:16-alpine
+    container_name: zabbix-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: zabbix
+      TZ: Europe/Paris
+    volumes:
+      - zabbix-db-data:/var/lib/postgresql/data
+    networks:
+      - zabbix-net
+    labels:
+      com.centurylinklabs.watchtower.enable: "false"
+
+  zabbix-server:
+    image: zabbix/zabbix-server-pgsql:alpine-7.0-latest
+    container_name: zabbix-server
+    restart: unless-stopped
+    environment:
+      DB_SERVER_HOST: zabbix-db
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: zabbix
+      TZ: Europe/Paris
+    ports:
+      - "10051:10051"
+    depends_on:
+      - zabbix-db
+    networks:
+      - zabbix-net
+    labels:
+      com.centurylinklabs.watchtower.enable: "false"
+
+  zabbix-web:
+    image: zabbix/zabbix-web-nginx-pgsql:alpine-7.0-latest
+    container_name: zabbix-web
+    restart: unless-stopped
+    environment:
+      ZBX_SERVER_HOST: zabbix-server
+      DB_SERVER_HOST: zabbix-db
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: zabbix
+      PHP_TZ: Europe/Paris
+      ZBX_SERVER_NAME: Santelia - supervision
+    ports:
+      - "8087:8080"
+    depends_on:
+      - zabbix-server
+    networks:
+      - zabbix-net
+    labels:
+      com.centurylinklabs.watchtower.enable: "false"
+
+volumes:
+  zabbix-db-data:
+
+networks:
+  zabbix-net:
