@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Supervision Zabbix — Santélia</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<a class="skip" href="#contenu">Aller au contenu</a>
+
+<header class="masthead">
+  <div class="wrap">
+    <p class="eyebrow">Santélia &middot; brique 3 sur 4 &middot; supervision</p>
+    <h1>Supervision centralisée du parc</h1>
+    <p class="lede">
+      Un serveur de supervision installé sur la machine qu'il surveille ne peut
+      pas signaler la panne de cette machine. La plateforme vit donc sur un
+      châssis distinct de celui qui porte le cluster.
+    </p>
+    <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 27 novembre 2026</p>
+  </div>
+</header>
+
+<main id="contenu">
+  <div class="wrap">
+
+    <nav class="back">
+      <a href="index.html">&larr; Sommaire</a>
+    </nav>
+
+    <div class="banner">
+      <div class="lab">Plateforme</div>
+      <div class="val"><strong>Déployée</strong></div>
+      <div class="sep"></div>
+      <div class="lab">Composants</div>
+      <div class="val"><strong>3 conteneurs</strong></div>
+      <div class="sep"></div>
+      <div class="lab">Hôtes raccordés</div>
+      <div class="val"><strong>En cours</strong></div>
+    </div>
+
+    <h2 class="sec-title">Documents de la brique</h2>
+    <p class="sec-hint">1 document</p>
+
+    <div class="grid">
+      <a class="card card--full" href="zbx-01-deploiement.html">
+        <span class="card__icon" aria-hidden="true">🛰️</span>
+        <span class="card__tag">01 / Déploiement</span>
+        <h3>Plateforme en conteneurs</h3>
+        <p>Trois services, une base dédiée et un réseau isolé sur une machine hors du cluster.</p>
+        <div class="pills">
+          <span class="pill">Docker</span>
+          <span class="pill">Docker Compose</span>
+          <span class="pill">PostgreSQL</span>
+          <span class="pill">volume nommé</span>
+          <span class="pill">réseau dédié</span>
+        </div>
+        <div class="card__foot">
+          Consulter <span aria-hidden="true">&rarr;</span>
+          <span class="status status--ok">Mesuré</span>
+        </div>
+      </a>
+    </div>
+
+    <article>
+      <h2>Ce que cette brique apporte</h2>
+      <ul>
+        <li>Une plateforme hors de l'infrastructure supervisée, donc capable de la voir tomber</li>
+        <li>Trois composants séparés : base, serveur, interface</li>
+        <li>Un déploiement reproductible, la pile étant décrite dans le dépôt</li>
+        <li>Un port d'écoute pour les agents, prêt à recevoir le parc</li>
+      </ul>
+
+      <h2>Pourquoi elle change la donne</h2>
+      <p>
+        Les deux autres briques fonctionnent, mais aucune ne se plaint toute seule.
+        Une synchronisation de sauvegarde peut échouer pendant des semaines sans
+        que personne ne le remarque. Une interface d'administration peut rester
+        exposée sans qu'aucune alerte ne parte.
+      </p>
+      <p>
+        La supervision ne répare rien : elle transforme un état silencieux en
+        signal. C'est le seul composant du projet dont c'est le métier.
+      </p>
+    </article>
+
+  </div>
+</main>
+
+<footer>
+  <p>Santélia &middot; documentation technique &middot; 27 novembre 2026</p>
+</footer>
+
+</body>
+</html>

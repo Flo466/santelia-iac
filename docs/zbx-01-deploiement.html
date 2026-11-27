@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#f1efe4" />
+    <title>Santélia — Supervision : déploiement de la plateforme</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <a class="skip" href="#contenu">Aller au contenu</a>
+    <header class="masthead">
+      <div class="wrap">
+        <p class="eyebrow">Sant&eacute;lia &middot; dossier technique</p>
+        <h1>Santélia — Supervision : déploiement de la plateforme</h1>
+        <p class="stamp">Documentation technique &nbsp;&middot;&nbsp; 27/11/2026</p>
+      </div>
+    </header>
+    <main class="wrap" id="contenu">
+      <a class="back" href="index.html">&larr; Sommaire</a>
+      <article><blockquote>
+<p>Brique 03 — Zabbix en conteneurs. Plateforme déployée hors de
+l’infrastructure supervisée. 27/11/2026</p>
+</blockquote>
+<hr />
+<h2 id="objet">1. Objet</h2>
+<p>Mettre en place une supervision centralisée du parc Santélia : savoir
+qu’un service est tombé avant que l’utilisateur ne le signale.</p>
+<p>Répond à l’exigence n° 4 du cahier des charges, priorité
+<strong>Should</strong> : supervision centralisée des postes avec
+remontée d’alerte.</p>
+<hr />
+<h2 id="où-la-plateforme-est-installée-et-pourquoi">2. Où la plateforme
+est installée, et pourquoi</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Emplacement possible</th>
+<th>Écarté parce que</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sur l’hôte Proxmox</td>
+<td>Il supervise le cluster qu’il héberge : si l’hôte tombe, la
+supervision tombe avec lui</td>
+</tr>
+<tr>
+<td>Dans un nœud du cluster</td>
+<td>Même défaut, à l’échelle du nœud</td>
+</tr>
+<tr>
+<td><strong>Sur <code>srv-debian</code>, machine physique
+distincte</strong></td>
+<td><strong>Retenu</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Le principe.</strong> Un serveur de supervision installé sur
+la machine qu’il surveille ne peut pas signaler la panne de cette
+machine. La plateforme vit donc sur un châssis distinct de celui qui
+porte le cluster.</p>
+<p><strong>Ce que ça permet de démontrer.</strong> Couper un nœud
+Proxmox et voir l’alerte partir depuis une machine qui, elle, n’a pas
+bougé.</p>
+<hr />
+<h2 id="la-machine-daccueil">3. La machine d’accueil</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Élément</th>
+<th>Valeur</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Machine</td>
+<td><code>srv-debian</code>, Dell OptiPlex 7040, Debian 13</td>
+</tr>
+<tr>
+<td>Adresse</td>
+<td>192.168.1.125</td>
+</tr>
+<tr>
+<td>Mémoire</td>
+<td><strong>15 Gio</strong> dont 8,8 disponibles avant déploiement</td>
+</tr>
+<tr>
+<td>Disque de données</td>
+<td><code>/mnt/data</code>, 220 Go dont <strong>198 libres</strong></td>
+</tr>
+<tr>
+<td>Disque de sauvegarde</td>
+<td><code>/mnt/backup</code> — <strong>non utilisé</strong>, réservé à
+la copie de la brique 02</td>
+</tr>
+<tr>
+<td>Conteneurs déjà en service</td>
+<td>12, dont Nextcloud, Immich, Vaultwarden, Open WebUI, Portainer,
+Watchtower</td>
+</tr>
+</tbody>
+</table>
+<p>La plateforme de conteneurs existe déjà, elle héberge les services du
+quotidien. La supervision s’y ajoute comme une pile de plus, isolée par
+son propre réseau.</p>
+<p>Le disque de sauvegarde n’est pas touché : il porte la copie
+secondaire de la brique 02.</p>
+<hr />
+<h2 id="pourquoi-des-conteneurs">4. Pourquoi des conteneurs</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Approche</th>
+<th>Ce qu’elle impose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Paquets natifs</td>
+<td>Installation système, dépendances PHP et PostgreSQL gérées à la
+main, mise à jour qui touche l’hôte</td>
+</tr>
+<tr>
+<td><strong>Conteneurs</strong></td>
+<td><strong>Environnement isolé, reproductible, supprimable sans
+trace</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Trois raisons concrètes de choisir les conteneurs sur cette machine
+:</p>
+<p><strong>La cohérence.</strong> Douze services tournent déjà en
+conteneurs. Ajouter une pile de paquets natifs créerait deux régimes
+d’exploitation à maintenir.</p>
+<p><strong>L’isolation.</strong> La pile Zabbix dispose de son propre
+réseau Docker. Sa base n’est joignable que par le serveur et
+l’interface, jamais depuis l’hôte.</p>
+<p><strong>La réversibilité.</strong> Un
+<code>docker compose down -v</code> efface la pile entièrement. Sur une
+maquette de validation, c’est ce qui permet de rejouer un déploiement à
+zéro sans réinstaller une machine.</p>
+<hr />
+<h2 id="la-composition-de-la-pile">5. La composition de la pile</h2>
+<pre><code>stacks/zabbix/
+├── docker-compose.yml
+├── .env.example
+└── README.md</code></pre>
+<h3 id="le-fichier-de-composition">Le fichier de composition</h3>
+<pre class="yaml"><code>services:
+  zabbix-db:
+    image: postgres:16-alpine
+    container_name: zabbix-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: zabbix
+      TZ: Europe/Paris
+    volumes:
+      - zabbix-db-data:/var/lib/postgresql/data
+    networks:
+      - zabbix-net
+    labels:
+      com.centurylinklabs.watchtower.enable: &quot;false&quot;
+
+  zabbix-server:
+    image: zabbix/zabbix-server-pgsql:alpine-7.0-latest
+    container_name: zabbix-server
+    restart: unless-stopped
+    environment:
+      DB_SERVER_HOST: zabbix-db
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: zabbix
+      TZ: Europe/Paris
+    ports:
+      - &quot;10051:10051&quot;
+    depends_on:
+      - zabbix-db
+    networks:
+      - zabbix-net
+    labels:
+      com.centurylinklabs.watchtower.enable: &quot;false&quot;
+
+  zabbix-web:
+    image: zabbix/zabbix-web-nginx-pgsql:alpine-7.0-latest
+    container_name: zabbix-web
+    restart: unless-stopped
+    environment:
+      ZBX_SERVER_HOST: zabbix-server
+      DB_SERVER_HOST: zabbix-db
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: zabbix
+      PHP_TZ: Europe/Paris
+      ZBX_SERVER_NAME: Santelia - supervision
+    ports:
+      - &quot;8087:8080&quot;
+    depends_on:
+      - zabbix-server
+    networks:
+      - zabbix-net
+    labels:
+      com.centurylinklabs.watchtower.enable: &quot;false&quot;
+
+volumes:
+  zabbix-db-data:
+
+networks:
+  zabbix-net:</code></pre>
+<h3 id="lecture-des-directives">Lecture des directives</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Directive</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>image</code></td>
+<td>Version figée ou flottante. <code>alpine-7.0-latest</code> suit les
+correctifs de la branche 7.0</td>
+</tr>
+<tr>
+<td><code>container_name</code></td>
+<td>Nom fixe plutôt que généré, pour retrouver les conteneurs dans
+<code>docker ps</code></td>
+</tr>
+<tr>
+<td><code>restart: unless-stopped</code></td>
+<td>Relance après redémarrage de la machine, sauf arrêt volontaire</td>
+</tr>
+<tr>
+<td><code>ports</code></td>
+<td><code>8087:8080</code> signifie port de l’hôte vers port du
+conteneur</td>
+</tr>
+<tr>
+<td><code>volumes</code></td>
+<td><code>zabbix-db-data:/var/lib/postgresql/data</code> : volume nommé
+monté sur le répertoire de la base</td>
+</tr>
+<tr>
+<td><code>networks</code></td>
+<td>Tous les services partagent <code>zabbix-net</code> et se joignent
+par leur nom</td>
+</tr>
+<tr>
+<td><code>depends_on</code></td>
+<td>Ordre de démarrage, pas attente de disponibilité</td>
+</tr>
+<tr>
+<td><code>labels</code></td>
+<td>Marquage des conteneurs, voir point de vigilance n° 4</td>
+</tr>
+</tbody>
+</table>
+<h3 id="le-rôle-des-trois-services">Le rôle des trois services</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Service</th>
+<th>Image</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>zabbix-db</code></td>
+<td><code>postgres:16-alpine</code></td>
+<td>Stocke l’inventaire, l’historique et les déclencheurs</td>
+</tr>
+<tr>
+<td><code>zabbix-server</code></td>
+<td><code>zabbix/zabbix-server-pgsql:alpine-7.0-latest</code></td>
+<td>Collecte, évalue, déclenche</td>
+</tr>
+<tr>
+<td><code>zabbix-web</code></td>
+<td><code>zabbix/zabbix-web-nginx-pgsql:alpine-7.0-latest</code></td>
+<td>Interface d’administration</td>
+</tr>
+</tbody>
+</table>
+<h3 id="le-fichier-.env">Le fichier <code>.env</code></h3>
+<pre><code>DB_PASSWORD=&lt;mot de passe&gt;</code></pre>
+<p>Le fichier <code>.env</code> vit à côté du compose, sur la machine,
+et n’est jamais versionné. <code>docker compose</code> le lit
+automatiquement au lancement et substitue <code>${DB_PASSWORD}</code>
+dans les trois services qui en ont besoin.</p>
+<table>
+<thead>
+<tr>
+<th>Fichier</th>
+<th>Versionné</th>
+<th>Contenu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>docker-compose.yml</code></td>
+<td>Oui</td>
+<td>Structure, images, <code>${DB_PASSWORD}</code></td>
+</tr>
+<tr>
+<td><code>.env.example</code></td>
+<td>Oui</td>
+<td>Le nom de la variable, sans la valeur</td>
+</tr>
+<tr>
+<td><code>.env</code></td>
+<td><strong>Non</strong></td>
+<td>La valeur réelle</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Pourquoi cette séparation.</strong> Le fichier de composition
+part sur un dépôt public. Le secret reste sur la machine.
+<code>.env</code> est déclaré dans le <code>.gitignore</code> du projet,
+et un contrôle le confirme avant tout commit :</p>
+<pre><code>git status --short</code></pre>
+<p>Aucun <code>.env</code> ne doit apparaître dans la sortie.</p>
+<p><strong>Si le fichier manque</strong>, <code>${DB_PASSWORD}</code>
+devient une chaîne vide, PostgreSQL refuse de démarrer et
+<code>zabbix-db</code> boucle en redémarrage. C’est le premier endroit à
+regarder quand la pile ne monte pas.</p>
+<hr />
+<h2 id="choix-techniques">6. Choix techniques</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Choix</th>
+<th>Raison</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Volume Docker nommé</strong> pour la base</td>
+<td>Un montage de répertoire impose la correspondance des identifiants
+système, source classique du refus d’accès au premier démarrage</td>
+</tr>
+<tr>
+<td><strong>Réseau Docker dédié</strong></td>
+<td>Les conteneurs se joignent par leur nom, sans exposer la base sur
+l’hôte</td>
+</tr>
+<tr>
+<td><strong>Fuseau Europe/Paris</strong> sur les trois services</td>
+<td>Les alertes et les graphiques sont à l’heure locale, pas en UTC</td>
+</tr>
+<tr>
+<td><strong>Port 8087</strong> en façade</td>
+<td>8080 est déjà occupé deux fois sur la machine, 8007 est pris par la
+copie de sauvegarde</td>
+</tr>
+<tr>
+<td><strong>Port 10051</strong> exposé</td>
+<td>C’est celui qu’écouteront les agents</td>
+</tr>
+<tr>
+<td><strong>Mot de passe dans un fichier <code>.env</code></strong></td>
+<td>Le fichier de composition est versionné sur un dépôt public, la base
+ne doit pas y figurer</td>
+</tr>
+<tr>
+<td><strong><code>depends_on</code> plutôt qu’une attente
+active</strong></td>
+<td>Suffisant ici, mais voir le point de vigilance n° 3</td>
+</tr>
+</tbody>
+</table>
+<h3 id="le-cas-du-mot-de-passe">Le cas du mot de passe</h3>
+<p>Le fichier <code>.env</code> vit à côté du compose, sur la machine,
+et n’est jamais versionné. Le compose contient
+<code>${DB_PASSWORD}</code>, que Docker Compose substitue au lancement
+en lisant ce fichier.</p>
+<p>Sans <code>.env</code>, la variable devient vide et PostgreSQL refuse
+de démarrer.</p>
+<hr />
+<h2 id="déploiement">7. Déploiement</h2>
+<p>Le fichier de composition vit dans le dépôt du projet. La machine ne
+fait que l’exécuter : le compose est une source, pas un état local.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Étape</th>
+<th>Opération</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Récupération du fichier de composition et de son modèle de
+variables</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Copie du modèle en <code>.env</code>, renseignement du mot de passe,
+restriction des droits</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Démarrage de la pile</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Attente de l’initialisation de la base</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Images récupérées en 9,2 secondes.</strong> 28 couches au
+total, la plus lente en 7,5 s.</p>
+<p><strong>Conteneurs démarrés dans la seconde</strong> : la base en 1,2
+s, puis le serveur et l’interface.</p>
+<hr />
+<h2 id="vérifications">8. Vérifications</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Contrôle</th>
+<th>Résultat obtenu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Trois conteneurs en service</td>
+<td>Oui</td>
+</tr>
+<tr>
+<td>Base prête</td>
+<td><code>database system is ready to accept connections</code></td>
+</tr>
+<tr>
+<td>Interface accessible</td>
+<td>Code de réponse valide sur le port 8087</td>
+</tr>
+<tr>
+<td>Connexion</td>
+<td><code>Admin</code>, mot de passe par défaut <strong>changé
+immédiatement</strong></td>
+</tr>
+<tr>
+<td>Serveur à l’écoute des agents</td>
+<td>Port 10051 exposé</td>
+</tr>
+</tbody>
+</table>
+<p>Le serveur redémarre une à deux fois au premier lancement, le temps
+que la base initialise son schéma. Après stabilisation, les trois
+composants restent en service.</p>
+<hr />
+<h2 id="points-de-vigilance">9. Points de vigilance</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Point</th>
+<th>Mesure appliquée</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Port 8080 déjà occupé deux fois sur la machine d’accueil</td>
+<td>Interface déplacée sur 8087, vérifié libre avant déploiement</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Base de données sur un montage de répertoire</td>
+<td>Volume Docker nommé retenu</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>depends_on</code> n’attend pas que la base soit prête,
+seulement qu’elle soit démarrée</td>
+<td>Le serveur redémarre de lui-même jusqu’à ce que la base réponde</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Le service de mise à jour automatique ignore le marquage posé sur
+les conteneurs</td>
+<td>Réserve assumée, voir ci-dessous</td>
+</tr>
+<tr>
+<td>5</td>
+<td>L’hôte « Zabbix server » créé automatiquement ne peut pas être
+supervisé</td>
+<td>Aucun agent installé, contrôles désactivés automatiquement</td>
+</tr>
+<tr>
+<td>6</td>
+<td>L’image allégée n’embarque pas tous les modules d’interrogation</td>
+<td>Items marqués « non supportés » : bruit dans les journaux, sans
+conséquence</td>
+</tr>
+</tbody>
+</table>
+<p><strong>N° 3 — l’attente de la base.</strong> <code>depends_on</code>
+garantit l’ordre de démarrage, pas la disponibilité. Le serveur tente de
+se connecter, échoue, redémarre, et finit par trouver la base. C’est
+visible dans les journaux et sans conséquence, mais ce n’est pas une
+attente propre.</p>
+<p><strong>N° 4 — mise à jour automatique.</strong> La machine exécute
+un service qui met à jour les conteneurs chaque nuit à 4 h. Il ne lit
+pas le marquage posé sur les trois conteneurs, qui reste donc sans
+effet. Une mise à jour de la pile peut survenir sans intervention, avec
+un risque de migration de schéma sur la base.</p>
+<p><strong>N° 5 — l’angle mort du superviseur.</strong> Zabbix se crée
+automatiquement un hôte à son propre nom et tente de l’interroger par
+agent. Aucun agent n’étant installé, il échoue, réessaie, puis désactive
+temporairement les contrôles.</p>
+<blockquote>
+<p>Un serveur de supervision sans agent sur lui-même ne surveille pas
+son propre socle. Deux réponses possibles : désactiver l’hôte, ou
+déployer un agent. La seconde seule supprime l’angle mort.</p>
+</blockquote>
+<p><strong>N° 6 — image allégée.</strong> Les modules Java, SNMP, IPMI,
+VMware et générateur de rapports ne sont pas embarqués. Le serveur crée
+leurs indicateurs et les marque comme non supportés.</p>
+<hr />
+<h2 id="annexe-a-relevés-bruts">Annexe A — Relevés bruts</h2>
+<h3 id="a.1-état-de-la-machine-avant-déploiement">A.1 État de la machine
+avant déploiement</h3>
+<pre><code>              total       utilisé      libre     partagé tamp/cache   disponible
+Mem:            15Gi       6,7Gi       1,3Gi       193Mi       8,0Gi       8,8Gi
+Échange:       7,8Gi        90Mi       7,7Gi
+
+/dev/sdc1          220G     11G  198G   5% /mnt/data
+/dev/sdb1          457G     22G  413G   5% /mnt/backup
+
+LISTEN 0  4096  127.0.0.1:8080        0.0.0.0:*
+LISTEN 0  4096  100.108.182.100:8080  0.0.0.0:*
+LISTEN 0  1024  *:8007                 *:*
+
+Docker version 26.1.5+dfsg1
+Docker Compose version 2.26.1-4</code></pre>
+<p>8080 est occupé deux fois, 8007 l’est aussi. 8087 et 10051 sont
+libres.</p>
+<h3 id="a.2-déploiement">A.2 Déploiement</h3>
+<pre><code>[+] Running 28/28
+zabbix-server Pulled     4.2s
+zabbix-web Pulled        7.1s
+zabbix-db Pulled         9.2s
+
+[+] Running 5/5
+Network zabbix_zabbix-net       Created   0.1s
+Volume &quot;zabbix_zabbix-db-data&quot;  Created   0.0s
+Container zabbix-db             Started   1.2s
+Container zabbix-server         Started   0.1s
+Container zabbix-web            Started   0.0s</code></pre>
+<h3 id="a.3-état-des-conteneurs">A.3 État des conteneurs</h3>
+<pre><code>NAME            IMAGE                                           STATUS
+zabbix-db       postgres:16-alpine                              Up
+zabbix-server   zabbix/zabbix-server-pgsql:alpine-7.0-latest    Up   0.0.0.0:10051-&gt;10051/tcp
+zabbix-web      zabbix/zabbix-web-nginx-pgsql:alpine-7.0-latest Up   0.0.0.0:8087-&gt;8080/tcp</code></pre>
+<h3 id="a.4-journaux-de-la-base">A.4 Journaux de la base</h3>
+<pre><code>2026-11-27 18:25:06.580 CET [1] LOG:  listening on IPv4 address &quot;0.0.0.0&quot;, port 5432
+2026-11-27 18:25:06.585 CET [1] LOG:  listening on Unix socket &quot;/run/postgresql/.s.PGSQL.5432&quot;
+2026-11-27 18:25:06.602 CET [1] LOG:  database system is ready to accept connections</code></pre>
+<h3 id="a.5-journaux-du-serveur-messages-attendus">A.5 Journaux du
+serveur — messages attendus</h3>
+<pre><code>item &quot;Zabbix server:zabbix[process,java poller,avg,busy]&quot; became not supported:
+No &quot;java poller&quot; processes started.
+
+Zabbix agent item &quot;agent.ping&quot; on host &quot;Zabbix server&quot; failed: another network error
+temporarily disabling Zabbix agent checks on host &quot;Zabbix server&quot;: interface unavailable</code></pre>
+<p>Première ligne, module absent de l’image allégée. Seconde ligne,
+aucun agent installé sur le serveur lui-même.</p>
+<hr />
+<p><em>Documentation technique — plateforme déployée, hôtes à
+raccorder.</em></p></article>
+    </main>
+    <footer>
+      <div class="wrap">
+        <p>Sant&eacute;lia &middot; documentation technique &middot; 27/11/2026</p>
+      </div>
+    </footer>
+  </body>
+</html>
